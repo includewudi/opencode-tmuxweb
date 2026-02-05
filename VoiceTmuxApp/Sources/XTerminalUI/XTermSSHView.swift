@@ -1,3 +1,6 @@
+import SwiftUI
+import VoiceTmuxCore
+
 public struct XTermSSHView: View {
     let transport: SSHTransport
     @State private var webViewScript: String?

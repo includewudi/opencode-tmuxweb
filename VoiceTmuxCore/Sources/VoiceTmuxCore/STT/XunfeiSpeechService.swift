@@ -5,7 +5,7 @@ public enum STTError: Error {
     case configMissing
     case audioSetupFailed(Error)
     case connectionFailed(Error)
-    case recognitionFailed(Int, String) // code, msg
+    case recognitionFailed(Int, String)
 }
 
 public protocol STTDelegate: AnyObject {
@@ -19,12 +19,13 @@ public class XunfeiSpeechService: NSObject {
     private let audioEngine = AVAudioEngine()
     private weak var delegate: STTDelegate?
     
-    // Config
     private var appId: String?
     private var apiKey: String?
     private var apiSecret: String?
     
     private var isRecording = false
+    private var audioSeq = 0
+    private var accumulatedText = ""
     
     public init(delegate: STTDelegate) {
         self.delegate = delegate
@@ -44,7 +45,9 @@ public class XunfeiSpeechService: NSObject {
         
         guard !isRecording else { return }
         
-        // 1. Connect WS
+        audioSeq = 0
+        accumulatedText = ""
+        
         guard let url = XunfeiAuth.buildAuthURL(apiKey: apiKey, apiSecret: apiSecret) else {
             throw STTError.connectionFailed(NSError(domain: "URL", code: -1))
         }
@@ -54,50 +57,46 @@ public class XunfeiSpeechService: NSObject {
         webSocketTask?.resume()
         listen()
         
-        // 2. Start Audio
         let inputNode = audioEngine.inputNode
-        let format = inputNode.outputFormat(forBus: 0)
+        let hardwareFormat = inputNode.outputFormat(forBus: 0)
         
-        // Xunfei requires 16k 16bit mono. Converting if necessary.
-        // For simplicity, assuming we can get compatible buffer or convert.
-        // We will just tap and assume we can send data. Real impl requires format conversion.
-        // Let's check spec: "AVAudioEngine: capture 16kHz PCM16"
+        guard let recordingFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 16000, channels: 1, interleaved: true) else {
+            throw STTError.audioSetupFailed(NSError(domain: "Format", code: -1))
+        }
         
-        // Installing tap
-        let recordingFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 16000, channels: 1, interleaved: true)!
-        // Note: inputNode hardware format might differ, need converter. 
-        // For this task, we will simulate the structure.
-        
-        // Remove existing tap if any
         inputNode.removeTap(onBus: 0)
         
-        // Converter
-        let converter = AVAudioConverter(from: format, to: recordingFormat)
+        let converter = AVAudioConverter(from: hardwareFormat, to: recordingFormat)
+        var isFirstFrame = true
+        let capturedAppId = appId
         
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] (buffer, time) in
-            guard let self = self else { return }
+        inputNode.installTap(onBus: 0, bufferSize: 1280, format: hardwareFormat) { [weak self] (buffer, _) in
+            guard let self = self, self.isRecording else { return }
             
-            // Convert to 16k Int16
-            let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat, frameCapacity: AVAudioFrameCount(recordingFormat.sampleRate * 0.1))!
-            var error: NSError? = nil
+            let frameCapacity = AVAudioFrameCount(recordingFormat.sampleRate * 0.08)
+            guard let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat, frameCapacity: frameCapacity) else { return }
             
-            let inputBlock: AVAudioConverterInputBlock = { inNumPackets, outStatus in
+            var error: NSError?
+            let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
                 outStatus.pointee = .haveData
                 return buffer
             }
             
             converter?.convert(to: pcmBuffer, error: &error, withInputFrom: inputBlock)
             
-            if let data = self.toData(buffer: pcmBuffer) {
-                self.sendAudio(data: data, status: self.isRecording ? 1 : 2)
+            guard let audioData = self.bufferToData(pcmBuffer) else { return }
+            
+            if isFirstFrame {
+                self.sendFirstFrame(appId: capturedAppId, audioData: audioData)
+                isFirstFrame = false
+            } else {
+                self.sendContinueFrame(audioData: audioData)
             }
         }
         
         do {
             try audioEngine.start()
             isRecording = true
-            // Send first frame
-            sendFirstFrame(appId: appId)
         } catch {
             throw STTError.audioSetupFailed(error)
         }
@@ -105,27 +104,25 @@ public class XunfeiSpeechService: NSObject {
     
     public func stopRecording() {
         guard isRecording else { return }
+        isRecording = false
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
-        isRecording = false
         
-        // Send last frame?
-        sendAudio(data: Data(), status: 2)
+        sendLastFrame()
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.webSocketTask?.cancel(with: .normalClosure, reason: nil)
-            self.webSocketTask = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+            self?.webSocketTask?.cancel(with: .normalClosure, reason: nil)
+            self?.webSocketTask = nil
         }
     }
     
-    // MARK: - Websocket Logic
+    // MARK: - WebSocket
     
     private func listen() {
         webSocketTask?.receive { [weak self] result in
             guard let self = self else { return }
             switch result {
             case .failure(let error):
-                print("WS Error: \(error)")
                 self.delegate?.onError(error)
             case .success(let message):
                 switch message {
@@ -143,67 +140,117 @@ public class XunfeiSpeechService: NSObject {
     }
     
     private func handleMessage(_ json: String) {
-        // Parse JSON
-        // Structure: code: 0, data: { result: { ws: ... } }
-        // Partial/Final logic handled here or in Delegate
         guard let data = json.data(using: .utf8),
-              let jsonDict = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let code = jsonDict["code"] as? Int else { return }
+              let response = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let header = response["header"] as? [String: Any],
+              let code = header["code"] as? Int else { return }
         
         if code != 0 {
-            let msg = jsonDict["message"] as? String ?? "Unknown error"
+            let msg = header["message"] as? String ?? "Unknown error"
             delegate?.onError(STTError.recognitionFailed(code, msg))
             return
         }
         
-        guard let dataDict = jsonDict["data"] as? [String: Any],
-              let result = dataDict["result"] as? [String: Any],
-              let ws = result["ws"] as? [[String: Any]] else { return }
+        guard let payload = response["payload"] as? [String: Any],
+              let result = payload["result"] as? [String: Any],
+              let textBase64 = result["text"] as? String,
+              let textData = Data(base64Encoded: textBase64),
+              let textJson = try? JSONSerialization.jsonObject(with: textData) as? [String: Any],
+              let ws = textJson["ws"] as? [[String: Any]] else { return }
         
-        var text = ""
+        var segmentText = ""
         for item in ws {
             if let cw = item["cw"] as? [[String: Any]] {
                 for w in cw {
                     if let word = w["w"] as? String {
-                        text += word
+                        segmentText += word
                     }
                 }
             }
         }
         
-        if !text.isEmpty {
-            // pgs logic: apd or rpl. Simplified: just returning text.
-            // Coordinator should handle accumulation.
-            delegate?.onPartialResult(text: text)
+        if !segmentText.isEmpty {
+            accumulatedText += segmentText
+            delegate?.onPartialResult(text: accumulatedText)
+        }
+        
+        let headerStatus = header["status"] as? Int ?? 0
+        if headerStatus == 2 {
+            delegate?.onFinalResult(text: accumulatedText)
         }
     }
     
-    private func sendFirstFrame(appId: String) {
+    // MARK: - Send Frames
+    
+    private func sendFirstFrame(appId: String, audioData: Data) {
+        audioSeq = 1
         let frame: [String: Any] = [
-            "common": ["app_id": appId],
-            "business": [
-                "language": "zh_cn",
-                "domain": "iat",
-                "accent": "mandarin",
-                "dwa": "wpgs"
+            "header": [
+                "app_id": appId,
+                "status": 0
             ],
-            "data": [
-                "status": 0,
-                "format": "audio/L16;rate=16000",
-                "encoding": "raw"
+            "parameter": [
+                "iat": [
+                    "domain": "slm",
+                    "language": "mul_cn",
+                    "accent": "mandarin",
+                    "eos": 6000,
+                    "vinfo": 1,
+                    "result": [
+                        "encoding": "utf8",
+                        "compress": "raw",
+                        "format": "json"
+                    ]
+                ]
+            ],
+            "payload": [
+                "audio": [
+                    "encoding": "raw",
+                    "sample_rate": 16000,
+                    "channels": 1,
+                    "bit_depth": 16,
+                    "seq": audioSeq,
+                    "status": 0,
+                    "audio": audioData.base64EncodedString()
+                ]
             ]
         ]
         sendJson(frame)
     }
     
-    private func sendAudio(data: Data, status: Int) {
+    private func sendContinueFrame(audioData: Data) {
+        audioSeq += 1
         let frame: [String: Any] = [
-            "data": [
-                "status": status,
-                "format": "audio/L16;rate=16000", // duplicated but required often in cont frames?
-                // Actually Xunfei docs say only 'data' needed for continue
-                "encoding": "raw",
-                "audio": data.base64EncodedString()
+            "header": [
+                "app_id": appId ?? "",
+                "status": 1
+            ],
+            "payload": [
+                "audio": [
+                    "encoding": "raw",
+                    "sample_rate": 16000,
+                    "status": 1,
+                    "audio": audioData.base64EncodedString()
+                ]
+            ]
+        ]
+        sendJson(frame)
+    }
+    
+    private func sendLastFrame() {
+        audioSeq += 1
+        let frame: [String: Any] = [
+            "header": [
+                "app_id": appId ?? "",
+                "status": 2
+            ],
+            "payload": [
+                "audio": [
+                    "encoding": "raw",
+                    "sample_rate": 16000,
+                    "status": 2,
+                    "audio": ""
+                ]
             ]
         ]
         sendJson(frame)
@@ -213,18 +260,15 @@ public class XunfeiSpeechService: NSObject {
         guard let data = try? JSONSerialization.data(withJSONObject: dict),
               let str = String(data: data, encoding: .utf8) else { return }
         
-        let message = URLSessionWebSocketTask.Message.string(str)
-        webSocketTask?.send(message) { error in
+        webSocketTask?.send(.string(str)) { error in
             if let error = error {
                 print("Send error: \(error)")
             }
         }
     }
     
-    private func toData(buffer: AVAudioPCMBuffer) -> Data? {
+    private func bufferToData(_ buffer: AVAudioPCMBuffer) -> Data? {
         guard let channelData = buffer.int16ChannelData else { return nil }
-        let channelDataValue = channelData.pointee
-        let data = Data(bytes: channelDataValue, count: Int(buffer.frameLength) * 2)
-        return data
+        return Data(bytes: channelData.pointee, count: Int(buffer.frameLength) * 2)
     }
 }

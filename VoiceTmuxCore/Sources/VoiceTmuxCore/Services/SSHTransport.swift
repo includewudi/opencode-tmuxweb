@@ -10,16 +10,21 @@ public enum SSHTransportError: Error {
     case connectionFailed(String)
     case commandFailed(Int, String) // exit code, stderr
     case inactive
+    case shellNotSupported
 }
 
 public actor SSHTransport {
     private var client: SSHClient?
     public private(set) var isConnected: Bool = false
     
-    // TTY Stream Handling
-    private var stdinWriter: TTYStdinWriter?
+    // Shell stream handling (iOS uses executeCommandStream, macOS uses withTTY)
     private var outputHandler: (@Sendable (String) -> Void)?
     private var shellTask: Task<Void, Error>?
+    
+    // For macOS TTY support
+    #if os(macOS)
+    private var stdinWriter: TTYStdinWriter?
+    #endif
     
     public func registerOutputHandler(_ handler: @escaping @Sendable (String) -> Void) {
         self.outputHandler = handler
@@ -67,59 +72,85 @@ public actor SSHTransport {
         }
     }
     
-        }
-    }
-    
     public func startShell(cols: Int = 80, rows: Int = 24) async throws {
         guard let client = client, isConnected else {
             throw SSHTransportError.notConnected
         }
         
-        // Cancel existing shell if any
         shellTask?.cancel()
         
+        #if os(macOS)
+        if #available(macOS 15.0, *) {
+            shellTask = Task {
+                do {
+                    try await client.withTTY(environment: []) { [weak self] inbound, outbound in
+                        guard let self = self else { return }
+                        await self.setStdinWriter(outbound)
+                        try? await outbound.changeSize(cols: cols, rows: rows, pixelWidth: 0, pixelHeight: 0)
+                        
+                        for try await chunk in inbound {
+                            switch chunk {
+                            case .stdout(let buffer):
+                                await self.handleOutput(String(buffer: buffer))
+                            case .stderr(let buffer):
+                                await self.handleOutput(String(buffer: buffer))
+                            }
+                        }
+                    }
+                } catch {
+                    print("Shell error: \(error)")
+                }
+            }
+        } else {
+            throw SSHTransportError.shellNotSupported
+        }
+        #else
         shellTask = Task {
             do {
-                try await client.withTTY(environment: []) { [weak self] inbound, outbound in
-                    guard let self = self else { return }
-                    
-                    // Store writer for input
-                    await self.setStdinWriter(outbound)
-                    
-                    // Initial resize
-                    try? await outbound.changeSize(cols: cols, rows: rows, pixelWidth: 0, pixelHeight: 0)
-                    
-                    // Process Output
-                    for try await chunk in inbound {
-                        switch chunk {
-                        case .stdout(let buffer):
-                            let str = String(buffer: buffer)
-                            await self.handleOutput(str)
-                        case .stderr(let buffer):
-                            let str = String(buffer: buffer)
-                            await self.handleOutput(str)
-                        }
+                let stream = try await client.executeCommandStream("$SHELL -l", inShell: true)
+                for try await chunk in stream {
+                    switch chunk {
+                    case .stdout(let buffer):
+                        await self.handleOutput(String(buffer: buffer))
+                    case .stderr(let buffer):
+                        await self.handleOutput(String(buffer: buffer))
                     }
                 }
             } catch {
-                print("Shell Stream Error: \(error)")
+                print("Shell error: \(error)")
             }
         }
+        #endif
     }
     
     public func send(input: String) async throws {
-        guard let writer = stdinWriter else { return }
-        var buffer = ByteBuffer(string: input)
-        try await writer.write(buffer)
+        #if os(macOS)
+        if #available(macOS 15.0, *) {
+            guard let writer = stdinWriter else { return }
+            let buffer = ByteBuffer(string: input)
+            try await writer.write(buffer)
+        }
+        #else
+        _ = input
+        #endif
     }
     
     public func resize(cols: Int, rows: Int) async {
-        try? await stdinWriter?.changeSize(cols: cols, rows: rows, pixelWidth: 0, pixelHeight: 0)
+        #if os(macOS)
+        if #available(macOS 15.0, *) {
+            try? await stdinWriter?.changeSize(cols: cols, rows: rows, pixelWidth: 0, pixelHeight: 0)
+        }
+        #else
+        _ = (cols, rows)
+        #endif
     }
     
+    #if os(macOS)
+    @available(macOS 15.0, *)
     private func setStdinWriter(_ writer: TTYStdinWriter) {
         self.stdinWriter = writer
     }
+    #endif
     
     private func handleOutput(_ output: String) {
         outputHandler?(output)
@@ -142,7 +173,9 @@ public actor SSHTransport {
     public func disconnect() async {
         shellTask?.cancel()
         shellTask = nil
+        #if os(macOS)
         stdinWriter = nil
+        #endif
         try? await client?.close()
         client = nil
         isConnected = false

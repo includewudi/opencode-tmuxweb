@@ -16,6 +16,15 @@
 		006 /* ConnectionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105; };
 		007 /* InteractiveTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106; };
 		008 /* VoiceControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107; };
+		/* XTerminalUI Source Files */
+		010 /* XTermSSHView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110; };
+		011 /* WebViewWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111; };
+		012 /* TerminalBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112; };
+		013 /* TerminalScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113; };
+		/* XTerminalUI Resources */
+		020 /* xterm.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 120; };
+		021 /* xterm.css in Resources */ = {isa = PBXBuildFile; fileRef = 121; };
+		022 /* xterm-addon-fit.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 122; };
 		/* VoiceTmuxCore Package */
 		009 /* VoiceTmuxCore in Frameworks */ = {isa = PBXBuildFile; productRef = 200; };
 /* End PBXBuildFile section */
@@ -29,6 +38,14 @@
 		105 /* ConnectionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionSettingsView.swift; sourceTree = "<group>"; };
 		106 /* InteractiveTerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveTerminalView.swift; sourceTree = "<group>"; };
 		107 /* VoiceControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceControlView.swift; sourceTree = "<group>"; };
+		/* XTerminalUI Files */
+		110 /* XTermSSHView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XTermSSHView.swift; sourceTree = "<group>"; };
+		111 /* WebViewWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewWrapper.swift; sourceTree = "<group>"; };
+		112 /* TerminalBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalBridge.swift; sourceTree = "<group>"; };
+		113 /* TerminalScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalScript.swift; sourceTree = "<group>"; };
+		120 /* xterm.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "xterm.min.js"; sourceTree = "<group>"; };
+		121 /* xterm.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = xterm.css; sourceTree = "<group>"; };
+		122 /* xterm-addon-fit.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "xterm-addon-fit.min.js"; sourceTree = "<group>"; };
 		300 /* VoiceTmuxApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VoiceTmuxApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -58,6 +75,7 @@
 				100 /* VoiceTmuxApp.swift */,
 				503 /* ViewModels */,
 				504 /* Views */,
+				505 /* XTerminalUI */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -89,6 +107,28 @@
 				107 /* VoiceControlView.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		505 /* XTerminalUI */ = {
+			isa = PBXGroup;
+			children = (
+				110 /* XTermSSHView.swift */,
+				111 /* WebViewWrapper.swift */,
+				112 /* TerminalBridge.swift */,
+				113 /* TerminalScript.swift */,
+				506 /* Resources */,
+			);
+			path = XTerminalUI;
+			sourceTree = "<group>";
+		};
+		506 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				120 /* xterm.min.js */,
+				121 /* xterm.css */,
+				122 /* xterm-addon-fit.min.js */,
+			);
+			path = Resources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -155,6 +195,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				020 /* xterm.min.js in Resources */,
+				021 /* xterm.css in Resources */,
+				022 /* xterm-addon-fit.min.js in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -173,6 +216,10 @@
 				006 /* ConnectionSettingsView.swift in Sources */,
 				007 /* InteractiveTerminalView.swift in Sources */,
 				008 /* VoiceControlView.swift in Sources */,
+				010 /* XTermSSHView.swift in Sources */,
+				011 /* WebViewWrapper.swift in Sources */,
+				012 /* TerminalBridge.swift in Sources */,
+				013 /* TerminalScript.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
