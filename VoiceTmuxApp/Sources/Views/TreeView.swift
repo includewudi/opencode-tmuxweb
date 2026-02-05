@@ -56,13 +56,21 @@ struct TreeView: View {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        viewModel.showXunfeiSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                    }
                     Button {
                         Task { await viewModel.refreshTree() }
                     } label: {
                         Image(systemName: "arrow.clockwise")
                     }
                 }
+            }
+            .sheet(isPresented: $viewModel.showXunfeiSettings) {
+                XunfeiSettingsView()
             }
         }
     }

@@ -16,6 +16,7 @@
 		006 /* ConnectionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105; };
 		007 /* InteractiveTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106; };
 		008 /* VoiceControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107; };
+		014 /* XunfeiSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108; };
 		/* XTerminalUI Source Files */
 		010 /* XTermSSHView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110; };
 		011 /* WebViewWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111; };
@@ -38,6 +39,7 @@
 		105 /* ConnectionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionSettingsView.swift; sourceTree = "<group>"; };
 		106 /* InteractiveTerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveTerminalView.swift; sourceTree = "<group>"; };
 		107 /* VoiceControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceControlView.swift; sourceTree = "<group>"; };
+		108 /* XunfeiSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XunfeiSettingsView.swift; sourceTree = "<group>"; };
 		/* XTerminalUI Files */
 		110 /* XTermSSHView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XTermSSHView.swift; sourceTree = "<group>"; };
 		111 /* WebViewWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewWrapper.swift; sourceTree = "<group>"; };
@@ -105,6 +107,7 @@
 				105 /* ConnectionSettingsView.swift */,
 				106 /* InteractiveTerminalView.swift */,
 				107 /* VoiceControlView.swift */,
+				108 /* XunfeiSettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -216,6 +219,7 @@
 				006 /* ConnectionSettingsView.swift in Sources */,
 				007 /* InteractiveTerminalView.swift in Sources */,
 				008 /* VoiceControlView.swift in Sources */,
+				014 /* XunfeiSettingsView.swift in Sources */,
 				010 /* XTermSSHView.swift in Sources */,
 				011 /* WebViewWrapper.swift in Sources */,
 				012 /* TerminalBridge.swift in Sources */,

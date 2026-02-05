@@ -18,8 +18,9 @@ public class AppViewModel: ObservableObject {
     // State
     @Published public var connectionState: ConnectionState = .disconnected
     @Published public var tree: TmuxTree?
-    @Published public var error: Error? // For alerts
+    @Published public var error: Error?
     @Published public var showConnectionSheet: Bool = false
+    @Published public var showXunfeiSettings: Bool = false
     
     // Setup
     public init() {
