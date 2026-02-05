@@ -10,7 +10,6 @@
 		001 /* VoiceTmuxApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 100 /* VoiceTmuxApp.swift */; };
 		002 /* AppViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101 /* AppViewModel.swift */; };
 		003 /* VoiceViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102 /* VoiceViewModel.swift */; };
-		004 /* TreeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103 /* TreeView.swift */; };
 		005 /* CaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104 /* CaptureView.swift */; };
 		006 /* ConnectionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105 /* ConnectionSettingsView.swift */; };
 		007 /* InteractiveTerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106 /* InteractiveTerminalView.swift */; };
@@ -21,6 +20,7 @@
 		012 /* TerminalBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112 /* TerminalBridge.swift */; };
 		013 /* TerminalScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113 /* TerminalScript.swift */; };
 		014 /* XunfeiSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108 /* XunfeiSettingsView.swift */; };
+		017 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132 /* MainView.swift */; };
 		020 /* xterm.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 120 /* xterm.min.js */; };
 		021 /* xterm.css in Resources */ = {isa = PBXBuildFile; fileRef = 121 /* xterm.css */; };
 		022 /* xterm-addon-fit.min.js in Resources */ = {isa = PBXBuildFile; fileRef = 122 /* xterm-addon-fit.min.js */; };
@@ -36,6 +36,7 @@
 		106 /* InteractiveTerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InteractiveTerminalView.swift; sourceTree = "<group>"; };
 		107 /* VoiceControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceControlView.swift; sourceTree = "<group>"; };
 		108 /* XunfeiSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XunfeiSettingsView.swift; sourceTree = "<group>"; };
+		132 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		110 /* XTermSSHView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XTermSSHView.swift; sourceTree = "<group>"; };
 		111 /* WebViewWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewWrapper.swift; sourceTree = "<group>"; };
 		112 /* TerminalBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalBridge.swift; sourceTree = "<group>"; };
@@ -97,12 +98,12 @@
 		504 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				103 /* TreeView.swift */,
 				104 /* CaptureView.swift */,
 				105 /* ConnectionSettingsView.swift */,
 				106 /* InteractiveTerminalView.swift */,
 				107 /* VoiceControlView.swift */,
 				108 /* XunfeiSettingsView.swift */,
+				132 /* MainView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -209,12 +210,12 @@
 				001 /* VoiceTmuxApp.swift in Sources */,
 				002 /* AppViewModel.swift in Sources */,
 				003 /* VoiceViewModel.swift in Sources */,
-				004 /* TreeView.swift in Sources */,
 				005 /* CaptureView.swift in Sources */,
 				006 /* ConnectionSettingsView.swift in Sources */,
 				007 /* InteractiveTerminalView.swift in Sources */,
 				008 /* VoiceControlView.swift in Sources */,
 				014 /* XunfeiSettingsView.swift in Sources */,
+				017 /* MainView.swift in Sources */,
 				010 /* XTermSSHView.swift in Sources */,
 				011 /* WebViewWrapper.swift in Sources */,
 				012 /* TerminalBridge.swift in Sources */,

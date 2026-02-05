@@ -20,7 +20,9 @@ public class HostStore: ObservableObject {
     }
     
     public func remove(at offsets: IndexSet) {
-        hosts.remove(atOffsets: offsets)
+        for index in offsets.sorted().reversed() {
+            hosts.remove(at: index)
+        }
         save()
     }
     
