@@ -1,66 +1,64 @@
-import SwiftUI
-import VoiceTmuxCore
-
 struct InteractiveTerminalView: View {
-    let transport: SSHTransport
+    @ObservedObject var viewModel: AppViewModel
+    
+    var transport: SSHTransport { viewModel.transport }
+    
+    @Environment(\.dismiss) var dismiss
+    
+    // Panel State
+    @State private var activePanelTab: TerminalInputPanel.PanelTab = .keys
+    
+    // Host Info (Mock or passed down)
+    // Ideally we get this from the ViewModel or Transport wrapper
+    // For now we'll rely on the parent logic or just generic text
+    private let hostAlias: String = "SSH Session" 
     
     var body: some View {
         VStack(spacing: 0) {
+            // 1. Control Bar
+            TerminalControlBar(
+                hostAlias: viewModel.currentHost?.alias ?? "Terminal",
+                status: viewModel.connectionState,
+                onDisconnect: {
+                    Task { await viewModel.disconnect() }
+                    dismiss()
+                },
+                onSettings: {
+                   // Show settings sheet logic
+                }
+            )
+            
+            // 2. Terminal View (Main Content)
             XTermSSHView(transport: transport)
             
-            // Virtual Keyboard Toolbar
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    KeyButton(label: "ESC", action: { send("\u{1B}") })
-                    KeyButton(label: "TAB", action: { send("\t") })
-                    KeyButton(label: "CTRL+C", action: { send("\u{03}") }) // ETX
-                    
-                    Divider()
-                    
-                    KeyButton(icon: "arrow.up", action: { send("\u{1B}[A") })
-                    KeyButton(icon: "arrow.down", action: { send("\u{1B}[B") })
-                    KeyButton(icon: "arrow.left", action: { send("\u{1B}[D") })
-                    KeyButton(icon: "arrow.right", action: { send("\u{1B}[C") })
-                    
-                    Divider()
-                    
-                    KeyButton(label: "SPACE", action: { send(" ") })
-                    KeyButton(label: "ENTER", action: { send("\r") })
+            // 3. Input Panel (Bottom Sheet)
+            if activePanelTab != .closed {
+                TerminalInputPanel(
+                    onInput: send,
+                    activeTab: $activePanelTab
+                )
+                .transition(.move(edge: .bottom))
+            } else {
+                // Minimized Bar to reopen?
+                HStack {
+                    Spacer()
+                    Button(action: { activePanelTab = .keys }) {
+                        Image(systemName: "keyboard.badge.ellipsis")
+                            .padding()
+                            .background(Color(UIColor.systemGray6))
+                            .clipShape(Circle())
+                    }
+                    .padding()
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
             }
-            .background(Color(UIColor.systemGray6))
         }
+        .edgesIgnoringSafeArea(.bottom) // Keyboard handling might need Tweaks
+        .navigationBarHidden(true) // We use our own ControlBar
     }
     
     private func send(_ input: String) {
         Task {
             try? await transport.send(input: input)
-        }
-    }
-}
-
-struct KeyButton: View {
-    var label: String?
-    var icon: String?
-    var action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Group {
-                if let icon = icon {
-                    Image(systemName: icon)
-                } else {
-                    Text(label ?? "")
-                        .font(.system(.caption, design: .monospaced))
-                        .fontWeight(.bold)
-                }
-            }
-            .frame(minWidth: 44, minHeight: 44)
-            .background(Color(UIColor.systemGray5))
-            .cornerRadius(8)
-            .foregroundStyle(.primary)
         }
     }
 }

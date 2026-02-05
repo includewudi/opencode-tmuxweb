@@ -15,7 +15,7 @@ struct TerminalContainerView: View {
             
             if let transport = viewModel.transport {
                 NavigationView {
-                    InteractiveTerminalView(transport: transport)
+                    InteractiveTerminalView(viewModel: viewModel)
                         .navigationTitle("Terminal")
                         .navigationBarTitleDisplayMode(.inline)
                 }

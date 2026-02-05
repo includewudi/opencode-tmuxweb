@@ -44,8 +44,8 @@ struct TreeView: View {
             }
             .navigationTitle("Tmux Sessions")
             .navigationDestination(for: TmuxPane.self) { pane in
-                if let transport = viewModel.transport {
-                    InteractiveTerminalView(transport: transport)
+                if let _ = viewModel.transport {
+                    InteractiveTerminalView(viewModel: viewModel)
                         .navigationTitle("Shell")
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar(.hidden, for: .tabBar) // Hide tab bar when pushed
