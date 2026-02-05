@@ -10,7 +10,7 @@ struct TreeView: View {
                 if let tree = viewModel.tree {
                     List {
                         ForEach(tree.sessions) { sessionNode in
-                            Section(header: Text("Session: \(sessionNode.session.name)")) {
+                            DisclosureGroup {
                                 ForEach(sessionNode.windows) { windowNode in
                                     DisclosureGroup {
                                         ForEach(windowNode.panes) { paneNode in
@@ -25,6 +25,12 @@ struct TreeView: View {
                                         Text("\(windowNode.window.index): \(windowNode.window.name)")
                                             .font(.headline)
                                     }
+                                }
+                            } label: {
+                                HStack {
+                                    Image(systemName: "rectangle.on.rectangle")
+                                    Text("Session: \(sessionNode.session.name)")
+                                        .font(.headline)
                                 }
                             }
                         }

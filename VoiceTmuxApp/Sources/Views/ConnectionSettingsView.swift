@@ -5,13 +5,16 @@ struct ConnectionSettingsView: View {
     @ObservedObject var viewModel: AppViewModel
     @Environment(\.dismiss) var dismiss
     
+    let existingHost: HostModel?
+    
+    @State private var alias: String = ""
     @State private var host: String = ""
     @State private var port: String = "22"
     @State private var username: String = ""
     @State private var authMethod: AuthMethodOption = .password
     @State private var password: String = ""
     @State private var privateKey: String = "" // PEM content
-    @State private var saveCredentials: Bool = true
+    @State private var isConnecting = false
     
     enum AuthMethodOption: String, CaseIterable, Identifiable {
         case password
@@ -29,8 +32,10 @@ struct ConnectionSettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Server") {
-                    TextField("Host", text: $host)
+                Section("Host Details") {
+                    TextField("Alias (Optional)", text: $alias)
+                    
+                    TextField("Hostname / IP", text: $host)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                     
@@ -65,18 +70,16 @@ struct ConnectionSettingsView: View {
                             )
                             .font(.system(.body, design: .monospaced))
                     }
-                    
-                    Toggle("Save Credentials", isOn: $saveCredentials)
                 }
                 
-                if case .failed(let msg) = viewModel.connectionState {
-                    Section {
-                        Text(msg)
-                            .foregroundStyle(.red)
-                    }
+                if let error = viewModel.error {
+                   Section {
+                       Text(error.localizedDescription)
+                           .foregroundStyle(.red)
+                   }
                 }
             }
-            .navigationTitle("Connect")
+            .navigationTitle(existingHost == nil ? "New Server" : "Edit Server")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
@@ -84,19 +87,44 @@ struct ConnectionSettingsView: View {
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Connect") {
-                        connect()
+                    if isConnecting {
+                        ProgressView()
+                    } else {
+                        Button("Connect") {
+                            connectAndSave()
+                        }
+                        .disabled(host.isEmpty || username.isEmpty)
                     }
-                    .disabled(host.isEmpty || username.isEmpty)
                 }
             }
             .onAppear {
-                loadSavedConfig()
+                populateFields()
             }
         }
     }
     
-    private func connect() {
+    private func populateFields() {
+        if let existing = existingHost {
+            self.alias = existing.alias
+            self.host = existing.hostname
+            self.port = String(existing.port)
+            self.username = existing.username
+            
+            // Load secrets
+            if let creds = try? KeychainService.shared.loadCredentials(for: existing) {
+                switch creds.authMethod {
+                case .password(let pwd):
+                    self.authMethod = .password
+                    self.password = pwd
+                case .privateKey(let key, _):
+                    self.authMethod = .privateKey
+                    self.privateKey = key
+                }
+            }
+        }
+    }
+    
+    private func connectAndSave() {
         guard let portInt = Int(port) else { return }
         
         let method: SSHAuthMethod
@@ -107,34 +135,39 @@ struct ConnectionSettingsView: View {
             method = .privateKey(key: privateKey, passphrase: nil)
         }
         
-        let creds = SSHCredentials(
+        let credentials = SSHCredentials(
             host: host,
             port: portInt,
             username: username,
             authMethod: method
         )
         
+        let hostId = existingHost?.id ?? UUID()
+        let hostAlias = alias.isEmpty ? host : alias
+        
+        let hostModel = HostModel(
+            id: hostId,
+            alias: hostAlias,
+            hostname: host,
+            port: portInt,
+            username: username
+        )
+        
+        isConnecting = true
+        
         Task {
-            await viewModel.connect(credentials: creds, save: saveCredentials)
-        }
-    }
-    
-    private func loadSavedConfig() {
-        // We could load from Keychain here to pre-fill the form if desired
-        if let saved = try? KeychainService.shared.loadCredentials() {
-            self.host = saved.host
-            self.port = String(saved.port)
-            self.username = saved.username
+            // Save first
+            viewModel.saveHost(
+                hostModel,
+                credentials: credentials,
+                usePrivateKey: authMethod == .privateKey
+            )
             
-            switch saved.authMethod {
-            case .password(let pwd):
-                self.authMethod = .password
-                self.password = pwd
-            case .privateKey(let key, _):
-                self.authMethod = .privateKey
-                self.privateKey = key
-            }
-            self.saveCredentials = true
+            // Connect
+            await viewModel.connect(host: hostModel)
+            
+            isConnecting = false
+            dismiss()
         }
     }
 }

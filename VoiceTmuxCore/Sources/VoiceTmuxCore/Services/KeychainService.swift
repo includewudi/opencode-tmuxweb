@@ -1,5 +1,7 @@
 import Foundation
 import Security
+import Foundation
+import Security
 
 public enum KeychainError: Error {
     case duplicateEntry
@@ -67,55 +69,49 @@ public class KeychainService {
     
     // MARK: - SSH Credentials
     
-    public func saveCredentials(_ creds: SSHCredentials, usePrivateKey: Bool) throws {
-        try save(creds.host.data(using: .utf8)!, account: "host")
-        try save(String(creds.port).data(using: .utf8)!, account: "port")
-        try save(creds.username.data(using: .utf8)!, account: "username")
-        try save(usePrivateKey ? "true".data(using: .utf8)! : "false".data(using: .utf8)!, account: "usePrivateKey")
+    // MARK: - SSH Credentials
+    
+    public func saveCredentials(for hostId: UUID, _ creds: SSHCredentials, usePrivateKey: Bool) throws {
+        let prefix = hostId.uuidString
+        // We don't save host/port/username in keychain anymore (HostStore handles that)
+        // We only save the secrets (password or private key)
+        
+        try save(usePrivateKey ? "true".data(using: .utf8)! : "false".data(using: .utf8)!, account: "\(prefix).usePrivateKey")
         
         switch creds.authMethod {
         case .password(let password):
-            try save(password.data(using: .utf8)!, account: "password")
+            try save(password.data(using: .utf8)!, account: "\(prefix).password")
         case .privateKey(let key, _):
-            // Note: Passphrase not currently saved based on spec, or simplified
-            try save(key.data(using: .utf8)!, account: "privateKey")
+            try save(key.data(using: .utf8)!, account: "\(prefix).privateKey")
         }
     }
     
-    public func loadCredentials() throws -> SSHCredentials {
-        let hostData = try load(account: "host")
-        let portData = try load(account: "port")
-        let usernameData = try load(account: "username")
-        let usePrivateKeyData = try load(account: "usePrivateKey")
+    public func loadCredentials(for host: HostModel) throws -> SSHCredentials {
+        let prefix = host.id.uuidString
+        let usePrivateKeyData = try load(account: "\(prefix).usePrivateKey")
         
-        guard let host = String(data: hostData, encoding: .utf8),
-              let portStr = String(data: portData, encoding: .utf8),
-              let port = Int(portStr),
-              let username = String(data: usernameData, encoding: .utf8),
-              let usePrivateKeyStr = String(data: usePrivateKeyData, encoding: .utf8) else {
+        guard let usePrivateKeyStr = String(data: usePrivateKeyData, encoding: .utf8) else {
             throw KeychainError.invalidData
         }
         
         let usePrivateKey = usePrivateKeyStr == "true"
         
         if usePrivateKey {
-            let keyData = try load(account: "privateKey")
+            let keyData = try load(account: "\(prefix).privateKey")
             guard let key = String(data: keyData, encoding: .utf8) else { throw KeychainError.invalidData }
-            return SSHCredentials(host: host, port: port, username: username, authMethod: .privateKey(key: key, passphrase: nil))
+            return SSHCredentials(host: host.hostname, port: host.port, username: host.username, authMethod: .privateKey(key: key, passphrase: nil))
         } else {
-            let passwordData = try load(account: "password")
+            let passwordData = try load(account: "\(prefix).password")
             guard let password = String(data: passwordData, encoding: .utf8) else { throw KeychainError.invalidData }
-            return SSHCredentials(host: host, port: port, username: username, authMethod: .password(password))
+            return SSHCredentials(host: host.hostname, port: host.port, username: host.username, authMethod: .password(password))
         }
     }
     
-    public func deleteCredentials() {
-        delete(account: "host")
-        delete(account: "port")
-        delete(account: "username")
-        delete(account: "password")
-        delete(account: "privateKey")
-        delete(account: "usePrivateKey")
+    public func deleteCredentials(for hostId: UUID) {
+        let prefix = hostId.uuidString
+        delete(account: "\(prefix).password")
+        delete(account: "\(prefix).privateKey")
+        delete(account: "\(prefix).usePrivateKey")
     }
     
     // MARK: - Xunfei Config

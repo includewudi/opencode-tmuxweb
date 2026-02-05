@@ -1,7 +1,7 @@
 import Foundation
 
 struct TerminalScript {
-    static func generateHTML(fontSize: Int = 14, fontFamily: String = "Menlo, monospace") -> String {
+    static func generateHTML(fontSize: Int = 14, fontFamily: String = "'PingFang SC', Menlo, monospace") -> String {
         return """
         <!doctype html>
         <html>
@@ -11,7 +11,7 @@ struct TerminalScript {
           <script src="xterm.min.js"></script>
           <script src="xterm-addon-fit.min.js"></script>
           <style>
-            body { margin: 0; background-color: #000; overflow: hidden; height: 100vh; }
+            body { margin: 0; background-color: #000; overflow: hidden; height: 100vh; font-family: 'PingFang SC', Menlo, monospace; }
             #terminal { width: 100%; height: 100%; }
             /* Custom Scrollbar for iOS */
             ::-webkit-scrollbar { width: 4px; }

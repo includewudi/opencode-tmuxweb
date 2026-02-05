@@ -6,14 +6,6 @@ struct VoiceTmuxApp: App {
     
     var body: some Scene {
         WindowGroup {
-            TreeView(viewModel: viewModel)
-                .sheet(isPresented: $viewModel.showConnectionSheet) {
-                    ConnectionSettingsView(viewModel: viewModel)
-                        .interactiveDismissDisabled(viewModel.connectionState == .disconnected)
-                }
-                .onAppear {
-                    Task {
-                        await viewModel.autoConnect()
                     }
                 }
         }

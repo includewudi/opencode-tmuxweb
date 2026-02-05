@@ -83,7 +83,8 @@ public actor SSHTransport {
         if #available(macOS 15.0, *) {
             shellTask = Task {
                 do {
-                    try await client.withTTY(environment: []) { [weak self] inbound, outbound in
+                    let env = [SSHChannelRequestEvent.EnvironmentRequest(variableName: "LANG", value: "en_US.UTF-8")]
+                    try await client.withTTY(environment: env) { [weak self] inbound, outbound in
                         guard let self = self else { return }
                         await self.setStdinWriter(outbound)
                         try? await outbound.changeSize(cols: cols, rows: rows, pixelWidth: 0, pixelHeight: 0)
@@ -107,7 +108,7 @@ public actor SSHTransport {
         #else
         shellTask = Task {
             do {
-                let stream = try await client.executeCommandStream("$SHELL -l", inShell: true)
+                let stream = try await client.executeCommandStream("export LANG=en_US.UTF-8; $SHELL -l", inShell: true)
                 for try await chunk in stream {
                     switch chunk {
                     case .stdout(let buffer):

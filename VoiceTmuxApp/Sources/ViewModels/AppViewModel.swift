@@ -13,10 +13,12 @@ public class AppViewModel: ObservableObject {
     // Services
     private let sshTransport = SSHTransport()
     private let keychainService = KeychainService.shared
+    public let hostStore = HostStore()
     private lazy var tmuxSyncService = TmuxSyncService(transport: sshTransport)
     
     // State
     @Published public var connectionState: ConnectionState = .disconnected
+    @Published public var currentHost: HostModel?
     @Published public var tree: TmuxTree?
     @Published public var error: Error?
     @Published public var showConnectionSheet: Bool = false
@@ -24,40 +26,50 @@ public class AppViewModel: ObservableObject {
     
     // Setup
     public init() {
-        // Auto-connect check can happen here or via onAppear
+        // No auto-connect on init anymore, user selects from list
     }
     
-    public func autoConnect() async {
-        do {
-            let creds = try keychainService.loadCredentials()
-            await connect(credentials: creds)
-        } catch {
-            // No saved credentials or load failed, show sheet
-            print("Auto-connect info: \(error)")
-            showConnectionSheet = true
-        }
-    }
-    
-    public func connect(credentials: SSHCredentials, save: Bool = false) async {
+    public func connect(host: HostModel) async {
         connectionState = .connecting
-        print("Connecting to \(credentials.host)...")
+        currentHost = host
+        print("Connecting to \(host.hostname)...")
         
         do {
-            try await sshTransport.connect(credentials: credentials)
+            // Load credentials from Keychain using host.id
+            let creds = try keychainService.loadCredentials(for: host)
+            
+            try await sshTransport.connect(credentials: creds)
             connectionState = .connected
             showConnectionSheet = false
-            if save {
-                try? keychainService.saveCredentials(credentials, usePrivateKey: {
-                    if case .privateKey = credentials.authMethod { return true }
-                    return false
-                }())
-            }
+            
             // Initial sync
             await refreshTree()
         } catch {
             print("Connection failed: \(error)")
             connectionState = .failed(error.localizedDescription)
-            self.error = error // Trigger alert if needed
+            self.error = error
+        }
+    }
+    
+    public func saveHost(_ host: HostModel, credentials: SSHCredentials, usePrivateKey: Bool) {
+        // Save to HostStore
+        if hostStore.hosts.contains(where: { $0.id == host.id }) {
+            hostStore.update(host)
+        } else {
+            hostStore.add(host)
+        }
+        
+        // Save secrets to Keychain
+        try? keychainService.saveCredentials(for: host.id, credentials, usePrivateKey: usePrivateKey)
+        
+        // If this is the current connection, update it? No, explicit connect is better.
+    }
+    
+    public func deleteHost(_ host: HostModel) {
+        hostStore.delete(hostId: host.id)
+        keychainService.deleteCredentials(for: host.id)
+        if currentHost?.id == host.id {
+            Task { await disconnect() }
         }
     }
     
@@ -65,6 +77,7 @@ public class AppViewModel: ObservableObject {
         await sshTransport.disconnect()
         connectionState = .disconnected
         tree = nil
+        currentHost = nil
     }
     
     public func refreshTree() async {
