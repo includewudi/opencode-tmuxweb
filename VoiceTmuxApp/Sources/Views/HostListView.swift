@@ -59,20 +59,18 @@ struct HostListView: View {
             }
             .navigationTitle("Servers")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        viewModel.showXunfeiSettings = true
+                    } label: {
+                        Image(systemName: "mic.badge.gear")
+                    }
+                    
                     Button {
                         selectedHostForEdit = nil
                         showSettings = true
                     } label: {
                         Image(systemName: "plus")
-                    }
-                }
-                
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        viewModel.showXunfeiSettings = true
-                    } label: {
-                        Image(systemName: "mic.badge.gear")
                     }
                 }
             }

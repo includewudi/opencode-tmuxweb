@@ -15,7 +15,7 @@ struct TerminalContainerView: View {
             
             if let transport = viewModel.transport {
                 NavigationView {
-                    XTermSSHView(transport: transport)
+                    InteractiveTerminalView(transport: transport)
                         .navigationTitle("Terminal")
                         .navigationBarTitleDisplayMode(.inline)
                 }

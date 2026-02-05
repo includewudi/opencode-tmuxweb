@@ -44,14 +44,13 @@ struct TreeView: View {
             }
             .navigationTitle("Tmux Sessions")
             .navigationDestination(for: TmuxPane.self) { pane in
-                // Router logic: If iOS 18+, use InteractiveTerminal, else CaptureView
-                if #available(iOS 18.0, *) {
-                    // Placeholder for InteractiveTerminal
-                    // For now, we point to CaptureView or a wrapper.
-                    // Ideally we'd have a TerminalContainerView switching implementation.
-                    CaptureView(viewModel: viewModel, pane: pane)
+                if let transport = viewModel.transport {
+                    InteractiveTerminalView(transport: transport)
+                        .navigationTitle("Shell")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar(.hidden, for: .tabBar) // Hide tab bar when pushed
                 } else {
-                    CaptureView(viewModel: viewModel, pane: pane)
+                    ContentUnavailableView("Disconnected", systemImage: "network.slash")
                 }
             }
             .toolbar {
