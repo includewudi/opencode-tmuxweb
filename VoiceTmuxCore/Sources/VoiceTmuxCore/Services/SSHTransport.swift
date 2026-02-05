@@ -16,6 +16,16 @@ public actor SSHTransport {
     private var client: SSHClient?
     public private(set) var isConnected: Bool = false
     
+    // TTY Stream Handling
+    private var stdinWriter: TTYStdinWriter?
+    private var outputHandler: (@Sendable (String) -> Void)?
+    private var shellTask: Task<Void, Error>?
+    
+    public func registerOutputHandler(_ handler: @escaping @Sendable (String) -> Void) {
+        self.outputHandler = handler
+    }
+
+    
     public init() {}
     
     public func connect(credentials: SSHCredentials) async throws {
@@ -57,6 +67,64 @@ public actor SSHTransport {
         }
     }
     
+        }
+    }
+    
+    public func startShell(cols: Int = 80, rows: Int = 24) async throws {
+        guard let client = client, isConnected else {
+            throw SSHTransportError.notConnected
+        }
+        
+        // Cancel existing shell if any
+        shellTask?.cancel()
+        
+        shellTask = Task {
+            do {
+                try await client.withTTY(environment: []) { [weak self] inbound, outbound in
+                    guard let self = self else { return }
+                    
+                    // Store writer for input
+                    await self.setStdinWriter(outbound)
+                    
+                    // Initial resize
+                    try? await outbound.changeSize(cols: cols, rows: rows, pixelWidth: 0, pixelHeight: 0)
+                    
+                    // Process Output
+                    for try await chunk in inbound {
+                        switch chunk {
+                        case .stdout(let buffer):
+                            let str = String(buffer: buffer)
+                            await self.handleOutput(str)
+                        case .stderr(let buffer):
+                            let str = String(buffer: buffer)
+                            await self.handleOutput(str)
+                        }
+                    }
+                }
+            } catch {
+                print("Shell Stream Error: \(error)")
+            }
+        }
+    }
+    
+    public func send(input: String) async throws {
+        guard let writer = stdinWriter else { return }
+        var buffer = ByteBuffer(string: input)
+        try await writer.write(buffer)
+    }
+    
+    public func resize(cols: Int, rows: Int) async {
+        try? await stdinWriter?.changeSize(cols: cols, rows: rows, pixelWidth: 0, pixelHeight: 0)
+    }
+    
+    private func setStdinWriter(_ writer: TTYStdinWriter) {
+        self.stdinWriter = writer
+    }
+    
+    private func handleOutput(_ output: String) {
+        outputHandler?(output)
+    }
+
     public func execute(command: String) async throws -> String {
         guard let client = client, isConnected else {
             throw SSHTransportError.notConnected
@@ -72,6 +140,9 @@ public actor SSHTransport {
     }
     
     public func disconnect() async {
+        shellTask?.cancel()
+        shellTask = nil
+        stdinWriter = nil
         try? await client?.close()
         client = nil
         isConnected = false
