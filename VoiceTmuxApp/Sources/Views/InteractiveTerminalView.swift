@@ -1,3 +1,6 @@
+import SwiftUI
+import VoiceTmuxCore
+
 struct InteractiveTerminalView: View {
     @ObservedObject var viewModel: AppViewModel
     
