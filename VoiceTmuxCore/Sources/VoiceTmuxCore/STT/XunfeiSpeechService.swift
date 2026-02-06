@@ -14,10 +14,24 @@ public protocol STTDelegate: AnyObject {
     func onError(_ error: Error)
 }
 
+public protocol WebSocketTasking: AnyObject {
+    func resume()
+    func send(_ message: URLSessionWebSocketTask.Message, completionHandler: @escaping @Sendable (Error?) -> Void)
+    func receive(completionHandler: @escaping @Sendable (Result<URLSessionWebSocketTask.Message, Error>) -> Void)
+    func cancel(with closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?)
+}
+
+public protocol Scheduler: AnyObject {
+    func schedule(after seconds: TimeInterval, _ action: @escaping () -> Void)
+}
+
+extension URLSessionWebSocketTask: WebSocketTasking {}
+
 public class XunfeiSpeechService: NSObject {
-    private var webSocketTask: URLSessionWebSocketTask?
-    private let audioEngine = AVAudioEngine()
+    private var webSocketTask: WebSocketTasking?
+    private var audioEngine: AVAudioEngine?
     private weak var delegate: STTDelegate?
+    private var scheduler: Scheduler?
     
     private var appId: String?
     private var apiKey: String?
@@ -29,7 +43,20 @@ public class XunfeiSpeechService: NSObject {
     
     public init(delegate: STTDelegate) {
         self.delegate = delegate
+        self.audioEngine = AVAudioEngine()
         super.init()
+    }
+    
+    public init(delegate: STTDelegate, scheduler: Scheduler?, webSocketTask: WebSocketTasking?, audioEngine: AVAudioEngine?) {
+        self.delegate = delegate
+        self.scheduler = scheduler
+        self.webSocketTask = webSocketTask
+        self.audioEngine = audioEngine
+        super.init()
+    }
+    
+    public func setRecordingStateForTesting(_ state: Bool) {
+        isRecording = state
     }
     
     public func updateConfig(appId: String, apiKey: String, apiSecret: String) {
@@ -38,82 +65,96 @@ public class XunfeiSpeechService: NSObject {
         self.apiSecret = apiSecret
     }
     
-    public func startRecording() throws {
-        guard let appId = appId, let apiKey = apiKey, let apiSecret = apiSecret else {
-            throw STTError.configMissing
-        }
-        
-        guard !isRecording else { return }
-        
-        audioSeq = 0
-        accumulatedText = ""
-        
-        guard let url = XunfeiAuth.buildAuthURL(apiKey: apiKey, apiSecret: apiSecret) else {
-            throw STTError.connectionFailed(NSError(domain: "URL", code: -1))
-        }
-        
-        let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue())
-        webSocketTask = session.webSocketTask(with: url)
-        webSocketTask?.resume()
-        listen()
-        
-        let inputNode = audioEngine.inputNode
-        let hardwareFormat = inputNode.outputFormat(forBus: 0)
-        
-        guard let recordingFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 16000, channels: 1, interleaved: true) else {
-            throw STTError.audioSetupFailed(NSError(domain: "Format", code: -1))
-        }
-        
-        inputNode.removeTap(onBus: 0)
-        
-        let converter = AVAudioConverter(from: hardwareFormat, to: recordingFormat)
-        var isFirstFrame = true
-        let capturedAppId = appId
-        
-        inputNode.installTap(onBus: 0, bufferSize: 1280, format: hardwareFormat) { [weak self] (buffer, _) in
-            guard let self = self, self.isRecording else { return }
-            
-            let frameCapacity = AVAudioFrameCount(recordingFormat.sampleRate * 0.08)
-            guard let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat, frameCapacity: frameCapacity) else { return }
-            
-            var error: NSError?
-            let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
-                outStatus.pointee = .haveData
-                return buffer
-            }
-            
-            converter?.convert(to: pcmBuffer, error: &error, withInputFrom: inputBlock)
-            
-            guard let audioData = self.bufferToData(pcmBuffer) else { return }
-            
-            if isFirstFrame {
-                self.sendFirstFrame(appId: capturedAppId, audioData: audioData)
-                isFirstFrame = false
-            } else {
-                self.sendContinueFrame(audioData: audioData)
-            }
-        }
-        
-        do {
-            try audioEngine.start()
-            isRecording = true
-        } catch {
-            throw STTError.audioSetupFailed(error)
-        }
-    }
+     public func startRecording() throws {
+         guard let appId = appId, let apiKey = apiKey, let apiSecret = apiSecret else {
+             throw STTError.configMissing
+         }
+         
+         guard !isRecording else { return }
+         
+         guard let audioEngine = audioEngine else {
+             throw STTError.audioSetupFailed(NSError(domain: "AudioEngine", code: -1))
+         }
+         
+         audioSeq = 0
+         accumulatedText = ""
+         
+         guard let url = XunfeiAuth.buildAuthURL(apiKey: apiKey, apiSecret: apiSecret) else {
+             throw STTError.connectionFailed(NSError(domain: "URL", code: -1))
+         }
+         
+         let session = URLSession(configuration: .default, delegate: nil, delegateQueue: OperationQueue())
+         webSocketTask = session.webSocketTask(with: url)
+         webSocketTask?.resume()
+         listen()
+         
+         let inputNode = audioEngine.inputNode
+         let hardwareFormat = inputNode.outputFormat(forBus: 0)
+         
+         guard let recordingFormat = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 16000, channels: 1, interleaved: true) else {
+             throw STTError.audioSetupFailed(NSError(domain: "Format", code: -1))
+         }
+         
+         inputNode.removeTap(onBus: 0)
+         
+         let converter = AVAudioConverter(from: hardwareFormat, to: recordingFormat)
+         var isFirstFrame = true
+         let capturedAppId = appId
+         
+         inputNode.installTap(onBus: 0, bufferSize: 1280, format: hardwareFormat) { [weak self] (buffer: AVAudioPCMBuffer, _) in
+             guard let self = self, self.isRecording else { return }
+             
+             let frameCapacity = AVAudioFrameCount(recordingFormat.sampleRate * 0.08)
+             guard let pcmBuffer = AVAudioPCMBuffer(pcmFormat: recordingFormat, frameCapacity: frameCapacity) else { return }
+             
+             var error: NSError?
+             let inputBlock: AVAudioConverterInputBlock = { _, outStatus in
+                 outStatus.pointee = .haveData
+                 return buffer
+             }
+             
+             converter?.convert(to: pcmBuffer, error: &error, withInputFrom: inputBlock)
+             
+             guard let audioData = self.bufferToData(pcmBuffer) else { return }
+             
+             if isFirstFrame {
+                 self.sendFirstFrame(appId: capturedAppId, audioData: audioData)
+                 isFirstFrame = false
+             } else {
+                 self.sendContinueFrame(audioData: audioData)
+             }
+         }
+         
+         do {
+             try audioEngine.start()
+             isRecording = true
+         } catch {
+             throw STTError.audioSetupFailed(error)
+         }
+     }
     
     public func stopRecording() {
         guard isRecording else { return }
+        audioEngine?.inputNode.removeTap(onBus: 0)
+        audioEngine?.stop()
         isRecording = false
-        audioEngine.stop()
-        audioEngine.inputNode.removeTap(onBus: 0)
-        
-        sendLastFrame()
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
-            self?.webSocketTask?.cancel(with: .normalClosure, reason: nil)
-            self?.webSocketTask = nil
+
+        sendLastFrame { [weak self] in
+            guard let self = self else { return }
+            if let scheduler = self.scheduler {
+                scheduler.schedule(after: 1) { [weak self] in
+                    self?.webSocketTask?.cancel(with: .goingAway, reason: nil)
+                    self?.webSocketTask = nil
+                }
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+                    self?.webSocketTask?.cancel(with: .goingAway, reason: nil)
+                    self?.webSocketTask = nil
+                }
+            }
         }
+
+        audioEngine = nil
     }
     
     // MARK: - WebSocket
@@ -237,7 +278,7 @@ public class XunfeiSpeechService: NSObject {
         sendJson(frame)
     }
     
-    private func sendLastFrame() {
+    private func sendLastFrame(completion: (() -> Void)? = nil) {
         audioSeq += 1
         let frame: [String: Any] = [
             "header": [
@@ -253,17 +294,19 @@ public class XunfeiSpeechService: NSObject {
                 ]
             ]
         ]
-        sendJson(frame)
+        sendJson(frame, completion: completion)
     }
     
-    private func sendJson(_ dict: [String: Any]) {
+    private func sendJson(_ dict: [String: Any], completion: (() -> Void)? = nil) {
         guard let data = try? JSONSerialization.data(withJSONObject: dict),
               let str = String(data: data, encoding: .utf8) else { return }
-        
+
         webSocketTask?.send(.string(str)) { error in
             if let error = error {
                 print("Send error: \(error)")
+                return
             }
+            completion?()
         }
     }
     

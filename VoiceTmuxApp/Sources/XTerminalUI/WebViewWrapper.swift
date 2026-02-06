@@ -35,10 +35,15 @@ struct WebViewWrapper: UIViewRepresentable {
     
     func updateUIView(_ uiView: WKWebView, context: Context) {
         if let script = script {
-            uiView.evaluateJavaScript(script)
-            DispatchQueue.main.async {
-                self.script = nil
+            uiView.evaluateJavaScript(script) { _, error in
+                if let error = error {
+                    print("[Terminal] evaluateJavaScript error: \(error)")
+                }
+                DispatchQueue.main.async {
+                    self.script = nil
+                }
             }
         }
     }
 }
+
