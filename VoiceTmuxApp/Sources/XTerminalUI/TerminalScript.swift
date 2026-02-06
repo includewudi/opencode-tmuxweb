@@ -74,8 +74,19 @@ struct TerminalScript {
             });
 
             window.write = function(data) {
-                statusEl.textContent = 'write len: ' + data.length + ' cols=' + term.cols + ' rows=' + term.rows;
-                term.write(data);
+                try {
+                    const container = document.getElementById('terminal');
+                    statusEl.textContent = 'write len:' + data.length + 
+                        ' cols=' + term.cols + ' rows=' + term.rows +
+                        ' w=' + container.clientWidth + ' h=' + container.clientHeight;
+                    term.write(data);
+                } catch(e) {
+                    statusEl.textContent = 'write ERROR: ' + e.message;
+                    window.webkit.messageHandlers.terminalBridge.postMessage({
+                        "type": "jsError",
+                        "message": "write() exception: " + e.message
+                    });
+                }
             };
 
             window.writeFallback = function(data) {

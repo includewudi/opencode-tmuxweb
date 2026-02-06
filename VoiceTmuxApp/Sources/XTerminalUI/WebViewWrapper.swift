@@ -35,9 +35,11 @@ struct WebViewWrapper: UIViewRepresentable {
     
     func updateUIView(_ uiView: WKWebView, context: Context) {
         if let script = script {
-            uiView.evaluateJavaScript(script) { _, error in
+            uiView.evaluateJavaScript(script) { result, error in
                 if let error = error {
                     print("[Terminal] evaluateJavaScript error: \(error)")
+                    // Report error to bridge for UI overlay
+                    self.bridge.onJSError?("evalJS failed: \(error.localizedDescription)")
                 }
                 DispatchQueue.main.async {
                     self.script = nil
