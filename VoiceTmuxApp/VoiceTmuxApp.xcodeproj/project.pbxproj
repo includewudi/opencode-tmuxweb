@@ -20,6 +20,9 @@
 		012 /* TerminalBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112 /* TerminalBridge.swift */; };
 		013 /* TerminalScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113 /* TerminalScript.swift */; };
 		014 /* XunfeiSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108 /* XunfeiSettingsView.swift */; };
+		025 /* TerminalClientScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 140 /* TerminalClientScript.swift */; };
+		026 /* TerminalLibraries.swift in Sources */ = {isa = PBXBuildFile; fileRef = 141 /* TerminalLibraries.swift */; };
+		027 /* TerminalStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 142 /* TerminalStyles.swift */; };
 		017 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 132 /* MainView.swift */; };
 		018 /* TerminalControlBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 133 /* TerminalControlBar.swift */; };
 		019 /* TerminalInputPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 134 /* TerminalInputPanel.swift */; };
@@ -49,6 +52,9 @@
 		111 /* WebViewWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewWrapper.swift; sourceTree = "<group>"; };
 		112 /* TerminalBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalBridge.swift; sourceTree = "<group>"; };
 		113 /* TerminalScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalScript.swift; sourceTree = "<group>"; };
+		140 /* TerminalClientScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalClientScript.swift; sourceTree = "<group>"; };
+		141 /* TerminalLibraries.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalLibraries.swift; sourceTree = "<group>"; };
+		142 /* TerminalStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TerminalStyles.swift; sourceTree = "<group>"; };
 		120 /* xterm.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = xterm.min.js; sourceTree = "<group>"; };
 		121 /* xterm.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = xterm.css; sourceTree = "<group>"; };
 		122 /* xterm-addon-fit.min.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "xterm-addon-fit.min.js"; sourceTree = "<group>"; };
@@ -127,6 +133,9 @@
 				111 /* WebViewWrapper.swift */,
 				112 /* TerminalBridge.swift */,
 				113 /* TerminalScript.swift */,
+				140 /* TerminalClientScript.swift */,
+				141 /* TerminalLibraries.swift */,
+				142 /* TerminalStyles.swift */,
 				506 /* Resources */,
 			);
 			path = XTerminalUI;
@@ -236,6 +245,9 @@
 				011 /* WebViewWrapper.swift in Sources */,
 				012 /* TerminalBridge.swift in Sources */,
 				013 /* TerminalScript.swift in Sources */,
+				025 /* TerminalClientScript.swift in Sources */,
+				026 /* TerminalLibraries.swift in Sources */,
+				027 /* TerminalStyles.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
