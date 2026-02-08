@@ -1,0 +1,11 @@
+{
+  "port": 8215,
+  "bind": "0.0.0.0",
+  "token": "tmuxweb-dev-token",
+  "sessionSecret": "tmuxweb-session-secret-change-in-prod",
+  "frontendPort": 5215,
+  "tmuxSocket": null,
+  "allowedOrigins": ["http://localhost:5215", "http://127.0.0.1:5215"],
+  "summaryServiceUrl": "",
+  "summaryServiceToken": ""
+}

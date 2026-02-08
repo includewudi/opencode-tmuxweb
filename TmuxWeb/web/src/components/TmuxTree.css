@@ -1,0 +1,236 @@
+.tmux-tree {
+  padding: 12px;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.tree-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #333;
+  margin-bottom: 12px;
+  font-weight: bold;
+}
+
+.refresh-btn {
+  background: #333;
+  border: none;
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.refresh-btn:hover {
+  background: #444;
+}
+
+.empty {
+  color: #666;
+  text-align: center;
+  padding: 20px;
+}
+
+.session-node {
+  margin-bottom: 16px;
+}
+
+.session-name {
+  font-weight: bold;
+  color: #4fc3f7;
+  margin-bottom: 8px;
+}
+
+.window-node {
+  margin-left: 12px;
+  margin-bottom: 8px;
+}
+
+.window-name {
+  color: #81c784;
+  margin-bottom: 4px;
+}
+
+.pane-node {
+  margin-left: 12px;
+  padding: 6px 8px;
+  background: #1e1e1e;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.pane-node:hover {
+  background: #2a2a2a;
+}
+
+.pane-id {
+  color: #ffb74d;
+  font-family: monospace;
+}
+
+.pane-cmd {
+  color: #999;
+  font-size: 0.9em;
+}
+
+.tree-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.drag-handle {
+  cursor: grab;
+  color: #666;
+  font-size: 14px;
+  letter-spacing: -2px;
+  padding: 0 6px;
+  user-select: none;
+  transition: color 0.15s ease;
+}
+
+.drag-handle:hover {
+  color: #999;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.session-row,
+.group-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+}
+
+.session-row:hover,
+.group-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.expand-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 10px;
+  padding: 2px 4px;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.expand-btn:hover {
+  color: #ccc;
+}
+
+.group-node {
+  margin-bottom: 8px;
+  padding: 4px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.group-name {
+  font-weight: 600;
+  color: #ba68c8;
+}
+
+.group-count {
+  font-size: 11px;
+  color: #666;
+  margin-left: auto;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+}
+
+.group-children {
+  margin-left: 20px;
+  margin-top: 4px;
+  padding-left: 8px;
+  border-left: 2px solid rgba(186, 104, 200, 0.2);
+}
+
+.group-empty-drop {
+  padding: 12px 16px;
+  color: #555;
+  font-size: 12px;
+  font-style: italic;
+  border: 1px dashed #444;
+  border-radius: 6px;
+  text-align: center;
+  margin: 4px 0;
+  transition: all 0.2s ease;
+}
+
+.session-node.in-group {
+  margin-bottom: 4px;
+  margin-left: 0;
+}
+
+.session-node.in-group .session-row {
+  padding-left: 8px;
+}
+
+.session-node.dragging,
+.group-node.dragging {
+  opacity: 0.4;
+}
+
+.session-node.drop-target .session-row {
+  background: rgba(79, 195, 247, 0.1);
+  box-shadow: inset 0 -2px 0 0 #4fc3f7;
+}
+
+.group-node.drop-target-group {
+  border-color: #ba68c8;
+  background: rgba(186, 104, 200, 0.08);
+}
+
+.group-node.drop-target-group .group-empty-drop {
+  border-color: #ba68c8;
+  color: #ba68c8;
+  background: rgba(186, 104, 200, 0.05);
+}
+
+.drag-preview {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #2a2a2a;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid #444;
+  pointer-events: none;
+}
+
+.drag-preview.session-preview {
+  border-left: 3px solid #4fc3f7;
+}
+
+.drag-preview.group-preview {
+  border-left: 3px solid #ba68c8;
+}
+
+.drag-preview .session-name {
+  margin-bottom: 0;
+}
+
+.drag-preview .group-name {
+  margin-bottom: 0;
+}
+
+.drag-preview .expand-btn {
+  pointer-events: none;
+}
