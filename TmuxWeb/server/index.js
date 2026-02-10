@@ -17,7 +17,10 @@ const panesRouter = require('./routes/panes');
 const profilesRouter = require('./routes/profiles');
 const segmentsRouter = require('./routes/segments');
 const { taskSummariesRouter, paneSummariesRouter } = require('./routes/summaries');
+const taskEventsRouter = require('./routes/task-events');
+const telemetryRouter = require('./routes/telemetry');
 const { handleTerminalConnection } = require('./services/terminal');
+const { handleSpeechConnection } = require('./services/speech');
 const { pool, testConnection } = require('./db/pool');
 
 const app = express();
@@ -45,6 +48,8 @@ app.get('/healthz', async (req, res) => {
 });
 
 app.use('/api/auth', authRouter);
+app.use('/api/tasks/events', taskEventsRouter);
+app.use('/api/telemetry', telemetryRouter);
 app.use('/api/tmux', tokenMiddleware, tmuxRouter);
 app.use('/api/tasks', tokenMiddleware, tasksDbRouter);
 app.use('/api/groups', tokenMiddleware, groupsRouter);
@@ -58,24 +63,61 @@ app.use('/api/panes', tokenMiddleware, paneSummariesRouter);
 
 app.use(express.static(path.join(__dirname, '../web/dist')));
 
-const wss = new WebSocketServer({ server, path: '/ws/terminal' });
+// Use noServer mode to avoid multiple WebSocketServer conflict
+// See: docs/errors/ws-multiple-websocketserver-rsv1-error.md
+const terminalWss = new WebSocketServer({ noServer: true, perMessageDeflate: false });
+const speechWss = new WebSocketServer({ noServer: true, perMessageDeflate: false });
 
-wss.on('connection', (ws, req) => {
+// Manually handle HTTP upgrade to route to correct WebSocketServer
+server.on('upgrade', (request, socket, head) => {
+  const pathname = new URL(request.url, `http://${request.headers.host}`).pathname;
+  
+  if (pathname === '/ws/terminal') {
+    terminalWss.handleUpgrade(request, socket, head, (ws) => {
+      terminalWss.emit('connection', ws, request);
+    });
+  } else if (pathname === '/ws/speech') {
+    speechWss.handleUpgrade(request, socket, head, (ws) => {
+      speechWss.emit('connection', ws, request);
+    });
+  } else {
+    socket.destroy();
+  }
+});
+
+terminalWss.on('connection', (ws, req) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const token = url.searchParams.get('token');
   const paneId = url.searchParams.get('paneId');
+  
+  console.log(`[WS] Connection attempt: paneId=${paneId}, token=${token ? 'present' : 'missing'}, from=${req.socket.remoteAddress}`);
 
   if (!validateToken(token)) {
+    console.log(`[WS] Rejected: invalid token`);
     ws.close(4001, 'Unauthorized');
     return;
   }
 
   if (!paneId) {
+    console.log(`[WS] Rejected: missing paneId`);
     ws.close(4002, 'Missing paneId');
     return;
   }
 
+  console.log(`[WS] Accepted: paneId=${paneId}`);
   handleTerminalConnection(ws, paneId);
+});
+
+speechWss.on('connection', (ws, req) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  const token = url.searchParams.get('token');
+  
+  if (!validateToken(token)) {
+    ws.close(4001, 'Unauthorized');
+    return;
+  }
+  
+  handleSpeechConnection(ws);
 });
 
 server.listen(config.port, config.bind, () => {

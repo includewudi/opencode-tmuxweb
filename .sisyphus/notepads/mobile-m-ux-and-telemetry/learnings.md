@@ -114,3 +114,42 @@ selectedPaneRef.current = selectedPane  // Always fresh
 Implementation complete and verified via static analysis.
 Next: Browser-based manual QA to confirm 5-second persistence.
 
+
+## [2026-02-10] Task 2: Backend Telemetry Endpoints (NDJSON)
+
+### Implementation
+
+**Files Created/Modified**:
+- `TmuxWeb/server/routes/telemetry.js` (new — 116 lines)
+- `TmuxWeb/server/index.js` (2 lines added: require + mount)
+- `TmuxWeb/backend/data/telemetry/` directory created
+
+### Debug Gating Strategy
+
+No existing debug mechanism found in codebase (config.json has no debug flag, middleware/auth.js only does token validation). Used `?debug=1` query param as the simplest approach — applied as router-level middleware via `router.use(requireDebug)` so all three endpoints are gated.
+
+### Key Patterns
+
+- **NDJSON**: One `JSON.stringify(obj)` per line, `\n` separated. `fsp.appendFile` for atomic-ish appends.
+- **Batch + single**: Accept `{"events":[...]}` or single `{...}` — normalize to array early.
+- **File rotation**: Check `stat.size > 10MB` before each write; rename with `YYYYMMDD-HHmmss` timestamp.
+- **ENOENT handling**: Both `rotateIfNeeded()` and GET handler gracefully handle missing file (rotation skips, GET returns `[]`).
+- **Route mounting**: Placed alongside `taskEventsRouter` — both are unauthenticated routes (telemetry self-gates via debug param).
+
+### Test Results (8/8 PASS)
+
+1. ✅ No debug → 403
+2. ✅ POST batch → 204, events appended
+3. ✅ POST single → 204
+4. ✅ GET tail=1 → last event correct
+5. ✅ GET tail=10 → all 3 events
+6. ✅ POST /clear → 204, then tail returns []
+7. ✅ GET without debug → 403
+8. ✅ POST /clear without debug → 403
+
+### Codebase Conventions Observed
+
+- Express routes export `router` directly (not wrapped)
+- Error logging uses `console.error('[tag] message:', err.message)` pattern
+- Routes use `async (req, res) => {}` with try/catch
+- No TypeScript in server code — pure CommonJS

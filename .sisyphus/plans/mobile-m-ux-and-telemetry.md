@@ -155,7 +155,7 @@ Critical Path: Task 2 → Task 3 → Task 4
 
 ---
 
-- [ ] 2. Implement debug-only telemetry endpoints (server-side NDJSON)
+- [x] 2. Implement debug-only telemetry endpoints (server-side NDJSON)
 
   **What to do**:
   - Locate backend server code handling `/api/*` (Express/Fastify/etc.).
