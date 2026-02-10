@@ -126,8 +126,8 @@ Critical Path: Task 2 → Task 3 → Task 4
   - `TmuxWeb/web/src/mobile/MobileDrawer.tsx` — selection callback wiring.
 
   **Acceptance Criteria**:
-  - [ ] After selecting a non-first pane, and waiting 5 seconds, the selected pane remains active (no reversion) when the pane still exists in `/api/tmux/tree`.
-  - [ ] If the selected pane disappears from the fetched tree, the UI falls back to the first available pane OR shows “Select a terminal” placeholder (choose one and implement consistently).
+  - [x] After selecting a non-first pane, and waiting 5 seconds, the selected pane remains active (no reversion) when the pane still exists in `/api/tmux/tree`.
+  - [x] If the selected pane disappears from the fetched tree, the UI falls back to the first available pane OR shows “Select a terminal” placeholder (choose one and implement consistently).
 
   **Agent-Executed QA Scenarios**:
   
@@ -192,11 +192,11 @@ Critical Path: Task 2 → Task 3 → Task 4
   - Existing auth/session middleware for `/api/*` routes to ensure telemetry endpoint respects current auth posture.
 
   **Acceptance Criteria**:
-  - [ ] When debug disabled, `POST /api/telemetry` returns HTTP 403.
-  - [ ] When debug enabled, `POST /api/telemetry` returns HTTP 204/200 and appends 1+ NDJSON lines.
-  - [ ] `GET /api/telemetry?tail=10` returns the last 10 events (order preserved).
-  - [ ] `POST /api/telemetry/clear` truncates and subsequent `tail` returns empty.
-  - [ ] File rotation occurs when size > 10MB (or configured threshold).
+  - [x] When debug disabled, `POST /api/telemetry` returns HTTP 403.
+  - [x] When debug enabled, `POST /api/telemetry` returns HTTP 204/200 and appends 1+ NDJSON lines.
+  - [x] `GET /api/telemetry?tail=10` returns the last 10 events (order preserved).
+  - [x] `POST /api/telemetry/clear` truncates and subsequent `tail` returns empty.
+  - [x] File rotation occurs when size > 10MB (or configured threshold).
 
   **Agent-Executed QA Scenarios**:
 
@@ -240,9 +240,9 @@ Critical Path: Task 2 → Task 3 → Task 4
   - `TmuxWeb/web/src/mobile/MobileTerminal.tsx` — mobile terminal input pipeline.
 
   **Acceptance Criteria**:
-  - [ ] With `/m?debug=1`, at least 1 telemetry event is POSTed to backend within 2 seconds of typing.
-  - [ ] With `/m` (no debug), no calls are made to `/api/telemetry`.
-  - [ ] Telemetry payload includes: `ts`, `event`, `paneId` (where applicable).
+  - [x] With `/m?debug=1`, at least 1 telemetry event is POSTed to backend within 2 seconds of typing.
+  - [x] With `/m` (no debug), no calls are made to `/api/telemetry`.
+  - [x] Telemetry payload includes: `ts`, `event`, `paneId` (where applicable).
 
   **Agent-Executed QA Scenarios**:
 
