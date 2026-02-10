@@ -153,3 +153,78 @@ No existing debug mechanism found in codebase (config.json has no debug flag, mi
 - Error logging uses `console.error('[tag] message:', err.message)` pattern
 - Routes use `async (req, res) => {}` with try/catch
 - No TypeScript in server code — pure CommonJS
+
+## [2026-02-10] Task 3: Mobile Telemetry Emitter
+
+### Architecture
+
+**New file**: `TmuxWeb/web/src/utils/telemetryEmitter.ts`
+- Factory function `createTelemetryEmitter(paneId)` returns `TelemetryEmitter` interface
+- When debug disabled: returns no-op emitter (zero overhead)
+- When debug enabled: batches events, flushes via POST to `/api/telemetry?debug=1`
+
+**Modified file**: `TmuxWeb/web/src/mobile/MobileTerminal.tsx`
+- Emitter created at top of main `useEffect`, destroyed in cleanup
+- 5 emission points added (no existing code paths altered, only augmented)
+
+### Event Types Emitted
+
+1. `mobile-onData`: Every input keystroke — `{ data, len, wsReadyState }`
+2. `mobile-suppress`: When burst suppression fires — `{ reason, data, transitionType?, elapsed?, count? }`
+3. `mobile-transition`: Keyboard (viewport resize), visibility change, reconnect — `{ kind, ...metadata }`
+
+### Key Design Decisions
+
+1. **Dual flush strategy**: `fetch(keepalive)` for periodic flush, `sendBeacon` for page-hide/unload (more reliable during teardown)
+2. **No sampling in emitter**: Unlike client-side `telemetryLog()` which samples onData 1/10, the network emitter sends ALL events — backend analysis needs complete data
+3. **Data truncation**: Strings >100 chars truncated with `...[truncated]` suffix for privacy
+4. **Existing `telemetryLog()` kept**: The emitter augments but doesn't replace existing console-based telemetry — both run in parallel
+
+### Patterns
+
+- `isDebugEnabled()` already checks both `?debug=1` and `localStorage('tmux-debug')` — reused as-is
+- Backend port remapping `5215 → 8215` matches existing WebSocket URL construction pattern in MobileTerminal
+- Emitter ref stored but not currently needed outside useEffect (kept for potential future use by toolbar)
+
+### Verification
+
+- LSP diagnostics: 0 errors on both files
+- TypeScript: `tsc --noEmit` passes clean
+
+## [2026-02-10 20:34:00] Task 3: Mobile telemetry emitter
+
+### Implementation verified
+- **Files created**: `TmuxWeb/web/src/utils/telemetryEmitter.ts` (122 lines)
+- **Files modified**: `TmuxWeb/web/src/mobile/MobileTerminal.tsx` (+6 emission points)
+- **Debug gating**: Returns no-op emitter when `!isDebugEnabled()` - zero overhead in production
+- **Batching**: Flushes every 1s OR 50 events, uses `sendBeacon` on page-hide/unload
+- **Privacy**: Truncates `entry.data` to 100 chars max
+
+### QA verification (browser automation)
+- Started vite dev server on port 5215
+- Used Playwright to navigate to `/m?debug=1`
+- Typed "hello" in terminal (5 keystrokes)
+- Verified events reached backend via `GET /api/telemetry?debug=1&tail=20`
+- Evidence saved: `.sisyphus/evidence/mobile-telemetry-qa-task3.json`
+
+### Event types confirmed
+1. `mobile-onData` - All sent input (with `data`, `len`, `wsReadyState`)
+2. `mobile-suppress` - Suppressed input (with `reason`, `data`, `count`/`transitionType`)
+3. `mobile-transition` - State changes (with `kind`: reconnect/visibility/keyboard)
+
+### Integration points in MobileTerminal.tsx
+- Line 46-47: Initialize emitter with paneId
+- Line 105: Emit reconnect transition
+- Line 145: Emit visibility change transition
+- Line 180-184: Emit space-burst suppression
+- Line 202-207: Emit post-transition suppression
+- Line 237-241: Emit onData for all sent input
+- Line 256-260: Emit keyboard viewport resize
+- Line 295-296: Cleanup (destroy emitter)
+
+### Key patterns
+- **No-op when debug disabled**: `createTelemetryEmitter()` checks `isDebugEnabled()` first
+- **Ref pattern for cleanup**: `emitterRef.current` allows cleanup in useEffect return
+- **Batching prevents spam**: 1s interval + 50 event threshold
+- **sendBeacon for reliability**: Used on page-hide/beforeunload events
+

@@ -213,7 +213,7 @@ Critical Path: Task 2 → Task 3 → Task 4
 
 ---
 
-- [ ] 3. Add mobile telemetry emitter on `/m` (debug-only)
+- [x] 3. Add mobile telemetry emitter on `/m` (debug-only)
 
   **What to do**:
   - In `TmuxWeb/web/src/mobile/MobileTerminal.tsx`:
