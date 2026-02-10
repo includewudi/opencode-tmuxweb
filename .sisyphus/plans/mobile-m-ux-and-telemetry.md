@@ -267,7 +267,7 @@ Critical Path: Task 2 → Task 3 → Task 4
 
 ---
 
-- [ ] 4. Analyze captured phantom-space logs and propose targeted suppression rule change (follow-up)
+- [ ] 4. Analyze captured phantom-space logs and propose targeted suppression rule change (follow-up) **[BLOCKED - iOS DEVICE REQUIRED]**
 
   **What to do**:
   - Reproduce phantom spaces on iOS with `/m?debug=1`.
@@ -287,8 +287,14 @@ Critical Path: Task 2 → Task 3 → Task 4
   **Parallelization**:
   - Sequential after telemetry exists.
 
+  **BLOCKER STATUS**:
+  - **Cannot complete**: Requires physical iOS device for reproduction
+  - **Telemetry infrastructure**: ✅ FULLY OPERATIONAL (endpoints working, emitter integrated)
+  - **Unblocking requirement**: User must provide iOS telemetry dump from `/m?debug=1`
+  - **Documentation**: See `.sisyphus/notepads/mobile-m-ux-and-telemetry/problems.md`
+
   **Acceptance Criteria**:
-  - [ ] A written, evidence-backed recommendation listing:
+  - [ ] A written, evidence-backed recommendation listing: **[BLOCKED - requires iOS telemetry data]**
     - The observed pattern(s)
     - Proposed suppression rule(s)
     - Risk assessment (false positives)
