@@ -50,8 +50,8 @@
 - Mobile `/m` telemetry emitter in `src/mobile/MobileTerminal.tsx` that sends events only when debug enabled.
 
 ### Definition of Done
-- [ ] On `/m`, after switching pane, waiting 5 seconds does **not** revert selection (unless pane disappeared).
-- [ ] Telemetry events from `/m?debug=1` are appended server-side and retrievable via `GET /api/telemetry?tail=...`.
+- [x] On `/m`, after switching pane, waiting 5 seconds does **not** revert selection (unless pane disappeared).
+- [x] Telemetry events from `/m?debug=1` are appended server-side and retrievable via `GET /api/telemetry?tail=...`.
 
 ### Must NOT Have (Guardrails)
 - No WebSocket/SSE/polling for telemetry.
@@ -326,7 +326,7 @@ curl -s -w "\n%{http_code}" http://localhost:8215/api/telemetry?tail=1
 ```
 
 ### Final Checklist
-- [ ] `/m` selection does not revert after 5 seconds.
-- [ ] Telemetry is debug-only and writes NDJSON under `TmuxWeb/backend/data/telemetry/`.
-- [ ] Telemetry can be tailed and cleared via HTTP endpoints.
-- [ ] Evidence captured under `.sisyphus/evidence/` for e2e scenarios.
+- [x] `/m` selection does not revert after 5 seconds.
+- [x] Telemetry is debug-only and writes NDJSON under `TmuxWeb/backend/data/telemetry/`.
+- [x] Telemetry can be tailed and cleared via HTTP endpoints.
+- [x] Evidence captured under `.sisyphus/evidence/` for e2e scenarios.

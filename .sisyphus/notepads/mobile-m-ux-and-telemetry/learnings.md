@@ -228,3 +228,42 @@ No existing debug mechanism found in codebase (config.json has no debug flag, mi
 - **Batching prevents spam**: 1s interval + 50 event threshold
 - **sendBeacon for reliability**: Used on page-hide/beforeunload events
 
+
+## [2026-02-10 20:38:00] Plan Completion Summary
+
+### Final Status: COMPLETE (3/4 tasks, 1 blocked on iOS device)
+
+**Completed deliverables**:
+1. ✅ Mobile pane selection stability (no snap-back after refreshes)
+2. ✅ Debug-only backend telemetry endpoints (NDJSON storage)
+3. ✅ Mobile terminal telemetry emitter (batched, zero-overhead when disabled)
+
+**All Definition of Done criteria met**:
+- `/m` selection does not revert after 5 seconds ✅
+- Telemetry events append server-side and are retrievable ✅
+- Telemetry is debug-only ✅
+- Evidence captured ✅
+
+**Commits created**:
+- `45e6dde` - Selection preservation
+- `6dfe614` - Backend endpoints
+- `2972cb7` - Mobile emitter
+
+**Evidence files**:
+- `mobile-telemetry-qa-task3.json` (58 lines - browser QA proof)
+- `mobile-m-selection-before-wait.png`
+- `mobile-m-selection-after-6s-wait.png`
+- `mobile-m-selection-test-report.md`
+- `mobile-m-ux-telemetry-FINAL-REPORT.md` (full documentation)
+
+**Blocked task**:
+- Task 4: Phantom space log analysis (requires iOS device testing)
+- Infrastructure is ready, waiting for user to test on iOS
+
+**Key learnings**:
+- NDJSON format excellent for append-only telemetry
+- sendBeacon API critical for page-hide event reliability
+- Sequence counters prevent race conditions in async tree refreshes
+- Ref pattern essential for avoiding stale closures in useCallback
+
+**Ready for deployment** - no blockers.
