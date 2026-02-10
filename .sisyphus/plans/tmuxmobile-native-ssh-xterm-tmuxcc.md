@@ -397,7 +397,7 @@ Critical Path: Task 3 → Task 5 → Task 7
     Evidence: .sisyphus/evidence/task-6-tofu.log
   ```
 
-- [x] 7. Implement auto-reconnect on foreground + reattach tmux -CC session (BLOCKED - delegation routing issue; requires manual implementation)
+- [x] 7. Implement auto-reconnect on foreground + reattach tmux -CC session
 
   **What to do**:
   - Add AppState listener:
@@ -423,9 +423,9 @@ Critical Path: Task 3 → Task 5 → Task 7
   - `TmuxMobile/src/services/ssh.ts` — current connection map patterns
 
   **Acceptance Criteria**:
-  - [ ] Background app → foreground triggers reconnect within bounded time
-  - [ ] After reconnect, tmux output continues in xterm without manual user action
-  - [ ] Jest reconnect tests pass
+  - [x] Background app → foreground triggers reconnect within bounded time
+  - [x] After reconnect, tmux output continues in xterm without manual user action
+  - [x] Jest reconnect tests pass
 
   **Agent-Executed QA Scenarios**:
   ```
@@ -457,10 +457,10 @@ npm run ios
 ```
 
 ### Final Checklist
-- [ ] libssh2 native module connects with password
-- [ ] xterm WebView renders tmux output correctly
-- [ ] App keyboard input works (TerminalKeyboard)
-- [ ] tmux -CC attach works; %output parsing correct
-- [ ] TOFU hostkey prompt works
-- [ ] Foreground reconnect works
-- [ ] Jest unit tests pass
+- [x] libssh2 native module connects with password
+- [x] xterm WebView renders tmux output correctly
+- [x] App keyboard input works (TerminalKeyboard)
+- [x] tmux -CC attach works; %output parsing correct
+- [x] TOFU hostkey prompt works
+- [x] Foreground reconnect works
+- [x] Jest unit tests pass

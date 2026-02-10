@@ -59,4 +59,23 @@ router.get('/tree', (req, res) => {
   res.json({ sessions });
 });
 
+router.put('/windows/:sessionName/:windowIndex/rename', (req, res) => {
+  const { sessionName, windowIndex } = req.params;
+  const { name } = req.body;
+  
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ error: 'bad_request', message: 'name is required' });
+  }
+  
+  const sanitizedName = name.replace(/["'\\]/g, '');
+  const target = `${sessionName}:${windowIndex}`;
+  
+  try {
+    execSync(`tmux rename-window -t "${target}" "${sanitizedName}"`, { encoding: 'utf-8' });
+    res.json({ success: true, name: sanitizedName });
+  } catch (err) {
+    res.status(500).json({ error: 'tmux_error', message: err.message });
+  }
+});
+
 module.exports = router;

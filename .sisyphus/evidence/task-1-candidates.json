@@ -1,0 +1,24 @@
+{
+  "candidates": [
+    {
+      "id": 1,
+      "segment_id": 1,
+      "session_name": "dify",
+      "window_index": 1,
+      "command_summary": "echo test command",
+      "output_summary": "This is a very long output summary that contains multiple lines with lots of information about what the command did. It should be truncated when displayed in preview list to keep UI clean.",
+      "generated_at": 1770620633,
+      "preview": "This is a very long output summary that contains multiple lines with lots of information about what the command did. It ..."
+    },
+    {
+      "id": 2,
+      "segment_id": 2,
+      "session_name": "dify",
+      "window_index": 1,
+      "command_summary": null,
+      "output_summary": "Another output with\nmultiline text that\nneeds normalization",
+      "generated_at": 1770620633,
+      "preview": "Another output with multiline text that needs normalization"
+    }
+  ]
+}

@@ -61,9 +61,9 @@ router.post('/login', (req, res) => {
   
   res.cookie(COOKIE_NAME, sessionValue, {
     httpOnly: true,
-    maxAge: COOKIE_MAX_AGE * 1000, // Express uses milliseconds
+    maxAge: COOKIE_MAX_AGE * 1000,
     sameSite: 'lax',
-    secure: isProduction,
+    secure: false,
     path: '/'
   });
   

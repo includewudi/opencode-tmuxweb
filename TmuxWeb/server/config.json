@@ -5,7 +5,19 @@
   "sessionSecret": "tmuxweb-session-secret-change-in-prod",
   "frontendPort": 5215,
   "tmuxSocket": null,
-  "allowedOrigins": ["http://localhost:5215", "http://127.0.0.1:5215"],
+  "allowedOrigins": [
+    "http://localhost:5215", 
+    "http://127.0.0.1:5215",
+    "http://10.147.20.237:5215",
+    "http://172.29.15.223:5215",
+    "http://192.168.10.64:5215",
+    "http://100.64.0.28:5215"
+  ],
   "summaryServiceUrl": "",
-  "summaryServiceToken": ""
+  "summaryServiceToken": "",
+  "xfyun": {
+    "appId": "58110c96",
+    "apiKey": "d7a334a600966e75c13e68af559b50b8",
+    "apiSecret": "OWY5NjFlMDdjMzljMDUwZTEzMDBhMjMy"
+  }
 }

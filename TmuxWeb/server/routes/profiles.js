@@ -249,12 +249,13 @@ router.put('/:id/order', async (req, res) => {
         );
       }
 
+      const now = Math.floor(Date.now() / 1000);
       for (const s of sessions) {
         await connection.query(
-          `UPDATE tmux_session_meta 
-           SET group_id = ?, sort_order = ? 
-           WHERE session_name = ? AND token = ? AND profile_key = ?`,
-          [s.group_id || 0, s.sort_order, s.session_name, token, profileKey]
+          `INSERT INTO tmux_session_meta (token, profile_key, session_name, group_id, sort_order, ctime, mtime)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE group_id = VALUES(group_id), sort_order = VALUES(sort_order), mtime = VALUES(mtime)`,
+          [token, profileKey, s.session_name, s.group_id || 0, s.sort_order || 0, now, now]
         );
       }
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { ChevronDown, ChevronUp, Plus, Check, X, Pencil, Trash2 } from 'lucide-react'
 import { Profile } from '../types'
 import './ProfileSelector.css'
 
@@ -56,11 +57,13 @@ export function ProfileSelector({ currentProfile, onProfileChange }: Props) {
     if (!newName.trim() || loading) return
     setLoading(true)
     try {
+      const name = newName.trim()
+      const profile_key = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `profile-${Date.now()}`
       const res = await fetch('/api/profiles', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName.trim() })
+        body: JSON.stringify({ name, profile_key })
       })
       const data = await res.json()
       if (data.id) {
@@ -136,9 +139,10 @@ export function ProfileSelector({ currentProfile, onProfileChange }: Props) {
   return (
     <div className="profile-selector" ref={dropdownRef}>
       <div className="profile-current" onClick={() => setIsOpen(!isOpen)}>
-        <span className="profile-icon">&#9650;</span>
         <span className="profile-name">{currentProfile?.name || 'Select Profile'}</span>
-        <span className="profile-chevron">{isOpen ? '&#9652;' : '&#9662;'}</span>
+        <span className="profile-chevron">
+          {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </span>
       </div>
 
       {isOpen && (
@@ -154,7 +158,7 @@ export function ProfileSelector({ currentProfile, onProfileChange }: Props) {
                 }}
               >
                 <span>{profile.name}</span>
-                {profile.id === currentProfile?.id && <span className="check">&#10003;</span>}
+                {profile.id === currentProfile?.id && <Check size={14} className="check" />}
               </div>
             ))}
           </div>
@@ -173,15 +177,15 @@ export function ProfileSelector({ currentProfile, onProfileChange }: Props) {
                   disabled={loading}
                 />
                 <button onClick={createProfile} disabled={loading || !newName.trim()} className="btn-confirm">
-                  &#10003;
+                  <Check size={14} />
                 </button>
                 <button onClick={() => setIsCreating(false)} className="btn-cancel">
-                  &#10005;
+                  <X size={14} />
                 </button>
               </div>
             ) : (
               <button className="profile-add-btn" onClick={() => setIsCreating(true)}>
-                <span>+</span> New Profile
+                <Plus size={14} /> New Profile
               </button>
             )}
           </div>
@@ -200,10 +204,10 @@ export function ProfileSelector({ currentProfile, onProfileChange }: Props) {
                     disabled={loading}
                   />
                   <button onClick={updateProfile} disabled={loading || !editName.trim()} className="btn-confirm">
-                    &#10003;
+                    <Check size={14} />
                   </button>
                   <button onClick={() => setIsEditing(false)} className="btn-cancel">
-                    &#10005;
+                    <X size={14} />
                   </button>
                 </div>
               ) : (
@@ -215,7 +219,7 @@ export function ProfileSelector({ currentProfile, onProfileChange }: Props) {
                       setIsEditing(true)
                     }}
                   >
-                    &#9998; Edit
+                    <Pencil size={12} style={{ marginRight: 4 }} /> Edit
                   </button>
                   <button
                     className="btn-delete"
@@ -223,7 +227,7 @@ export function ProfileSelector({ currentProfile, onProfileChange }: Props) {
                     disabled={profiles.length <= 1}
                     title={profiles.length <= 1 ? 'Cannot delete last profile' : ''}
                   >
-                    &#128465; Delete
+                    <Trash2 size={12} style={{ marginRight: 4 }} /> Delete
                   </button>
                 </div>
               )}

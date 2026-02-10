@@ -149,6 +149,48 @@ CREATE TABLE `tmux_task_summary` (
     KEY `idx_job` (`summary_job_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='任务摘要表（命令+输出摘要）';
 
+-- ----------------------------------------------------------------------------
+-- 7. ai_conversation - AI 对话主表（CLI 回调自动创建）
+--    每次用户向 AI 提问创建一条记录
+-- ----------------------------------------------------------------------------
+CREATE TABLE `ai_conversation` (
+    `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+    `year` smallint(4) NOT NULL DEFAULT 0 COMMENT '年份（分区用）',
+    `mon` tinyint(2) NOT NULL DEFAULT 0 COMMENT '月份（分区用）',
+    `conversation_id` varchar(64) NOT NULL DEFAULT '' COMMENT 'CLI 生成的对话 ID（UUID）',
+    `pane_key` varchar(128) NOT NULL DEFAULT '' COMMENT 'Pane 标识：session/window/pane',
+    `user_message` text COMMENT '用户输入',
+    `assistant_message` text COMMENT 'AI 完整回复',
+    `conv_status` varchar(32) NOT NULL DEFAULT 'in_progress' COMMENT '状态：in_progress/completed/aborted',
+    `started_at` int(11) NOT NULL DEFAULT 0 COMMENT '开始时间戳',
+    `completed_at` int(11) NOT NULL DEFAULT 0 COMMENT '完成时间戳',
+    `ctime` int(11) NOT NULL DEFAULT 0 COMMENT '创建时间戳',
+    `mtime` int(11) NOT NULL DEFAULT 0 COMMENT '修改时间戳',
+    `status` tinyint(4) NOT NULL DEFAULT 1 COMMENT '状态：1=正常',
+    `is_deleted` tinyint(4) NOT NULL DEFAULT 0 COMMENT '是否删除：0=否，1=是',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_conversation_id` (`conversation_id`),
+    KEY `idx_pane_key` (`pane_key`),
+    KEY `idx_conv_status` (`conv_status`),
+    KEY `idx_year_mon` (`year`, `mon`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI 对话主表（CLI 回调自动创建）';
+
+-- ----------------------------------------------------------------------------
+-- 8. ai_conversation_chunk - AI 对话增量块表（流式输出）
+--    存储 assistant_chunk 事件的增量内容
+-- ----------------------------------------------------------------------------
+CREATE TABLE `ai_conversation_chunk` (
+    `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+    `conversation_id` varchar(64) NOT NULL DEFAULT '' COMMENT '关联的对话 ID',
+    `seq` int(11) NOT NULL DEFAULT 0 COMMENT '块序号',
+    `content` text COMMENT '增量内容',
+    `chunk_time` int(11) NOT NULL DEFAULT 0 COMMENT '块时间戳',
+    `ctime` int(11) NOT NULL DEFAULT 0 COMMENT '创建时间戳',
+    PRIMARY KEY (`id`),
+    KEY `idx_conversation` (`conversation_id`),
+    KEY `idx_seq` (`conversation_id`, `seq`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI 对话增量块表（流式输出）';
+
 -- ============================================================================
 -- End of Schema
 -- ============================================================================

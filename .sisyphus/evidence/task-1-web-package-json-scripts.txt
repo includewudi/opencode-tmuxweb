@@ -1,0 +1,36 @@
+TMUXWEB WEB FRONTEND - PACKAGE.JSON SCRIPTS
+============================================
+
+File: TmuxWeb/web/package.json
+
+Scripts Section:
+  "dev": "vite --port 5215"
+  "build": "vite build"
+  "preview": "vite preview"
+
+Build Output Directory:
+  TmuxWeb/web/dist/
+  Current Status: EXISTS (verified 2026-02-09 12:16:00)
+  Contains: Built assets from vite build
+
+Development Stack:
+  - Vite 5.0.0 (bundler)
+  - React 18.2.0 (UI framework)
+  - xterm 5.3.0 (terminal emulator)
+  - TypeScript 5.3.0 (dev dependency)
+  - React DnD Kit 6.3.1 (drag & drop)
+
+Test Infrastructure:
+  - NO test config files found
+  - NO test scripts in package.json
+  - NO jest/vitest/playwright dependencies
+
+Port Configuration:
+  Development: vite --port 5215 (dev server)
+  Preview: vite preview (built assets server)
+  Production: vite preview via PM2 (npm run preview)
+
+Notes:
+  - The preview command serves pre-built assets (dist/)
+  - Currently running via PM2: `npx vite preview --port 5215 --host`
+  - NODE_ENV in PM2: production

@@ -14,13 +14,13 @@ module.exports = {
     {
       name: 'tmuxweb-frontend',
       script: 'node_modules/.bin/vite',
-      args: '--port 5215 --host',
+      args: 'preview --port 5215 --host',
       cwd: __dirname + '/web',
       instances: 1,
       autorestart: true,
       watch: false,
       env: {
-        NODE_ENV: 'development'
+        NODE_ENV: 'production'
       }
     }
   ]

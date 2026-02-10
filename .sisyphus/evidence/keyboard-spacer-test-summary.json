@@ -1,0 +1,93 @@
+{
+  "title": "Keyboard Spacer E2E Verification - Task 4",
+  "timestamp": "2026-02-09T15:40:00Z",
+  "allTestsPassed": true,
+  "exitCode": 0,
+  "tests": {
+    "test1_desktop_no_spacer": {
+      "name": "Desktop - Verify no spacer rendered",
+      "viewport": "1280x720",
+      "userAgent": "Windows Chrome",
+      "assertions": [
+        "Spacer element does NOT exist (querySelector('.keyboard-spacer') returns null)",
+        "No page-level scrollbars present (scrollHeight <= clientHeight)",
+        "Terminal wrapper renders without keyboard-related sizing"
+      ],
+      "result": "PASS",
+      "evidenceFile": "keyboard-spacer-desktop-noop.png"
+    },
+    "test2_mobile_keyboard_open": {
+      "name": "Mobile - Verify spacer behavior when keyboard opens",
+      "viewport": "390x844",
+      "userAgent": "iPhone iOS 14.7.1 Safari",
+      "assertions": [
+        "Spacer element EXISTS in DOM after keyboard simulation",
+        "Spacer height > 0px when visualViewport shrinks (keyboard open)",
+        "Keyboard height calculation: 844 - 584 = 260px reserve",
+        "No page-level scrollbars during keyboard open"
+      ],
+      "result": "PASS",
+      "evidenceFile": "keyboard-spacer-open.png"
+    },
+    "test3_mobile_keyboard_close": {
+      "name": "Mobile - Verify spacer height returns to 0 when keyboard closes",
+      "viewport": "390x844",
+      "userAgent": "iPhone iOS 14.7.1 Safari",
+      "assertions": [
+        "Spacer exists in DOM",
+        "Spacer height returns to 0px when visualViewport restored (keyboard close)",
+        "No page-level scrollbars after keyboard close",
+        "Terminal layout remains continuous"
+      ],
+      "result": "PASS",
+      "evidenceFile": "keyboard-spacer-close.png"
+    },
+    "test4_orientation_change": {
+      "name": "Mobile - Verify orientation change without scrollbars",
+      "portrait": {
+        "viewport": "390x844",
+        "keyboard": "simulated (260px height)",
+        "assertions": [
+          "Spacer reserves keyboard height in portrait",
+          "No page-level scrollbars"
+        ],
+        "result": "PASS"
+      },
+      "landscape": {
+        "viewport": "844x390",
+        "keyboard": "simulated (162px height)",
+        "assertions": [
+          "Spacer adapts to reduced absolute height in landscape",
+          "No page-level scrollbars even with smaller viewport",
+          "Layout remains stable during orientation change"
+        ],
+        "result": "PASS"
+      },
+      "evidenceFile": "keyboard-spacer-orientation.json"
+    }
+  },
+  "implementation_verified": {
+    "spacer_element": "✓ Render as flex child: <div className='keyboard-spacer' style={{ height: keyboardSpacerHeightPx }} />",
+    "spacer_css": "✓ flex-shrink: 0; height driven by keyboardSpacerHeightPx state",
+    "mobile_detection": "✓ showAccessoryBar = isMobile() gates mobile-only rendering",
+    "keyboard_metrics": "✓ keyboardSpacerHeightPx computed from visualViewport shrink",
+    "no_page_scrollbars": "✓ Terminal wrapper overflow: hidden prevents document scrolling",
+    "no_overlay": "✓ Push-up spacer (DOM occupies space) not overlay-based"
+  },
+  "qa_findings": {
+    "desktop_behavior": "Desktop (1280x720) shows NO spacer element - keyboard spacer is mobile-only as designed",
+    "mobile_open": "Mobile viewport (390x844) with keyboard simulation shows spacer with proper height reservation",
+    "mobile_close": "Spacer returns to 0 height when keyboard closes - smooth height transition via CSS",
+    "orientation": "Orientation changes properly recalculate spacer - landscape respects reduced absolute viewport",
+    "scrollbars": "No page-level scrollbars in any scenario - terminal container controls internal scroll only",
+    "data_attributes": "data-keyboard-spacer-height and data-keyboard-visible attributes exposed for Playwright reads"
+  },
+  "requirements_met": [
+    "Mobile-only behavior: desktop unchanged ✓",
+    "Spacer is push-up reservation (DOM occupies space) not overlay ✓",
+    "Page-level scrollbars eliminated ✓",
+    "Playwright-based verification with screenshots and JSON metrics ✓",
+    "No polling, SSE, or websocket additions ✓",
+    "No human visual confirmation required ✓"
+  ]
+}

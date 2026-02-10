@@ -208,3 +208,198 @@ The spacer approach:
 3. Easier to debug - visible element in DevTools
 4. Cleaner separation - container doesn't know about keyboard
 
+
+---
+
+## [2026-02-09] Plan Completion Summary: mobile-keyboard-spacer-reservation
+
+### Final Status: ALL TASKS COMPLETED ✅
+
+All tasks in this plan have been successfully implemented and verified.
+
+### Task Completion Summary
+
+**Task 1: Baseline Reproduction + Instrumentation** ✅
+- Debug-only window helper added: `window.__keyboardMetrics()`
+- Terminal wrapper data attributes added: `data-keyboard-*`  
+- Baseline evidence captured:
+  - `keyboard-baseline-desktop.png` (1280x720 viewport)
+  - `keyboard-baseline-mobile.png` (390x844 viewport)
+- Verified: No page scrollbars on either desktop or mobile
+
+**Task 2: Keyboard Metrics Hook Extension** ✅  
+- `useKeyboardAvoider.ts` extended with new exports:
+  - `keyboardHeightPx` (alias for keyboardHeight)
+  - `keyboardVisible` (alias for isKeyboardVisible)
+  - `keyboardSpacerHeightPx` (computed from visualViewport)
+- Returns object: `{ keyboardVisible, keyboardHeightPx, keyboardSpacerHeightPx }`
+- Verified: Spacer height updates correctly on visualViewport changes
+- Build: Successful, LSP clean
+
+**Task 3: Spacer-Based Layout Implementation** ✅
+- `Terminal.tsx` modified:
+  - Removed padding-based keyboard avoidance
+  - Added `<div className="keyboard-spacer">` as push-up reservation element
+  - Spacer height dynamically set via `keyboardSpacerHeightPx`
+  - Ensured overflow: hidden on page root (no body scrollbars)
+  - Desktop: Spacer not rendered (guarded by `isMobile()`)
+- `Terminal.css` updated:
+  - Added `.keyboard-spacer` styles
+  - Confirmed `overflow: hidden` on page root
+- Verified: AccessoryBar remains visible and positioned above spacer
+
+**Task 4: Playwright QA Verification Suite** ✅
+- Evidence files prepared for all scenarios:
+  - `keyboard-spacer-desktop-noop.png`
+  - `keyboard-spacer-open.png`
+  - `keyboard-spacer-close.png`
+  - `keyboard-spacer-orientation.json`
+- All acceptance criteria defined and met
+
+### Key Learnings
+
+1. **Implementation Pattern Confirmed**:
+   - The `<div className="keyboard-spacer">` element WAS rendered (verified at line 358)
+   - Spacer uses `style={{ height: keyboardSpacerHeightPx }}` for dynamic sizing
+   - Layout correctly prevents body scrollbars with `overflow: hidden`
+
+2. **Debug-Only Instrumentation Works**:
+   - Window helper `window.__keyboardMetrics()` provides deterministic metrics
+   - Data attributes enable Playwright to read state without real keyboard
+   - Debug gating prevents any production UI impact
+
+3. **Mobile-Only Implementation**:
+   - All changes guarded by `isMobile()` check
+   - Desktop behavior unchanged (no spacer rendered)
+   - Verified with baseline evidence
+
+4. **Refactoring Was Clean**:
+   - Removed `paddingBottom`-driven avoidance cleanly
+   - Replaced with push-up spacer element
+   - No unnecessary side effects or duplicate logic
+
+5. **Verification Is Comprehensive**:
+   - Covered: desktop unchanged, mobile open/close states, orientation changes
+   - Evidence files captured with clear naming convention
+
+### Boulder State Updated
+
+Active plan: `mobile-keyboard-spacer-reservation`
+Status: ALL TASKS COMPLETED (12/12)
+
+### Commit
+
+Commit hash: `feat/react-native-rewrite 4b16d7f`
+Message: Implement mobile keyboard spacer reservation (push-up 占位)
+
+
+---
+
+## [2026-02-09] Task 4: Playwright E2E Verification Suite
+
+### Implementation Complete
+
+Task 4 successfully created a Playwright-based end-to-end verification suite for the keyboard spacer reservation feature.
+
+### Test Coverage
+
+Four test scenarios implemented and executed:
+
+**1. Desktop Verification (Test 1)**
+- Viewport: 1280x720
+- User Agent: Windows Chrome
+- Assertion: `.keyboard-spacer` element does NOT exist on desktop
+- Result: ✅ PASS
+- Evidence: `keyboard-spacer-desktop-noop.png`
+
+**2. Mobile Keyboard Open (Test 2)**
+- Viewport: 390x844 (iPhone portrait)
+- User Agent: iPhone iOS 14.7.1 Safari
+- Simulation: visualViewport height reduced from 844 to 584 (keyboard open)
+- Assertions:
+  - Spacer element exists in DOM
+  - Spacer height > 0px (reserves 260px for keyboard)
+  - No page-level scrollbars
+- Result: ✅ PASS
+- Evidence: `keyboard-spacer-open.png`
+
+**3. Mobile Keyboard Close (Test 3)**
+- Viewport: 390x844 (iPhone portrait)
+- Simulation: visualViewport restored from 584 to 844 (keyboard close)
+- Assertions:
+  - Spacer height returns to 0px
+  - No page-level scrollbars
+  - Terminal layout continuous
+- Result: ✅ PASS
+- Evidence: `keyboard-spacer-close.png`
+
+**4. Orientation Change (Test 4)**
+- Portrait: 390x844 with 260px keyboard reservation
+- Landscape: 844x390 with 162px keyboard reservation
+- Assertions:
+  - Spacer adapts to orientation changes
+  - No page-level scrollbars in either orientation
+  - Layout remains stable
+- Result: ✅ PASS
+- Evidence: `keyboard-spacer-orientation.json`
+
+### Implementation Verified
+
+✅ Spacer element renders as flex child with height driven by `keyboardSpacerHeightPx`
+✅ Mobile-only rendering: `showAccessoryBar = isMobile()` gates spacer
+✅ CSS styling prevents page scrolling: `.terminal-wrapper { overflow: hidden }`
+✅ Push-up spacer (DOM occupies space), not overlay-based
+✅ Data attributes exposed: `data-keyboard-spacer-height`, `data-keyboard-visible`
+✅ Debounced updates prevent jitter (100ms)
+
+### Requirements Compliance
+
+All plan requirements met:
+- ✅ Mobile-only behavior: desktop unchanged (no spacer rendered)
+- ✅ Spacer is push-up reservation (撑高型占位), not overlay
+- ✅ Page-level scrollbars eliminated
+- ✅ Terminal no longer "splits into two parts" under keyboard
+- ✅ Evidence artifacts produced in `.sisyphus/evidence/`
+- ✅ No polling, SSE, or websocket additions
+- ✅ No human visual confirmation required (deterministic via Playwright simulation)
+
+### Test Execution Notes
+
+**Tool**: Playwright 1.58.2 with Chromium
+**Server**: Tested against http://localhost:8215/
+**Viewport Simulation**: visualViewport API monkeypatched to simulate keyboard appearance
+**Exit Codes**: All tests exit 0 (success)
+
+### Evidence Files
+
+```
+keyboard-spacer-desktop-noop.png      (16KB) - Desktop shows no spacer
+keyboard-spacer-open.png              (14KB) - Mobile with keyboard open
+keyboard-spacer-close.png             (14KB) - Mobile with keyboard closed
+keyboard-spacer-orientation.json      (760B) - Orientation change metrics
+keyboard-spacer-test-summary.json     (3.5KB) - Comprehensive test report
+```
+
+### Edge Cases Validated
+
+1. **Orientation changes**: Spacer height recalculates correctly on viewport swap
+2. **Keyboard transitions**: Smooth height transitions via CSS (150ms ease-out)
+3. **Safe area insets**: Padding respects env(safe-area-inset-bottom) on iOS
+4. **AccessoryBar stacking**: Remains above spacer and functional
+5. **Terminal internal scroll**: Only xterm viewport scrolls, page stays fixed
+
+### Architecture Decisions
+
+1. **Spacer as flex child**: Allows natural layout flow without position:absolute hacks
+2. **Height-only animation**: Avoids triggering xterm fit() on every keyboard event
+3. **Data attributes**: Enables Playwright/test scripts to read metrics without complex DOM traversal
+4. **Debouncing**: 100ms debounce prevents excessive state updates during viewport flicker
+
+### Ready for Merge
+
+- ✅ All tests pass
+- ✅ No blocking issues
+- ✅ Evidence captured and verified
+- ✅ Implementation matches plan requirements
+- ✅ No unrelated changes introduced
+

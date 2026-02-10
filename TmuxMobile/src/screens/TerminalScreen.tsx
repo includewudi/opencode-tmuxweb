@@ -1,11 +1,13 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, TextInput, Alert, LayoutChangeEvent } from 'react-native';
+import { View, Text, Pressable, TextInput, Alert, LayoutChangeEvent, AppState } from 'react-native';
 import { ChevronLeft, Keyboard, Sparkles } from 'lucide-react-native';
 import { Header } from '../components/Header';
 import { TerminalKeyboard } from '../components/TerminalKeyboard';
+import { AccessoryBar } from '../components/AccessoryBar';
 import { XtermTerminal, XtermTerminalRef } from '../components/XtermTerminal';
 import { sshService, tmuxService } from '../services';
 import remoteLogger from '../services/remoteLogger';
+import { ReconnectStateMachine, ReconnectContext } from '../utils/reconnectStateMachine';
 import { Server, TmuxSession, TmuxWindow } from '../types';
 
 interface TerminalScreenProps {
@@ -28,13 +30,90 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(true);
   const [terminalReady, setTerminalReady] = useState(false);
+  const [reconnectingState, setReconnectingState] = useState<ReconnectContext | null>(null);
   const terminalRef = useRef<XtermTerminalRef>(null);
   const inputRef = useRef<TextInput>(null);
   const terminalDimensions = useRef<{ cols: number; rows: number }>({ cols: 80, rows: 24 });
+  const reconnectMachineRef = useRef<ReconnectStateMachine | null>(null);
 
   const handleTerminalReady = useCallback(() => {
     setTerminalReady(true);
   }, []);
+
+  // Initialize reconnect state machine with callbacks
+  useEffect(() => {
+    const handleReconnectAttempt = async (): Promise<boolean> => {
+      try {
+        remoteLogger.log('TerminalScreen', 'Reconnect attempt starting', {
+          serverId: server.id,
+          sessionName: session.name,
+          windowIndex: tmuxWindow.index,
+        });
+
+        // Disconnect any existing connection
+        sshService.disconnect(server.id);
+        
+        // Wait briefly for disconnect to complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Reconnect and attach to window
+        const connected = await sshService.connect(server);
+        if (!connected) {
+          terminalRef.current?.write('\x1b[31mReconnect failed: Could not connect to server\x1b[0m\r\n');
+          return false;
+        }
+
+        const { cols, rows } = terminalDimensions.current;
+        await tmuxService.attachToWindow(server.id, session.name, tmuxWindow.index, cols, rows);
+        
+        remoteLogger.log('TerminalScreen', 'Reconnect successful', {
+          serverId: server.id,
+        });
+        return true;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        remoteLogger.log('TerminalScreen', 'Reconnect attempt failed', {
+          error: errorMessage,
+        });
+        terminalRef.current?.write(`\x1b[31mReconnect error: ${errorMessage}\x1b[0m\r\n`);
+        return false;
+      }
+    };
+
+    const handleStateChange = (context: ReconnectContext) => {
+      remoteLogger.log('TerminalScreen', 'Reconnect state changed', {
+        state: context.state,
+        attemptCount: context.attemptCount,
+        maxAttempts: context.maxAttempts,
+        error: context.lastError,
+      });
+
+      setReconnectingState(context);
+
+      // Show status message in terminal based on state
+      if (context.state === 'reconnecting') {
+        const statusMsg = `\x1b[33mAttempting to reconnect (${context.attemptCount}/${context.maxAttempts})...\x1b[0m\r\n`;
+        terminalRef.current?.write(statusMsg);
+      } else if (context.state === 'connected') {
+        terminalRef.current?.write('\x1b[32mReconnected successfully!\x1b[0m\r\n');
+      } else if (context.state === 'failed') {
+        const failMsg = `\x1b[31mReconnection failed: ${context.lastError}\x1b[0m\r\n`;
+        terminalRef.current?.write(failMsg);
+      }
+    };
+
+    reconnectMachineRef.current = new ReconnectStateMachine(undefined, {
+      onReconnectAttempt: handleReconnectAttempt,
+      onStateChange: handleStateChange,
+    });
+
+    remoteLogger.log('TerminalScreen', 'ReconnectStateMachine initialized');
+
+    return () => {
+      reconnectMachineRef.current?.destroy();
+      reconnectMachineRef.current = null;
+    };
+  }, [server, session.name, tmuxWindow.index]);
 
   const [layoutReady, setLayoutReady] = useState(false);
 
@@ -112,11 +191,38 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
     };
   }, [server.id]);
 
-  useEffect(() => {
-    if (layoutReady) {
-      connectAndAttach();
-    }
-  }, [layoutReady, connectAndAttach]);
+   useEffect(() => {
+     if (layoutReady) {
+       connectAndAttach();
+     }
+   }, [layoutReady, connectAndAttach]);
+
+    useEffect(() => {
+      remoteLogger.log('TerminalScreen', 'Setting up AppState listener');
+      
+      const subscription = AppState.addEventListener('change', (state) => {
+        remoteLogger.log('TerminalScreen', 'AppState changed', { state });
+        
+        if (state === 'active') {
+          // Check connection health when app returns to foreground
+          const isHealthy = sshService.isConnected(server.id);
+          remoteLogger.log('TerminalScreen', 'App returned to foreground', { 
+            isConnected: isHealthy,
+            serverId: server.id 
+          });
+          
+          if (!isHealthy) {
+            // Trigger reconnect via reconnectStateMachine
+            reconnectMachineRef.current?.triggerReconnect();
+          }
+        }
+      });
+
+      return () => {
+        remoteLogger.log('TerminalScreen', 'Cleaning up AppState listener');
+        subscription.remove();
+      };
+    }, [server.id]);
 
   const sendToShell = useCallback(async (data: string) => {
     if (!isConnected) return;
@@ -188,6 +294,10 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
     setInputBuffer(text);
   }, [inputBuffer, sendToShell]);
 
+  const handlePaste = useCallback((pastedText: string) => {
+    sendToShell(pastedText);
+  }, [sendToShell]);
+
   const handleDisconnect = useCallback(() => {
     Alert.alert(
       'Disconnect',
@@ -198,6 +308,8 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
           text: 'Disconnect',
           style: 'destructive',
           onPress: () => {
+            // Cancel any ongoing reconnect attempts
+            reconnectMachineRef.current?.cancel();
             sshService.closeShell(server.id);
             onBack();
           },
@@ -248,6 +360,8 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
             onReady={handleTerminalReady}
           />
         </View>
+
+        <AccessoryBar onPaste={handlePaste} isConnected={isConnected} />
 
         {showSystemKeyboard && (
           <TextInput

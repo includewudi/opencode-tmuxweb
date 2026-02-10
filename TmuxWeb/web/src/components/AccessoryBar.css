@@ -1,0 +1,59 @@
+.accessory-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: #0d0d0d;
+  border-top: 1px solid #2a2a2a;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.accessory-key {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 500;
+  color: #e0e0e0;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 6px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.accessory-key:active {
+  background: #333;
+  border-color: #555;
+}
+
+.accessory-ctrl.active {
+  background: #2563eb;
+  border-color: #3b82f6;
+  color: #fff;
+}
+
+.accessory-arrows {
+  display: flex;
+  gap: 2px;
+}
+
+.accessory-arrow {
+  min-width: 36px;
+  padding: 8px 6px;
+}
+
+.accessory-paste {
+  margin-left: auto;
+}
+
+@media (min-width: 768px) {
+  .accessory-bar {
+    display: none;
+  }
+}

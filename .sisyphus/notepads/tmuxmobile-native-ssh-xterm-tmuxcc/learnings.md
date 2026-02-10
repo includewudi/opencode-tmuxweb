@@ -146,3 +146,129 @@ Replace CDN xterm.js with bundled assets (currently uses CDN with fallback)
 - Passwords stored in iOS Keychain, never logged
 - Host key fingerprints hashed before storage (additional layer)
 - Mismatch shows warning, blocks connection (MITM detection)
+
+## Task 7: Auto-reconnect on AppState changes
+
+### Current Status
+- Tasks 1-6 complete
+- Task 7 implementation pending
+- TerminalScreen.tsx missing AppState listeners
+- No reconnect state machine exists
+
+### Key Requirements
+- Add AppState listener: when app returns to active, if connection not healthy → reconnect
+- Reconnect state machine: exponential backoff, max attempts, cancel on manual back
+- On successful reconnect: re-run `tmux -CC attach -t session:window` based on TerminalScreen context
+- Jest tests for state machine transitions
+- Parameters: backoff starting at 0.5s, multiplier 2, max 8s, max 8 attempts
+- Cancel reconnect if user leaves TerminalScreen
+
+### Implementation Approach
+- Use `AppState` from 'react-native'
+- Implement reconnect state machine in TerminalScreen or separate service
+- Preserve session:window context on reconnect
+- On reconnect failure after max attempts, show error in xterm
+- Add Jest tests for state transitions (connected/disconnected/reconnecting states)
+
+## Task 7.1: AppState Listener Implementation
+
+### Implementation Details
+- Added `AppState` import to TerminalScreen.tsx from 'react-native'
+- Created useEffect hook that subscribes to AppState changes via `AppState.addEventListener('change', ...)`
+- Listener checks connection health when app returns to 'active' state using `sshService.isConnected(server.id)`
+- Added comprehensive logging via remoteLogger:
+  - Logs setup/cleanup of listener
+  - Logs state changes with state value
+  - Logs connection health check results
+- Added placeholder comment "TODO: Trigger reconnect via reconnectStateMachine" for next subtask
+- Placeholder code writes yellow warning to terminal if connection is unhealthy
+
+### Key Technical Notes
+- AppState listener is dependency-cleaned in useEffect return - calls `.remove()` on subscription
+- Dependencies: [server.id] - recreates listener if server changes (correct since we check server.id)
+- Integration point for reconnectStateMachine: replace TODO placeholder in "Connection unhealthy" branch
+- No actual reconnect logic yet - this task is detection only
+
+### TypeScript Status
+- Compilation succeeded with no errors
+- All imports and types are correct
+
+## Task 7.2: ReconnectStateMachine Integration
+
+### Implementation Details
+- Imported `ReconnectStateMachine` and `ReconnectContext` types from utils
+- Created `reconnectMachineRef` to hold state machine instance across renders
+- Added `reconnectingState` state to track state changes for UI updates
+- Initialized ReconnectStateMachine in a useEffect with callbacks:
+  - **onReconnectAttempt**: Disconnects SSH connection, waits 100ms, reconnects, and calls attachToWindow
+  - **onStateChange**: Updates UI with colored status messages in terminal (yellow for reconnecting, green for success, red for failure)
+- Replaced TODO placeholder with actual `reconnectMachineRef.current?.triggerReconnect()` call when connection unhealthy
+- Added cleanup: call `reconnectMachineRef.current?.cancel()` in handleDisconnect when user manually disconnects
+
+### Key Behaviors
+- When app returns to active state with unhealthy connection, triggers async reconnect with exponential backoff
+- Displays attempt counter in yellow: "Attempting to reconnect (2/8)..."
+- On success: clears error state and shows "Reconnected successfully!" in green
+- On max attempt failure: shows error message and transitions to failed state
+- Cleanup ensures no orphaned reconnect timers if component unmounts
+
+### Connection Restoration Flow
+1. App returns to foreground → AppState listener fires
+2. sshService.isConnected() checks health
+3. If unhealthy → triggerReconnect() starts state machine
+4. State machine waits (currentDelay), calls onReconnectAttempt callback
+5. Callback: disconnect → wait 100ms → connect → attachToWindow
+6. Success: onStateChange called, "Reconnected successfully!" shown
+7. Failure: retries with exponential backoff up to 8 attempts
+
+### TypeScript Validation
+- Jest tests pass (12 passed, 3 suites)
+- No TypeScript compilation errors
+- All imports and type signatures correct
+
+## Task 7.3: ReconnectStateMachine Jest Tests
+
+### Test Coverage
+- Created comprehensive test suite at `TmuxMobile/src/utils/__tests__/reconnectStateMachine.test.ts`
+- 63 total tests passing across all suites
+- Tests cover all transition types and state machine behaviors
+
+### Key Test Patterns
+- **Pure function tests**: Use `transition()` function directly to test state logic
+- **Class tests**: Use `ReconnectStateMachine` class for lifecycle and callback testing
+- **Helper tests**: Test `createInitialContext()` and `calculateNextDelay()` utilities
+- **State sequence tests**: Test realistic flow patterns (connect → connected → reconnecting → etc.)
+
+### Test Categories Implemented
+1. **Basic utilities**: Context initialization, delay calculation with caps
+2. **All transition types**: CONNECT, CONNECT_SUCCESS, CONNECT_FAILURE, DISCONNECT, TRIGGER_RECONNECT, RECONNECT_SUCCESS, RECONNECT_FAILURE, CANCEL, RESET
+3. **State machine class**: Initialization, getters, dispatch methods, callbacks
+4. **Realistic flows**: 
+   - Successful connect sequence (idle → connecting → connected)
+   - Failed connect → failed state
+   - Reconnect with exponential backoff
+   - Cancel/cleanup on disconnect
+   - Max attempts boundary conditions
+   - State reset functionality
+
+### Important Implementation Details
+- `TRIGGER_RECONNECT` only works from 'connected', 'idle', or 'failed' states (not from 'reconnecting')
+- `RECONNECT_FAILURE` doesn't increment attemptCount - only `TRIGGER_RECONNECT` does
+- Max attempts check happens on both TRIGGER_RECONNECT and RECONNECT_FAILURE
+- Exponential backoff: delay multiplied by 2, capped at 8000ms
+- On successful connection: attemptCount reset to 0, currentDelay reset to initialDelay
+
+### Test Execution
+- All 63 tests pass (4 test suites: example, octalUnescape, tmuxCcParser, reconnectStateMachine)
+- TypeScript compilation: No errors
+- LSP diagnostics: Clean
+
+### Comment Guidelines
+- Test comments removed where code is self-explanatory
+- Kept minimal inline comments only for complex exponential backoff calculations (where test expectations verify exact multiplier math)
+- No docstrings needed - test names clearly express intent
+
+### Future Considerations
+- Timer warning about process exit: Normal for async state machine tests with setTimeout
+- Could add integration tests with actual ReconnectStateMachine.triggerReconnect() async flow
+- Coverage metrics could be tracked if thresholds added to jest.config.js

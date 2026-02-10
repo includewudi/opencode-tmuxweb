@@ -19,6 +19,19 @@ function parsePaneKey(paneKey) {
   };
 }
 
+function generatePreview(outputSummary, commandSummary, maxLength = 120) {
+  const source = outputSummary || commandSummary || '';
+  const normalized = source
+    .replace(/\r\n/g, ' ')
+    .replace(/\n/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+  return normalized.slice(0, maxLength) + '...';
+}
+
 taskSummariesRouter.post('/:taskId/summarize', async (req, res) => {
   try {
     const { taskId } = req.params;
@@ -148,7 +161,8 @@ paneSummariesRouter.get('/:paneKey/summary-candidates', async (req, res) => {
         window_index: row.window_index,
         command_summary: row.command_summary,
         output_summary: row.output_summary,
-        generated_at: row.generated_at
+        generated_at: row.generated_at,
+        preview: generatePreview(row.output_summary, row.command_summary)
       }))
     });
   } catch (err) {

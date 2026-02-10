@@ -8,21 +8,25 @@ interface SummaryCandidate {
   generated_at: string
   window_index?: number
   pane_index?: number
+  preview?: string
 }
 
 interface Props {
   paneKey: string
   taskId: number
+  currentCommandSummary?: string | null
+  currentOutputSummary?: string | null
   onSelect: (summaryId: number) => void
   onClose: () => void
 }
 
-export function SummaryCandidatePicker({ paneKey, taskId, onSelect, onClose }: Props) {
+export function SummaryCandidatePicker({ paneKey, taskId, currentCommandSummary, currentOutputSummary, onSelect, onClose }: Props) {
   const [candidates, setCandidates] = useState<SummaryCandidate[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [showOverwriteConfirm, setShowOverwriteConfirm] = useState(false)
 
   useEffect(() => {
     fetchCandidates()
@@ -43,9 +47,21 @@ export function SummaryCandidatePicker({ paneKey, taskId, onSelect, onClose }: P
     }
   }
 
-  const handleLoad = async () => {
+  const hasExistingSummary = Boolean(currentCommandSummary?.trim() || currentOutputSummary?.trim())
+
+  const handleLoadClick = () => {
+    if (selectedId === null) return
+    if (hasExistingSummary) {
+      setShowOverwriteConfirm(true)
+    } else {
+      doLoad()
+    }
+  }
+
+  const doLoad = async () => {
     if (selectedId === null) return
     setSubmitting(true)
+    setShowOverwriteConfirm(false)
     try {
       const res = await fetch(`/api/tasks/${taskId}/load-summary`, {
         method: 'POST',
@@ -77,8 +93,12 @@ export function SummaryCandidatePicker({ paneKey, taskId, onSelect, onClose }: P
   }
 
   const getPreview = (candidate: SummaryCandidate) => {
-    const text = candidate.command_summary || candidate.output_summary || ''
-    return text.length > 60 ? text.slice(0, 60) + '...' : text
+    if (candidate.preview) {
+      return candidate.preview
+    }
+    const text = candidate.output_summary || candidate.command_summary || ''
+    const normalized = text.replace(/\r?\n/g, ' ').replace(/\s+/g, ' ').trim()
+    return normalized.length > 120 ? normalized.slice(0, 120) + '...' : normalized
   }
 
   const sessionName = paneKey.split(':')[0] || 'session'
@@ -144,12 +164,36 @@ export function SummaryCandidatePicker({ paneKey, taskId, onSelect, onClose }: P
           </button>
           <button
             className="candidate-btn candidate-btn-load"
-            onClick={handleLoad}
+            onClick={handleLoadClick}
             disabled={selectedId === null || submitting}
           >
             {submitting ? 'Loading...' : 'Load Selected'}
           </button>
         </div>
+
+        {showOverwriteConfirm && (
+          <div className="overwrite-confirm-overlay" onClick={() => setShowOverwriteConfirm(false)}>
+            <div className="overwrite-confirm-modal" onClick={e => e.stopPropagation()}>
+              <h4>Overwrite existing summaries?</h4>
+              <p>The current task already has summaries. Loading this will overwrite them.</p>
+              <div className="overwrite-confirm-actions">
+                <button 
+                  className="candidate-btn candidate-btn-cancel" 
+                  onClick={() => setShowOverwriteConfirm(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="candidate-btn candidate-btn-overwrite" 
+                  onClick={doLoad}
+                  disabled={submitting}
+                >
+                  {submitting ? 'Loading...' : 'Overwrite'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -39,7 +39,16 @@ if [ ! -d "web/node_modules" ]; then
     cd web && npm install && cd ..
 fi
 
-echo -e "${GREEN}Starting backend on port ${BACKEND_PORT}...${NC}"
+echo -e "${GREEN}Building frontend production assets...${NC}"
+cd web
+npm run build
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Frontend build failed${NC}"
+    exit 1
+fi
+cd ..
+
+echo -e "${GREEN}Starting backend on port ${BACKEND_PORT} (production mode)...${NC}"
 node server/index.js &
 BACKEND_PID=$!
 
@@ -50,15 +59,17 @@ if ! kill -0 $BACKEND_PID 2>/dev/null; then
     exit 1
 fi
 
-echo -e "${GREEN}Starting frontend on port ${FRONTEND_PORT}...${NC}"
-cd web && npm run dev &
+echo -e "${GREEN}Starting frontend on port ${FRONTEND_PORT} (production preview mode)...${NC}"
+cd web && npm run preview -- --host &
 FRONTEND_PID=$!
 cd ..
 
 sleep 2
 
 echo ""
-echo -e "${GREEN}=== TmuxWeb Running ===${NC}"
+echo -e "${GREEN}=== TmuxWeb Running (PRODUCTION MODE) ===${NC}"
+echo -e "Backend:  ${GREEN}production${NC} (Node.js Direct)"
+echo -e "Frontend: ${GREEN}production${NC} (Vite Preview Mode)"
 echo -e "Open: ${YELLOW}http://localhost:${FRONTEND_PORT}?token=tmuxweb-dev-token${NC}"
 echo -e "Press Ctrl+C to stop"
 echo ""

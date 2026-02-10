@@ -6,10 +6,28 @@ export default defineConfig({
   server: {
     port: 5215,
     proxy: {
-      '/api': 'http://127.0.0.1:8215',
+      '/api': {
+        target: 'http://127.0.0.1:8215',
+        changeOrigin: true
+      },
       '/ws': {
         target: 'ws://127.0.0.1:8215',
-        ws: true
+        ws: true,
+        changeOrigin: true
+      }
+    }
+  },
+  preview: {
+    port: 5215,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8215',
+        changeOrigin: true
+      },
+      '/ws': {
+        target: 'ws://127.0.0.1:8215',
+        ws: true,
+        changeOrigin: true
       }
     }
   }

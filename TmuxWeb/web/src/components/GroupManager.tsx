@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { Plus, Check, X, Pencil, Trash2, ArrowRight } from 'lucide-react'
 import { TmuxSession, SessionGroup } from '../types'
 import './GroupManager.css'
 
@@ -145,7 +146,7 @@ export function GroupManager({ profileKey, sessions, onGroupsChanged }: Props) {
       <div className="group-header">
         <span className="group-title">Groups</span>
         <button className="group-add-btn" onClick={() => setIsCreating(true)} title="Create group">
-          +
+          <Plus size={14} />
         </button>
       </div>
 
@@ -162,10 +163,10 @@ export function GroupManager({ profileKey, sessions, onGroupsChanged }: Props) {
             disabled={loading}
           />
           <button onClick={createGroup} disabled={loading || !newGroupName.trim()} className="btn-sm btn-confirm">
-            &#10003;
+            <Check size={12} />
           </button>
           <button onClick={() => setIsCreating(false)} className="btn-sm btn-cancel">
-            &#10005;
+            <X size={12} />
           </button>
         </div>
       )}
@@ -192,10 +193,10 @@ export function GroupManager({ profileKey, sessions, onGroupsChanged }: Props) {
                   disabled={loading || !editName.trim()}
                   className="btn-sm btn-confirm"
                 >
-                  &#10003;
+                  <Check size={12} />
                 </button>
                 <button onClick={() => setEditingId(null)} className="btn-sm btn-cancel">
-                  &#10005;
+                  <X size={12} />
                 </button>
               </div>
             ) : (
@@ -211,14 +212,14 @@ export function GroupManager({ profileKey, sessions, onGroupsChanged }: Props) {
                     }}
                     title="Rename"
                   >
-                    &#9998;
+                    <Pencil size={12} />
                   </button>
                   <button
                     className="btn-icon btn-danger"
                     onClick={() => deleteGroup(group.id)}
                     title="Delete"
                   >
-                    &#10005;
+                    <Trash2 size={12} />
                   </button>
                 </div>
               </div>
@@ -254,7 +255,7 @@ export function GroupManager({ profileKey, sessions, onGroupsChanged }: Props) {
                   onClick={() => setAssigningSession(session.sessionName)}
                   title="Assign to group"
                 >
-                  &#8594;
+                  <ArrowRight size={14} />
                 </button>
               )}
             </div>

@@ -1,0 +1,15 @@
+[GET] http://localhost:8215/ => [200] OK
+[GET] http://localhost:8215/assets/index-DFJ7MQn6.js => [200] OK
+[GET] http://localhost:8215/assets/index-D4k8olJ9.css => [200] OK
+[GET] http://localhost:8215/api/profiles => [200] OK
+[GET] http://localhost:8215/api/profiles => [200] OK
+[GET] http://localhost:8215/api/tmux/tree => [200] OK
+[GET] http://localhost:8215/api/profiles => [200] OK
+[GET] http://localhost:8215/api/tmux/tree => [200] OK
+[GET] http://localhost:8215/api/groups?profile_key=peak => [200] OK
+[GET] http://localhost:8215/api/tmux/tree => [200] OK
+[GET] http://localhost:8215/api/groups?profile_key=peak => [200] OK
+[GET] http://localhost:8215/api/profiles/1/order => [200] OK
+[GET] http://localhost:8215/api/panes/status?profile_key=peak&paneKeys=dify:1:0,doing-api:1:0,doing-app:1:0,doing-local:1:0,ex-backend-yii2:1:0,md-manager:1:0,my-md-manager:1:0,my-md-manager:2:0,my-site-pro:1:0,my_site:1:0,n-skills:1:0,omo-frontend:1:0,omo-nsp:1:0,opencode-container:1:0,opencode-iterm:1:0,peak-s:1:0,peak-s:2:0,peak-s:3:0,peak-s:4:0,peak-seeker-menu:1:0,peak-seeker-pro:1:0,task-opencode:1:0,task-opencode-backend:1:0,task-opencode-frontend:1:0 => [200] OK
+[GET] http://localhost:8215/api/panes/status?profile_key=peak&paneKeys=dify:1:0,doing-api:1:0,doing-app:1:0,doing-local:1:0,ex-backend-yii2:1:0,md-manager:1:0,my-md-manager:1:0,my-md-manager:2:0,my-site-pro:1:0,my_site:1:0,n-skills:1:0,omo-frontend:1:0,omo-nsp:1:0,opencode-container:1:0,opencode-iterm:1:0,peak-s:1:0,peak-s:2:0,peak-s:3:0,peak-s:4:0,peak-seeker-menu:1:0,peak-seeker-pro:1:0,task-opencode:1:0,task-opencode-backend:1:0,task-opencode-frontend:1:0 => [200] OK
+[GET] http://localhost:8215/api/panes/status?profile_key=peak&paneKeys=dify:1:0,doing-api:1:0,doing-app:1:0,doing-local:1:0,ex-backend-yii2:1:0,md-manager:1:0,my-md-manager:1:0,my-md-manager:2:0,my-site-pro:1:0,my_site:1:0,n-skills:1:0,omo-frontend:1:0,omo-nsp:1:0,opencode-container:1:0,opencode-iterm:1:0,peak-s:1:0,peak-s:2:0,peak-s:3:0,peak-s:4:0,peak-seeker-menu:1:0,peak-seeker-pro:1:0,task-opencode:1:0,task-opencode-backend:1:0,task-opencode-frontend:1:0 => [200] OK

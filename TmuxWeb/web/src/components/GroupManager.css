@@ -1,6 +1,7 @@
 .group-manager {
   padding: 12px;
-  border-top: 1px solid #333;
+  border-bottom: 1px solid var(--zinc-800);
+  background: var(--zinc-900);
 }
 
 .group-header {
@@ -12,19 +13,19 @@
 
 .group-title {
   font-weight: 600;
-  color: #e0e0e0;
-  font-size: 13px;
+  color: var(--zinc-300);
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
 }
 
 .group-add-btn {
   width: 24px;
   height: 24px;
-  background: #333;
+  background: var(--zinc-800);
   border: none;
   border-radius: 4px;
-  color: #888;
+  color: var(--zinc-400);
   font-size: 16px;
   cursor: pointer;
   display: flex;
@@ -34,8 +35,8 @@
 }
 
 .group-add-btn:hover {
-  background: #4fc3f7;
-  color: #111;
+  background: var(--blue-600);
+  color: #fff;
 }
 
 .group-create-row,
@@ -48,21 +49,21 @@
 .group-input {
   flex: 1;
   padding: 6px 10px;
-  background: #141414;
-  border: 1px solid #3a3a3a;
+  background: var(--zinc-950);
+  border: 1px solid var(--zinc-700);
   border-radius: 4px;
-  color: #e0e0e0;
+  color: var(--zinc-200);
   font-size: 12px;
   outline: none;
   transition: border-color 0.15s;
 }
 
 .group-input:focus {
-  border-color: #4fc3f7;
+  border-color: var(--blue-500);
 }
 
 .group-input::placeholder {
-  color: #555;
+  color: var(--zinc-600);
 }
 
 .btn-sm {
@@ -75,12 +76,12 @@
 }
 
 .btn-sm.btn-confirm {
-  background: #2e7d32;
+  background: var(--blue-600);
   color: #fff;
 }
 
 .btn-sm.btn-confirm:hover:not(:disabled) {
-  background: #388e3c;
+  background: var(--blue-700);
 }
 
 .btn-sm.btn-confirm:disabled {
@@ -89,12 +90,12 @@
 }
 
 .btn-sm.btn-cancel {
-  background: #333;
-  color: #aaa;
+  background: var(--zinc-800);
+  color: var(--zinc-400);
 }
 
 .btn-sm.btn-cancel:hover {
-  background: #444;
+  background: var(--zinc-700);
 }
 
 .group-list {
@@ -105,14 +106,14 @@
 }
 
 .group-empty {
-  color: #555;
+  color: var(--zinc-600);
   font-size: 12px;
   text-align: center;
   padding: 12px;
 }
 
 .group-item {
-  background: #1e1e1e;
+  background: var(--zinc-800);
   border-radius: 6px;
   overflow: hidden;
 }
@@ -126,14 +127,14 @@
 
 .group-name {
   flex: 1;
-  color: #81c784;
+  color: var(--blue-500);
   font-size: 13px;
   font-weight: 500;
 }
 
 .group-count {
-  background: #333;
-  color: #888;
+  background: var(--zinc-700);
+  color: var(--zinc-400);
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 10px;
@@ -155,10 +156,10 @@
 .btn-icon {
   width: 22px;
   height: 22px;
-  background: #333;
+  background: var(--zinc-700);
   border: none;
   border-radius: 4px;
-  color: #888;
+  color: var(--zinc-400);
   font-size: 11px;
   cursor: pointer;
   display: flex;
@@ -168,25 +169,25 @@
 }
 
 .btn-icon:hover {
-  background: #444;
-  color: #fff;
+  background: var(--zinc-600);
+  color: var(--zinc-200);
 }
 
 .btn-icon.btn-danger:hover {
-  background: rgba(244, 67, 54, 0.2);
-  color: #f44336;
+  background: rgba(248, 113, 113, 0.2);
+  color: var(--red-400);
 }
 
 .session-assign-section {
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid var(--zinc-800);
   padding-top: 12px;
 }
 
 .section-label {
   font-size: 11px;
-  color: #666;
+  color: var(--zinc-500);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
   margin-bottom: 8px;
 }
 
@@ -203,20 +204,20 @@
   align-items: center;
   justify-content: space-between;
   padding: 6px 8px;
-  background: #1a1a1a;
+  background: var(--zinc-950);
   border-radius: 4px;
 }
 
 .session-name {
-  color: #4fc3f7;
+  color: var(--blue-500);
   font-size: 12px;
-  font-family: monospace;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
 }
 
 .btn-assign {
   background: transparent;
-  border: 1px solid #333;
-  color: #666;
+  border: 1px solid var(--zinc-700);
+  color: var(--zinc-500);
   padding: 4px 10px;
   border-radius: 4px;
   cursor: pointer;
@@ -225,14 +226,14 @@
 }
 
 .btn-assign:hover {
-  border-color: #4fc3f7;
-  color: #4fc3f7;
+  border-color: var(--blue-500);
+  color: var(--blue-500);
 }
 
 .group-select {
-  background: #141414;
-  border: 1px solid #4fc3f7;
-  color: #e0e0e0;
+  background: var(--zinc-950);
+  border: 1px solid var(--blue-500);
+  color: var(--zinc-200);
   padding: 4px 8px;
   border-radius: 4px;
   font-size: 12px;
@@ -241,12 +242,12 @@
 }
 
 .group-select option {
-  background: #1e1e1e;
-  color: #e0e0e0;
+  background: var(--zinc-900);
+  color: var(--zinc-200);
 }
 
 .session-empty {
-  color: #555;
+  color: var(--zinc-600);
   font-size: 12px;
   text-align: center;
   padding: 8px;

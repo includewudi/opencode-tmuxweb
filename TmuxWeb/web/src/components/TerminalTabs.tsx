@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { OpenTab } from '../types'
 import { Terminal } from './Terminal'
 import './TerminalTabs.css'
@@ -27,7 +28,9 @@ export function TerminalTabs({ tabs, activeTabId, onSelectTab, onCloseTab }: Pro
             <button
               className="close-btn"
               onClick={(e) => { e.stopPropagation(); onCloseTab(tab.id); }}
-            >×</button>
+            >
+              <X size={14} />
+            </button>
           </div>
         ))}
       </div>

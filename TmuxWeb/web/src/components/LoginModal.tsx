@@ -1,4 +1,5 @@
 import { useState, FormEvent } from 'react';
+import { Terminal } from 'lucide-react';
 import { login } from '../utils/auth';
 import './LoginModal.css';
 
@@ -28,7 +29,9 @@ export function LoginModal({ onLogin }: Props) {
     <div className="login-overlay">
       <form className="login-modal" onSubmit={handleSubmit}>
         <div className="login-header">
-          <div className="login-icon">⌘</div>
+          <div className="login-icon">
+            <Terminal size={32} />
+          </div>
           <h1>TmuxWeb</h1>
         </div>
         

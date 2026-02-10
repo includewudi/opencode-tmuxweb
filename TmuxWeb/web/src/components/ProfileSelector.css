@@ -1,7 +1,6 @@
 .profile-selector {
   position: relative;
-  padding: 8px 12px;
-  border-bottom: 1px solid #333;
+  flex: 1;
 }
 
 .profile-current {
@@ -9,40 +8,42 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #252525;
+  background: var(--zinc-800);
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s;
 }
 
 .profile-current:hover {
-  background: #2d2d2d;
+  background: var(--zinc-700);
 }
 
 .profile-icon {
-  font-size: 10px;
-  color: #4fc3f7;
+  color: var(--blue-500);
+  display: flex;
+  align-items: center;
 }
 
 .profile-name {
   flex: 1;
-  font-weight: 600;
-  color: #e0e0e0;
+  font-weight: 500;
+  color: var(--zinc-200);
   font-size: 13px;
 }
 
 .profile-chevron {
-  font-size: 10px;
-  color: #888;
+  color: var(--zinc-500);
+  display: flex;
+  align-items: center;
 }
 
 .profile-dropdown {
   position: absolute;
-  top: calc(100% - 4px);
-  left: 12px;
-  right: 12px;
-  background: #1e1e1e;
-  border: 1px solid #3a3a3a;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--zinc-900);
+  border: 1px solid var(--zinc-700);
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   z-index: 100;
@@ -60,27 +61,27 @@
   justify-content: space-between;
   padding: 10px 14px;
   cursor: pointer;
-  color: #ccc;
+  color: var(--zinc-300);
   font-size: 13px;
   transition: background 0.1s;
 }
 
 .profile-item:hover {
-  background: #2a2a2a;
+  background: var(--zinc-800);
 }
 
 .profile-item.active {
-  background: #2d3748;
-  color: #4fc3f7;
+  background: var(--blue-900-20);
+  color: var(--blue-500);
 }
 
 .profile-item .check {
-  color: #4fc3f7;
+  color: var(--blue-500);
   font-size: 12px;
 }
 
 .profile-actions {
-  border-top: 1px solid #333;
+  border-top: 1px solid var(--zinc-800);
   padding: 8px;
 }
 
@@ -91,18 +92,18 @@
   width: 100%;
   padding: 8px 12px;
   background: transparent;
-  border: 1px dashed #444;
+  border: 1px dashed var(--zinc-700);
   border-radius: 6px;
-  color: #888;
+  color: var(--zinc-500);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .profile-add-btn:hover {
-  border-color: #4fc3f7;
-  color: #4fc3f7;
-  background: rgba(79, 195, 247, 0.08);
+  border-color: var(--blue-500);
+  color: var(--blue-500);
+  background: var(--blue-900-20);
 }
 
 .profile-add-btn span {
@@ -118,21 +119,21 @@
 .profile-input {
   flex: 1;
   padding: 8px 10px;
-  background: #141414;
-  border: 1px solid #3a3a3a;
+  background: var(--zinc-950);
+  border: 1px solid var(--zinc-700);
   border-radius: 4px;
-  color: #e0e0e0;
+  color: var(--zinc-200);
   font-size: 13px;
   outline: none;
   transition: border-color 0.15s;
 }
 
 .profile-input:focus {
-  border-color: #4fc3f7;
+  border-color: var(--blue-500);
 }
 
 .profile-input::placeholder {
-  color: #555;
+  color: var(--zinc-600);
 }
 
 .btn-confirm,
@@ -146,12 +147,12 @@
 }
 
 .btn-confirm {
-  background: #2e7d32;
+  background: var(--blue-600);
   color: #fff;
 }
 
 .btn-confirm:hover:not(:disabled) {
-  background: #388e3c;
+  background: var(--blue-700);
 }
 
 .btn-confirm:disabled {
@@ -160,16 +161,16 @@
 }
 
 .btn-cancel {
-  background: #333;
-  color: #aaa;
+  background: var(--zinc-800);
+  color: var(--zinc-400);
 }
 
 .btn-cancel:hover {
-  background: #444;
+  background: var(--zinc-700);
 }
 
 .profile-edit-section {
-  border-top: 1px solid #333;
+  border-top: 1px solid var(--zinc-800);
   padding: 8px;
 }
 
@@ -190,22 +191,22 @@
 }
 
 .btn-edit {
-  background: #333;
-  color: #ccc;
+  background: var(--zinc-800);
+  color: var(--zinc-300);
 }
 
 .btn-edit:hover {
-  background: #3a3a3a;
-  color: #fff;
+  background: var(--zinc-700);
+  color: var(--zinc-200);
 }
 
 .btn-delete {
-  background: rgba(244, 67, 54, 0.15);
-  color: #f44336;
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--red-400);
 }
 
 .btn-delete:hover:not(:disabled) {
-  background: rgba(244, 67, 54, 0.25);
+  background: rgba(248, 113, 113, 0.25);
 }
 
 .btn-delete:disabled {

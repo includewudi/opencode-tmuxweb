@@ -1,0 +1,44 @@
+{
+  "candidates": [
+    {
+      "id": 1,
+      "segment_id": 101,
+      "session_name": "default",
+      "window_index": 0,
+      "command_summary": "npm run build",
+      "output_summary": "Build completed successfully. Generated 3 files: bundle.js, styles.css, index.html in dist/ directory.",
+      "generated_at": 1707400000,
+      "preview": "Build completed successfully. Generated 3 files: bundle.js, styles.css, index.html in dist/ directory."
+    },
+    {
+      "id": 2,
+      "segment_id": 102,
+      "session_name": "default",
+      "window_index": 0,
+      "command_summary": "git log --oneline",
+      "output_summary": "abc1234 Fix: button alignment\ndef5678 Feat: add dark mode\nghi9012 Chore: update deps",
+      "generated_at": 1707399000,
+      "preview": "abc1234 Fix: button alignment def5678 Feat: add dark mode ghi9012 Chore: update deps"
+    },
+    {
+      "id": 3,
+      "segment_id": 103,
+      "session_name": "default",
+      "window_index": 0,
+      "command_summary": "cat package.json",
+      "output_summary": null,
+      "generated_at": 1707398000,
+      "preview": "cat package.json"
+    },
+    {
+      "id": 4,
+      "segment_id": 104,
+      "session_name": "default",
+      "window_index": 0,
+      "command_summary": "Long output preview test",
+      "output_summary": "Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et dolore magna aliqua ut enim ad minim veniam qui...",
+      "generated_at": 1707397000,
+      "preview": "Lorem ipsum dolor sit amet consectetur adipiscing elit sed do eiusmod tempor incididunt ut labore et..."
+    }
+  ]
+}

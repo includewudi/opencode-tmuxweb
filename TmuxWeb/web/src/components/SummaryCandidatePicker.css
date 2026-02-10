@@ -214,3 +214,56 @@
   box-shadow: 0 4px 16px rgba(79, 195, 247, 0.4);
   transform: translateY(-1px);
 }
+
+/* Overwrite Confirmation Modal */
+.overwrite-confirm-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  animation: fadeIn 0.1s ease-out;
+}
+
+.overwrite-confirm-modal {
+  background: #1e1e1e;
+  border: 1px solid #444;
+  border-radius: 10px;
+  padding: 20px 24px;
+  max-width: 320px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  animation: slideUp 0.15s ease-out;
+}
+
+.overwrite-confirm-modal h4 {
+  margin: 0 0 10px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e0e0e0;
+}
+
+.overwrite-confirm-modal p {
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  color: #888;
+  line-height: 1.5;
+}
+
+.overwrite-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.candidate-btn-overwrite {
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  color: #1a1a1a;
+  font-weight: 600;
+}
+
+.candidate-btn-overwrite:hover:not(:disabled) {
+  box-shadow: 0 4px 16px rgba(255, 152, 0, 0.4);
+  transform: translateY(-1px);
+}

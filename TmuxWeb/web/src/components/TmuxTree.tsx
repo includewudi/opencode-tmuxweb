@@ -18,6 +18,17 @@ import {
   useSortable,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { 
+  Terminal, 
+  ChevronRight, 
+  ChevronDown, 
+  GripVertical, 
+  Folder,
+  FolderOpen,
+  RefreshCw,
+  MoreHorizontal,
+  Pencil
+} from 'lucide-react'
 import { TmuxSession, SessionGroup, PaneStatus, PaneStatusInfo } from '../types'
 import { StatusBadge } from './StatusBadge'
 import './TmuxTree.css'
@@ -30,6 +41,25 @@ interface Props {
   onSelectPane: (paneId: string, paneName: string) => void
   onRefresh: () => void
   onOrderChange?: () => void
+  onPaneContextMenu?: (paneKey: string) => void
+  statusRefreshToken?: number
+}
+
+async function renameWindow(sessionName: string, windowIndex: number, newName: string): Promise<boolean> {
+  try {
+    const res = await fetch(
+      `/api/tmux/windows/${encodeURIComponent(sessionName)}/${windowIndex}/rename`,
+      {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: newName })
+      }
+    )
+    return res.ok
+  } catch {
+    return false
+  }
 }
 
 interface OrderData {
@@ -68,7 +98,8 @@ async function fetchPaneStatuses(profileKey: string, paneKeys: string[]): Promis
     { credentials: 'include' }
   )
   if (!res.ok) return []
-  return res.json()
+  const data = await res.json()
+  return data.panes || []
 }
 
 function buildPaneKey(sessionName: string, windowIndex: number, paneIndex: number): string {
@@ -78,7 +109,7 @@ function buildPaneKey(sessionName: string, windowIndex: number, paneIndex: numbe
 function DragHandle() {
   return (
     <span className="drag-handle" aria-label="Drag to reorder">
-      ⋮⋮
+      <GripVertical size={14} />
     </span>
   )
 }
@@ -90,10 +121,14 @@ interface SortableSessionProps {
   isOver?: boolean
   statusMap: Record<string, PaneStatus>
   onSelectPane: (paneId: string, paneName: string) => void
+  onPaneContextMenu?: (paneKey: string) => void
+  onRefresh: () => void
 }
 
-function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelectPane }: SortableSessionProps) {
+function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelectPane, onPaneContextMenu, onRefresh }: SortableSessionProps) {
   const [expanded, setExpanded] = useState(false)
+  const [editingWindowIndex, setEditingWindowIndex] = useState<number | null>(null)
+  const [editWindowName, setEditWindowName] = useState('')
   
   const {
     attributes,
@@ -123,14 +158,48 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
           className="expand-btn"
           onClick={() => setExpanded(!expanded)}
         >
-          {expanded ? '▼' : '▶'}
+          {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         </button>
+        <Terminal size={14} style={{ color: 'var(--blue-500)' }} />
         <span className="session-name">{session.sessionName}</span>
       </div>
       
       {expanded && session.windows.map(window => (
         <div key={window.windowId} className="window-node">
-          <div className="window-name">{window.windowIndex}: {window.windowName}</div>
+          <div className="window-row">
+            {editingWindowIndex === window.windowIndex ? (
+              <input
+                type="text"
+                className="window-name-input"
+                value={editWindowName}
+                onChange={e => setEditWindowName(e.target.value)}
+                onKeyDown={async e => {
+                  if (e.key === 'Enter' && editWindowName.trim()) {
+                    const ok = await renameWindow(session.sessionName, window.windowIndex, editWindowName.trim())
+                    if (ok) onRefresh()
+                    setEditingWindowIndex(null)
+                  }
+                  if (e.key === 'Escape') setEditingWindowIndex(null)
+                }}
+                onBlur={() => setEditingWindowIndex(null)}
+                autoFocus
+              />
+            ) : (
+              <>
+                <span className="window-name">{window.windowIndex}: {window.windowName}</span>
+                <button
+                  className="window-rename-btn"
+                  onClick={() => {
+                    setEditWindowName(window.windowName)
+                    setEditingWindowIndex(window.windowIndex)
+                  }}
+                  title="Rename window"
+                >
+                  <Pencil size={12} />
+                </button>
+              </>
+            )}
+          </div>
           {window.panes.map((pane, paneIndex) => {
             const paneKey = buildPaneKey(session.sessionName, window.windowIndex, paneIndex)
             const paneStatus = statusMap[paneKey] || 'idle'
@@ -139,10 +208,26 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
                 key={pane.paneId}
                 className="pane-node"
                 onClick={() => onSelectPane(pane.paneId, `${session.sessionName}:${window.windowIndex}`)}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  onPaneContextMenu?.(paneKey)
+                }}
               >
                 <span className="pane-id">{pane.paneId}</span>
                 <StatusBadge status={paneStatus} size="small" />
                 <span className="pane-cmd">{pane.paneCommand}</span>
+                {onPaneContextMenu && (
+                  <button 
+                    className="pane-details-btn"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onPaneContextMenu(paneKey)
+                    }}
+                    title="View details"
+                  >
+                    <MoreHorizontal size={14} />
+                  </button>
+                )}
               </div>
             )
           })}
@@ -190,9 +275,10 @@ function SortableGroup({ item, group, children, isOver }: SortableGroupProps) {
           className="expand-btn"
           onClick={() => setExpanded(!expanded)}
         >
-          {expanded ? '▼' : '▶'}
+          {expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
         </button>
-        <span className="group-name">[{group.group_name}]</span>
+        {expanded ? <FolderOpen size={14} style={{ color: 'var(--blue-500)' }} /> : <Folder size={14} style={{ color: 'var(--blue-500)' }} />}
+        <span className="group-name">{group.group_name}</span>
         <span className="group-count">{group.session_count}</span>
       </div>
       
@@ -212,7 +298,8 @@ function DragPreview({ item }: { item: TreeItem | null }) {
     return (
       <div className="drag-preview session-preview">
         <DragHandle />
-        <span className="expand-btn">▶</span>
+        <ChevronRight size={12} />
+        <Terminal size={14} style={{ color: 'var(--blue-500)' }} />
         <span className="session-name">{item.session.sessionName}</span>
       </div>
     )
@@ -222,8 +309,9 @@ function DragPreview({ item }: { item: TreeItem | null }) {
     return (
       <div className="drag-preview group-preview">
         <DragHandle />
-        <span className="expand-btn">▼</span>
-        <span className="group-name">[{item.group.group_name}]</span>
+        <ChevronDown size={12} />
+        <FolderOpen size={14} style={{ color: 'var(--blue-500)' }} />
+        <span className="group-name">{item.group.group_name}</span>
       </div>
     )
   }
@@ -238,12 +326,57 @@ export function TmuxTree({
   profileKey = '',
   onSelectPane, 
   onRefresh, 
-  onOrderChange 
+  onOrderChange,
+  onPaneContextMenu,
+  statusRefreshToken
 }: Props) {
   const [sessionOrders, setSessionOrders] = useState<SessionOrder[]>([])
+  const [groupOrders, setGroupOrders] = useState<{ id: number; sort_order: number }[]>([])
   const [activeItem, setActiveItem] = useState<TreeItem | null>(null)
   const [overItemId, setOverItemId] = useState<string | null>(null)
   const [statusMap, setStatusMap] = useState<Record<string, PaneStatus>>({})
+
+  useEffect(() => {
+    if (!profileId) {
+      setSessionOrders([])
+      setGroupOrders([])
+      return
+    }
+
+    fetch(`/api/profiles/${profileId}/order`, { credentials: 'include' })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (!data) return
+        
+        const orders: SessionOrder[] = []
+        
+        for (const g of data.groups || []) {
+          for (const s of g.sessions || []) {
+            orders.push({
+              session_name: s.session_name,
+              group_id: g.id,
+              sort_order: s.sort_order
+            })
+          }
+        }
+        
+        for (const s of data.ungrouped || []) {
+          orders.push({
+            session_name: s.session_name,
+            group_id: null,
+            sort_order: s.sort_order
+          })
+        }
+        
+        setSessionOrders(orders)
+        
+        setGroupOrders((data.groups || []).map((g: { id: number; sort_order: number }) => ({
+          id: g.id,
+          sort_order: g.sort_order
+        })))
+      })
+      .catch(err => console.error('Failed to fetch order:', err))
+  }, [profileId])
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -271,17 +404,22 @@ export function TmuxTree({
   useEffect(() => {
     if (!profileKey || allPaneKeys.length === 0) return
 
-    fetchPaneStatuses(profileKey, allPaneKeys).then((statuses) => {
+    fetchPaneStatuses(profileKey, allPaneKeys).then((items) => {
       const map: Record<string, PaneStatus> = {}
-      statuses.forEach((s) => {
+      items.forEach((s) => {
         map[s.paneKey] = s.status
       })
       setStatusMap(map)
     })
-  }, [profileKey, allPaneKeys])
+  }, [profileKey, allPaneKeys, statusRefreshToken])
 
   const treeItems = useMemo(() => {
-    const sortedGroups = [...groups].sort((a, b) => a.sort_order - b.sort_order)
+    const groupOrderMap = new Map(groupOrders.map(o => [o.id, o.sort_order]))
+    const sortedGroups = [...groups].sort((a, b) => {
+      const aOrder = groupOrderMap.get(a.id) ?? a.sort_order
+      const bOrder = groupOrderMap.get(b.id) ?? b.sort_order
+      return aOrder - bOrder
+    })
     const orderMap = new Map(sessionOrders.map(o => [o.session_name, o]))
     
     const ungroupedSessions = sessions.filter(s => {
@@ -305,12 +443,12 @@ export function TmuxTree({
         type: 'group' as const,
         group: g,
         groupId: null,
-        sortOrder: g.sort_order
+        sortOrder: groupOrderMap.get(g.id) ?? g.sort_order
       }))
     ].sort((a, b) => a.sortOrder - b.sortOrder)
     
     return { rootItems: allRootItems, orderMap }
-  }, [sessions, groups, sessionOrders])
+  }, [sessions, groups, sessionOrders, groupOrders])
   
   const getGroupSessions = (groupId: number): TreeItem[] => {
     return sessions
@@ -364,6 +502,7 @@ export function TmuxTree({
     const overId = over.id as string
     
     const isActiveSession = activeId.startsWith('session-')
+    const isActiveGroup = activeId.startsWith('group-')
     const isOverSession = overId.startsWith('session-')
     const isOverGroup = overId.startsWith('group-')
     
@@ -388,6 +527,7 @@ export function TmuxTree({
     if (!foundActiveItem || !overItem) return
     
     const newSessionOrders = [...sessionOrders]
+    const newGroupOrders = [...groupOrders]
     const activeSessionName = foundActiveItem.session?.sessionName
     
     if (isActiveSession && activeSessionName) {
@@ -409,11 +549,30 @@ export function TmuxTree({
       setSessionOrders(newSessionOrders)
     }
     
+    if (isActiveGroup && foundActiveItem.group) {
+      const activeGroupId = foundActiveItem.group.id
+      let groupOrder = newGroupOrders.find(g => g.id === activeGroupId)
+      if (!groupOrder) {
+        groupOrder = { id: activeGroupId, sort_order: foundActiveItem.sortOrder }
+        newGroupOrders.push(groupOrder)
+      }
+      
+      if (isOverGroup || isOverSession) {
+        const overSortOrder = overItem.sortOrder
+        groupOrder.sort_order = overSortOrder + (foundActiveItem.sortOrder < overSortOrder ? 1 : -1)
+      }
+      
+      setGroupOrders(newGroupOrders)
+    }
+    
     const orderData: OrderData = {
-      groups: groups.map((g, idx) => ({
-        id: g.id,
-        sort_order: treeItems.rootItems.findIndex(i => i.id === `group-${g.id}`) * 10 || idx * 10
-      })),
+      groups: groups.map((g) => {
+        const order = newGroupOrders.find(o => o.id === g.id)
+        return {
+          id: g.id,
+          sort_order: order?.sort_order ?? g.sort_order
+        }
+      }),
       sessions: newSessionOrders.length > 0 ? newSessionOrders : sessions.map((s, idx) => ({
         session_name: s.sessionName,
         group_id: null,
@@ -444,7 +603,9 @@ export function TmuxTree({
     <div className="tmux-tree">
       <div className="tree-header">
         <span>Sessions</span>
-        <button onClick={onRefresh} className="refresh-btn">↻</button>
+        <button onClick={onRefresh} className="refresh-btn" title="Refresh">
+          <RefreshCw size={14} />
+        </button>
       </div>
       
       {sessions.length === 0 && groups.length === 0 && (
@@ -485,6 +646,8 @@ export function TmuxTree({
                           isOver={overItemId === sessionItem.id}
                           statusMap={statusMap}
                           onSelectPane={onSelectPane}
+                          onPaneContextMenu={onPaneContextMenu}
+                          onRefresh={onRefresh}
                         />
                       ))
                     )}
@@ -502,6 +665,8 @@ export function TmuxTree({
                     isOver={overItemId === item.id}
                     statusMap={statusMap}
                     onSelectPane={onSelectPane}
+                    onPaneContextMenu={onPaneContextMenu}
+                    onRefresh={onRefresh}
                   />
                 )
               }

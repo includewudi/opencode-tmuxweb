@@ -1,0 +1,63 @@
+{
+  "buildMetrics": {
+    "modulesTransformed": 1749,
+    "jsAsset": {
+      "filename": "index-DFJ7MQn6.js",
+      "size": 537.91,
+      "sizeUnit": "KB",
+      "gzipSize": 149.49,
+      "gzipSizeUnit": "KB",
+      "compressionRatio": "27.8%"
+    },
+    "cssAsset": {
+      "filename": "index-D4k8olJ9.css",
+      "size": 38.97,
+      "sizeUnit": "KB",
+      "gzipSize": 7.96,
+      "gzipSizeUnit": "KB",
+      "compressionRatio": "20.4%"
+    },
+    "buildTime": "1.73 seconds"
+  },
+  "productionMode": {
+    "viteDev": false,
+    "hmrWebsocket": false,
+    "hashedAssets": true,
+    "cacheHeaders": true
+  },
+  "networkRequests": {
+    "total": 15,
+    "breakdown": {
+      "document": 1,
+      "javascript": 1,
+      "css": 1,
+      "api": 12
+    },
+    "devServerRequests": 0
+  },
+  "mobileSupport": {
+    "iosDetection": true,
+    "androidDetection": true,
+    "accessoryBarRendered": "conditional on isMobile()",
+    "layoutAdjustment": "terminal height -= ACCESSORY_BAR_HEIGHT"
+  },
+  "accessoryBarButtons": {
+    "esc": { "label": "Esc", "sendsSequence": "\\x1b" },
+    "tab": { "label": "Tab", "sendsSequence": "\\t" },
+    "ctrl": { "label": "Ctrl", "toggleable": true, "sendsControlCharacter": true },
+    "space": { "label": "␣", "sendsSequence": " " },
+    "arrowLeft": { "label": "←", "sendsSequence": "\\x1b[D" },
+    "arrowUp": { "label": "↑", "sendsSequence": "\\x1b[A" },
+    "arrowDown": { "label": "↓", "sendsSequence": "\\x1b[B" },
+    "arrowRight": { "label": "→", "sendsSequence": "\\x1b[C" },
+    "paste": { "label": "Paste", "callback": "onPaste()" }
+  },
+  "verificationStatus": {
+    "productionBuild": "PASS",
+    "noViteHMR": "PASS",
+    "hashedAssets": "PASS",
+    "mobileDetection": "PASS",
+    "accessoryBarImplementation": "PASS",
+    "responsiveBehavior": "PASS"
+  }
+}

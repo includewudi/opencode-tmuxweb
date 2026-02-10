@@ -24,6 +24,13 @@ export async function logout(): Promise<void> {
 }
 
 export async function checkAuth(): Promise<boolean> {
+  // PWA standalone mode has isolated storage - check if we have the token
+  // If no token in localStorage, user needs to re-login even if cookie exists
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) {
+    return false;
+  }
+  
   const res = await fetch('/api/profiles', {
     credentials: 'include'
   });

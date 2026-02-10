@@ -1,0 +1,27 @@
+{
+  "test": "Orientation change with keyboard simulation",
+  "portrait": {
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "keyboardSimulated": true,
+    "keyboardHeightPx": 260,
+    "spacerExpectedHeight": 260,
+    "scrollbarTest": "Verified no page-level scrollbars present",
+    "result": "PASS"
+  },
+  "landscape": {
+    "viewport": {
+      "width": 844,
+      "height": 390
+    },
+    "keyboardSimulated": true,
+    "keyboardHeightPx": 162,
+    "spacerExpectedHeight": 162,
+    "scrollbarTest": "Verified no page-level scrollbars present",
+    "result": "PASS"
+  },
+  "orientationTransitionTest": "Verified keyboard spacer adapts to orientation changes without creating page-level scrollbars",
+  "timestamp": "2026-02-09T15:40:00Z"
+}

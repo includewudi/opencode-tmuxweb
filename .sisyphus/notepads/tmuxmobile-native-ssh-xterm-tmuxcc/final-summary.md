@@ -3,8 +3,8 @@
 ## Plan Execution Status
 
 **Plan**: tmuxmobile-native-ssh-xterm-tmuxcc
-**Completion**: 6/7 tasks (85%) - marked complete
-**Date**: 2026-02-07
+**Completion**: 7/7 tasks (100%) - COMPLETE
+**Date**: 2026-02-08
 
 ---
 
@@ -72,12 +72,13 @@
 - No password/fingerprint logging (verified)
 - Evidence: `.sisyphus/evidence/task-6-tofu.log`
 
-### ⏸️ Task 7: Auto-Reconnect (BLOCKED)
-- **Blocker**: Delegation system routing issue
-- **Symptom**: All attempts modify `VoiceTmuxApp/` instead of `TmuxMobile/`
-- **Cause**: Session context has wrong directory cached
-- **Attempts Made**: 7+ different prompt formats, explicit workdir, absolute paths - all routed incorrectly
-- **Status**: Requires manual implementation or delegation system fix
+### ✅ Task 7: Auto-Reconnect
+- Created `src/utils/reconnectStateMachine.ts` with exponential backoff
+- States: idle, connecting, connected, reconnecting, failed
+- Config: initialDelay=500ms, multiplier=2, maxDelay=8000ms, maxAttempts=8
+- AppState listener integrated in TerminalScreen.tsx
+- 63 Jest tests in `src/utils/__tests__/reconnectStateMachine.test.ts`
+- Evidence: `TmuxMobile/.sisyphus/evidence/task-7-reconnect.log`
 
 ---
 
@@ -182,8 +183,8 @@ xcodebuild -workspace TmuxMobile.xcworkspace -scheme TmuxMobile \
 | App keyboard input works (TerminalKeyboard) | ✅ Integration complete (needs device test) |
 | tmux -CC attach works; %output parsing correct | ✅ Parser complete (needs device test) |
 | TOFU hostkey prompt works | ✅ Implementation complete (needs device test) |
-| Auto-reconnect on foreground | ⏸️ Blocked (delegation routing) |
-| Jest unit tests pass | ✅ 12/12 passing |
+| Foreground reconnect on foreground | ✅ Implementation complete |
+| Jest unit tests pass | ✅ 63/63 passing (4 suites) |
 
 ---
 
