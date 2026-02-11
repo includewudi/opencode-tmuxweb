@@ -9,8 +9,9 @@
 ### 📱 Terminal Access via Browser
 - Access tmux sessions from any device (iPhone, iPad, desktop browser)
 - Full xterm.js terminal with touch-friendly controls
-- Auto-reconnect with page reload fallback (8 retries → auto refresh)
-- HTTPS/WSS support with self-signed certificates
+- Auto-reconnect (2s retry, then press any key to reload)
+- HTTPS/WSS support with mkcert certificates
+- **Responsive layout**: Desktop 3-column (sidebar | terminal | toolbox), mobile 50/50 split
 
 ### 🤖 AI Command Generation
 - **7 built-in roles**: CLI Expert, DevOps, Prompt Engineer, Frontend, Backend, UI/UX, API Architect
@@ -24,7 +25,8 @@
 - Supports Chinese and English
 
 ### 🔧 Toolbox
-- Quick keys (Tab, Ctrl+C, Ctrl+Z, arrows, etc.)
+- Quick keys (Tab, Ctrl+C, arrows, ⏎ Enter, 📜 tmux scroll mode, etc.)
+- **Touch swipe scrolling** (swipe up/down = tmux wheel scroll, requires `tmux set -g mouse on`)
 - Command snippets (save/load/delete frequently used commands)
 - Keyboard toggle for mobile
 
