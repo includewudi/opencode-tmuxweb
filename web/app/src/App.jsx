@@ -61,6 +61,15 @@ export default function App() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Responsive: detect mobile vs desktop
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
   // UI state — restore tabs from localStorage
   const [expandedNodes, setExpandedNodes] = useState({});
   const [openTabs, setOpenTabs] = useState(() => {
@@ -144,8 +153,8 @@ export default function App() {
       setOpenTabs(prev => [...prev, newTab]);
       setActiveTabId(newTab.id);
     }
-    // Always close sidebar after selecting a pane
-    setSidebarOpen(false);
+    // Close sidebar on mobile after selecting
+    if (isMobile) setSidebarOpen(false);
   };
 
   const closeTab = (tabId) => {
@@ -162,6 +171,152 @@ export default function App() {
 
   const activeTab = openTabs.find(t => t.id === activeTabId);
 
+  // ── Sidebar content (shared by mobile drawer & desktop fixed) ──
+  const sidebarContent = (
+    <>
+      {/* Header */}
+      <div className={`h-14 flex items-center justify-between px-4 shrink-0 ${THEME.sidebarHeader}`}>
+        <div className="flex items-center gap-2">
+          <Terminal className="w-5 h-5 text-[#4d78cc]" />
+          <span className="text-sm font-bold tracking-wider text-white">SESSIONS</span>
+        </div>
+        <div className="flex gap-1">
+          <IconButton icon={RefreshCw} onClick={fetchSessions} />
+          {isMobile && <IconButton icon={ChevronRight} onClick={() => setSidebarOpen(false)} />}
+        </div>
+      </div>
+
+      {/* Tree Content */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar py-2">
+        {loading ? (
+          <div className="flex items-center justify-center h-32 text-[#6b717d] text-sm">
+            Loading sessions...
+          </div>
+        ) : sessions.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-32 text-[#6b717d] text-sm gap-2">
+            <Terminal className="w-6 h-6 opacity-50" />
+            No tmux sessions found
+          </div>
+        ) : (
+          <SessionTree
+            sessions={sessions}
+            expandedNodes={expandedNodes}
+            toggleExpand={toggleExpand}
+            openPane={openPane}
+            activeTarget={activeTab?.paneTarget}
+          />
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-[#2b2d31] bg-[#1b1d23]">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white">
+            T
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs text-white font-medium">tmux@localhost</span>
+            <span className="text-[10px] text-green-500 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Connected
+            </span>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+
+  // ── Terminal viewport (shared) ──
+  const terminalViewport = (
+    <>
+      {activeTab ? (
+        openTabs.map(tab => (
+          <div key={tab.id} className={`absolute inset-0 ${tab.id === activeTabId ? '' : 'hidden'}`}>
+            <TerminalPane
+              paneTarget={tab.paneTarget}
+              active={tab.id === activeTabId}
+              onSendRef={(sendFn) => { terminalSendRefs.current[tab.id] = sendFn; }}
+            />
+          </div>
+        ))
+      ) : (
+        <div className="flex flex-col items-center justify-center h-full text-[#6b717d] gap-4">
+          <Terminal className="w-12 h-12 opacity-30" />
+          <p className="text-sm">Open a session from the sidebar</p>
+          <button
+            onClick={() => isMobile ? setSidebarOpen(true) : null}
+            className="px-4 py-2 bg-[#4d78cc] text-white text-sm rounded-lg hover:bg-[#5a8ae0] transition-colors"
+          >
+            Browse Sessions
+          </button>
+        </div>
+      )}
+    </>
+  );
+
+  // ── Tab bar (shared) ──
+  const tabBar = (
+    <header className="h-12 flex bg-[#21252b] border-b border-black items-center relative z-30 shadow-md shrink-0">
+      {isMobile && (
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="h-full px-4 border-r border-black hover:bg-[#2c313a] active:bg-[#4d78cc] active:text-white text-[#9da5b4] transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+      )}
+
+      <div className="flex-1 flex overflow-x-auto no-scrollbar">
+        {openTabs.map(tab => (
+          <TabItem
+            key={tab.id}
+            title={tab.title}
+            active={tab.id === activeTabId}
+            onClick={() => setActiveTabId(tab.id)}
+            onClose={() => closeTab(tab.id)}
+          />
+        ))}
+      </div>
+
+      <div className="flex items-center px-3 border-l border-black bg-[#21252b]">
+        <Plus className="w-5 h-5 text-[#6b717d] cursor-pointer hover:text-white" onClick={() => setSidebarOpen(true)} />
+      </div>
+    </header>
+  );
+
+  // ════════════════════════════════════════════════
+  // DESKTOP LAYOUT (≥768px): sidebar fixed left + full terminal
+  // ════════════════════════════════════════════════
+  if (!isMobile) {
+    return (
+      <div className={`h-screen w-screen flex font-sans ${THEME.bg} text-[#abb2bf] overflow-hidden`}>
+        {/* Fixed sidebar */}
+        <aside className={`w-72 flex flex-col shrink-0 ${THEME.sidebar} border-r ${THEME.border}`}>
+          {sidebarContent}
+        </aside>
+
+        {/* Main area */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {tabBar}
+
+          {/* Shake toast */}
+          {shakeToast && (
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-black/80 backdrop-blur-md text-white text-sm rounded-full shadow-lg animate-bounce">
+              {shakeToast}
+            </div>
+          )}
+
+          {/* Terminal — full remaining height */}
+          <main className="flex-1 relative overflow-hidden">
+            {terminalViewport}
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // ════════════════════════════════════════════════
+  // MOBILE LAYOUT (<768px): drawer sidebar + 50/50 split
+  // ════════════════════════════════════════════════
   return (
     <div className={`h-screen w-screen flex flex-col font-sans ${THEME.bg} text-[#abb2bf] overflow-hidden`}>
 
@@ -176,91 +331,16 @@ export default function App() {
 
       {/* SIDEBAR DRAWER */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-[85vw] sm:w-80 flex flex-col shadow-2xl ${THEME.sidebar} ${THEME.border} border-r
+        fixed inset-y-0 left-0 z-50 w-[85vw] flex flex-col shadow-2xl ${THEME.sidebar} ${THEME.border} border-r
         transform transition-transform duration-300 
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
-        {/* Header */}
-        <div className={`h-14 flex items-center justify-between px-4 shrink-0 ${THEME.sidebarHeader}`}>
-          <div className="flex items-center gap-2">
-            <Terminal className="w-5 h-5 text-[#4d78cc]" />
-            <span className="text-sm font-bold tracking-wider text-white">SESSIONS</span>
-          </div>
-          <div className="flex gap-1">
-            <IconButton icon={RefreshCw} onClick={fetchSessions} />
-            <IconButton icon={ChevronRight} onClick={() => setSidebarOpen(false)} className="md:hidden" />
-          </div>
-        </div>
-
-        {/* Tree Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar py-2">
-          {loading ? (
-            <div className="flex items-center justify-center h-32 text-[#6b717d] text-sm">
-              Loading sessions...
-            </div>
-          ) : sessions.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-32 text-[#6b717d] text-sm gap-2">
-              <Terminal className="w-6 h-6 opacity-50" />
-              No tmux sessions found
-            </div>
-          ) : (
-            <SessionTree
-              sessions={sessions}
-              expandedNodes={expandedNodes}
-              toggleExpand={toggleExpand}
-              openPane={openPane}
-              activeTarget={activeTab?.paneTarget}
-            />
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-[#2b2d31] bg-[#1b1d23]">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white">
-              T
-            </div>
-            <div className="flex flex-col">
-              <span className="text-xs text-white font-medium">tmux@localhost</span>
-              <span className="text-[10px] text-green-500 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Connected
-              </span>
-            </div>
-          </div>
-        </div>
+        {sidebarContent}
       </aside>
 
       {/* MAIN CONTENT — top half (terminal) */}
       <div className="flex flex-col min-w-0 relative" style={{ height: '50%' }}>
-
-        {/* TOP BAR */}
-        <header className="h-12 flex bg-[#21252b] border-b border-black items-center relative z-30 shadow-md shrink-0">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="h-full px-4 border-r border-black hover:bg-[#2c313a] active:bg-[#4d78cc] active:text-white text-[#9da5b4] transition-colors"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-
-          <div className="flex-1 flex overflow-x-auto no-scrollbar">
-            {openTabs.map(tab => (
-              <TabItem
-                key={tab.id}
-                title={tab.title}
-                active={tab.id === activeTabId}
-                onClick={() => setActiveTabId(tab.id)}
-                onClose={() => closeTab(tab.id)}
-              />
-            ))}
-          </div>
-
-
-
-
-          <div className="flex items-center px-3 border-l border-black bg-[#21252b]">
-            <Plus className="w-5 h-5 text-[#6b717d] cursor-pointer hover:text-white" onClick={() => setSidebarOpen(true)} />
-          </div>
-        </header>
+        {tabBar}
 
         {/* Shake toast notification */}
         {shakeToast && (
@@ -271,28 +351,7 @@ export default function App() {
 
         {/* TERMINAL VIEWPORT */}
         <main className="flex-1 relative overflow-hidden">
-          {activeTab ? (
-            openTabs.map(tab => (
-              <div key={tab.id} className={`absolute inset-0 ${tab.id === activeTabId ? '' : 'hidden'}`}>
-                <TerminalPane
-                  paneTarget={tab.paneTarget}
-                  active={tab.id === activeTabId}
-                  onSendRef={(sendFn) => { terminalSendRefs.current[tab.id] = sendFn; }}
-                />
-              </div>
-            ))
-          ) : (
-            <div className="flex flex-col items-center justify-center h-full text-[#6b717d] gap-4">
-              <Terminal className="w-12 h-12 opacity-30" />
-              <p className="text-sm">Open a session from the sidebar</p>
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="px-4 py-2 bg-[#4d78cc] text-white text-sm rounded-lg hover:bg-[#5a8ae0] transition-colors"
-              >
-                Browse Sessions
-              </button>
-            </div>
-          )}
+          {terminalViewport}
         </main>
       </div>
 
