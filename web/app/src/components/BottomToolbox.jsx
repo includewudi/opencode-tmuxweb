@@ -18,7 +18,7 @@ const KEY_ROW_1 = [
     { label: '/', data: '/' },
     { label: '-', data: '-' },
     { label: '~', data: '~' },
-    { label: '?', data: '?' },
+    { label: '^C', data: '\x03' },
     { label: 'clr', data: '\x15' },  // Ctrl+U = clear input line
 ];
 
@@ -29,7 +29,7 @@ const KEY_ROW_2 = [
     { label: '↓', data: '\x1b[B' },
     { label: '←', data: '\x1b[D' },
     { label: '→', data: '\x1b[C' },
-    { label: '^C', data: '\x03' },
+    { label: '📜', data: '\x02[' },   // tmux copy mode (Ctrl+B [) — arrows scroll, q exits
     { label: '⏎', data: '\r' },
 ];
 
