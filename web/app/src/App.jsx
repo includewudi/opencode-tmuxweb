@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Terminal, Settings, ChevronRight, ChevronDown, Plus,
-  X, Menu, FolderOpen, Hash, Monitor, RefreshCw
+  X, Menu, FolderOpen, Hash, Monitor, RefreshCw,
+  Maximize2, Minimize2, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 import TerminalPane from './components/TerminalPane';
 import VoiceInput from './components/VoiceInput';
@@ -77,6 +78,7 @@ export default function App() {
   });
   const [activeTabId, setActiveTabId] = useState(() => localStorage.getItem('activeTabId') || null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
 
   // Persist tabs to localStorage
   useEffect(() => {
@@ -289,14 +291,56 @@ export default function App() {
   if (!isMobile) {
     return (
       <div className={`h-screen w-screen flex font-sans ${THEME.bg} text-[#abb2bf] overflow-hidden`}>
-        {/* Fixed sidebar */}
-        <aside className={`w-72 flex flex-col shrink-0 ${THEME.sidebar} border-r ${THEME.border}`}>
-          {sidebarContent}
-        </aside>
+        {/* Fixed sidebar — hidden in fullscreen */}
+        {!fullscreen && (
+          <aside className={`w-72 flex flex-col shrink-0 ${THEME.sidebar} border-r ${THEME.border}`}>
+            {sidebarContent}
+          </aside>
+        )}
 
         {/* Main area */}
         <div className="flex-1 flex flex-col min-w-0">
-          {tabBar}
+          {/* Tab bar with fullscreen toggle */}
+          <header className={`flex items-center h-10 ${THEME.sidebar} border-b ${THEME.border} select-none shrink-0`}>
+            {/* Sidebar toggle (only in fullscreen) */}
+            {fullscreen && (
+              <button
+                onClick={() => setFullscreen(false)}
+                className="flex items-center gap-1 px-3 h-full text-[#6b717d] hover:text-white hover:bg-white/5 transition-colors"
+                title="退出全屏"
+              >
+                <PanelLeftOpen className="w-4 h-4" />
+              </button>
+            )}
+
+            {/* Tabs */}
+            <div className="flex-1 flex items-center overflow-x-auto no-scrollbar">
+              {openTabs.map((tab) => (
+                <TabItem
+                  key={tab.id}
+                  active={tab.id === activeTabId}
+                  title={tab.title}
+                  onClick={() => setActiveTabId(tab.id)}
+                  onClose={() => closeTab(tab.id)}
+                />
+              ))}
+            </div>
+
+            {/* Fullscreen toggle */}
+            <button
+              onClick={() => setFullscreen(f => !f)}
+              className="flex items-center gap-1 px-3 h-full text-[#6b717d] hover:text-white hover:bg-white/5 transition-colors border-l border-[#2b2d31]"
+              title={fullscreen ? '退出全屏' : '全屏模式'}
+            >
+              {fullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+
+            {!fullscreen && (
+              <div className="flex items-center px-3 border-l border-black bg-[#21252b]">
+                <Plus className="w-5 h-5 text-[#6b717d] cursor-pointer hover:text-white" onClick={() => setSidebarOpen(true)} />
+              </div>
+            )}
+          </header>
 
           {/* Shake toast */}
           {shakeToast && (
@@ -312,14 +356,16 @@ export default function App() {
               {terminalViewport}
             </main>
 
-            {/* Toolbox — right panel */}
-            <div className={`w-80 flex flex-col shrink-0 border-l ${THEME.border}`}>
-              <BottomToolbox
-                onSend={sendToActiveTerminal}
-                disabled={!activeTabId}
-                voiceRef={voiceRef}
-              />
-            </div>
+            {/* Toolbox — right panel, hidden in fullscreen */}
+            {!fullscreen && (
+              <div className={`w-80 flex flex-col shrink-0 border-l ${THEME.border}`}>
+                <BottomToolbox
+                  onSend={sendToActiveTerminal}
+                  disabled={!activeTabId}
+                  voiceRef={voiceRef}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>
