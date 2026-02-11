@@ -162,6 +162,45 @@ export function useTerminal({ containerRef, paneTarget, active }) {
         });
         resizeObserver.observe(container);
 
+        // --- Touch swipe → tmux scroll (mobile) ---
+        let touchStartY = null;
+        let touchAccum = 0;
+        const SCROLL_THRESHOLD = 20; // px per scroll line
+
+        const onTouchStart = (e) => {
+            if (e.touches.length === 1) {
+                touchStartY = e.touches[0].clientY;
+                touchAccum = 0;
+            }
+        };
+        const onTouchMove = (e) => {
+            if (touchStartY === null || e.touches.length !== 1) return;
+            e.preventDefault(); // prevent page scroll
+            const deltaY = touchStartY - e.touches[0].clientY;
+            touchAccum += deltaY;
+            touchStartY = e.touches[0].clientY;
+
+            // Send scroll lines proportional to swipe distance
+            const lines = Math.trunc(touchAccum / SCROLL_THRESHOLD);
+            if (lines !== 0 && wsRef.current?.readyState === WebSocket.OPEN) {
+                touchAccum -= lines * SCROLL_THRESHOLD;
+                // Send mouse wheel: up (button 64) or down (button 65) in SGR mode
+                const button = lines > 0 ? 64 : 65;
+                const count = Math.abs(lines);
+                for (let i = 0; i < Math.min(count, 10); i++) {
+                    wsRef.current.send(JSON.stringify({
+                        type: 'input',
+                        data: `\x1b[<${button};1;1M`
+                    }));
+                }
+            }
+        };
+        const onTouchEnd = () => { touchStartY = null; touchAccum = 0; };
+
+        container.addEventListener('touchstart', onTouchStart, { passive: true });
+        container.addEventListener('touchmove', onTouchMove, { passive: false });
+        container.addEventListener('touchend', onTouchEnd, { passive: true });
+
         // Start initial connection
         connectWs();
 
@@ -171,6 +210,9 @@ export function useTerminal({ containerRef, paneTarget, active }) {
             clearTimeout(resizeTimerRef.current);
             clearTimeout(reconnectTimerRef.current);
             resizeObserver.disconnect();
+            container.removeEventListener('touchstart', onTouchStart);
+            container.removeEventListener('touchmove', onTouchMove);
+            container.removeEventListener('touchend', onTouchEnd);
             if (wsRef.current) wsRef.current.close();
             term.dispose();
             termRef.current = null;
