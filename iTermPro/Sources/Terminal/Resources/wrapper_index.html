@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal Preview</title>
+</head>
+<body>
+    <script>
+        // Mock iOS Bridge
+        window.webkit = {
+            messageHandlers: {
+                terminalBridge: {
+                    postMessage: function(msg) {
+                        console.log("Bridge Message:", msg);
+                        if (msg.type === "ready") {
+                            setTimeout(() => {
+                                window.frames[0].window.write("Welcome to VoiceTmux Terminal Preview!\r\n");
+                                window.frames[0].window.write("Try resizing the window or typing...\r\n");
+                            }, 500);
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <iframe id="terminal-frame" style="width: 100%; height: 100vh; border: none;"></iframe>
+    <script type="module">
+        // In a real app, swift generates this. Here we simulate it by fetching the raw file content 
+        // and manually constructing the HTML, OR we can just paste the logic here.
+        // Since we can't easily execute Swift in browser, we will manually reconstruct the HTML 
+        // based on TerminalScript.swift logic using the files we have.
+        
+        async function loadTerminal() {
+            // We need to fetch the raw content of files. 
+            // In this dev environment, we can't easily "import" swift.
+            // So I will just write a second file `preview.html` that contains the Assemble HTML.
+        }
+    </script>
+</body>
+</html>
