@@ -73,17 +73,44 @@ cat > config_private.json << 'EOF'
 {
   "llm": {
     "apiKey": "your-api-key",
-    "apiUrl": "https://api.deepseek.com/v1/chat/completions",
-    "model": "deepseek-chat"
+    "apiUrl": "https://api.deerapi.com/v1/chat/completions",
+    "model": "deepseek-v3.2"
   }
 }
 EOF
+```
 
-# Generate self-signed SSL cert (optional, for iPhone access)
+### SSL Certificate (Required for iPhone)
+
+**Option A: mkcert (recommended, no browser warnings)**
+
+```bash
+brew install mkcert
+mkcert -install
+cd opencode-iterm/web
+mkcert -key-file key.pem -cert-file cert.pem localhost 127.0.0.1 $(ipconfig getifaddr en0)
+```
+
+**Install CA on iPhone:**
+1. Open `http://<your-ip>:8280` in iPhone Safari (server auto-starts this page)
+2. Tap "Download CA Certificate"
+3. Settings → Downloaded Profile → Install
+4. Settings → General → About → Certificate Trust Settings → Enable
+
+**Option B: Self-signed (browser will show warning)**
+
+```bash
+cd opencode-iterm/web
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout key.pem -out cert.pem -subj "/CN=localhost"
+```
 
-# Start server
+> Without cert files, server runs in HTTP mode (no WSS, limited iPhone support).
+
+### Start Server
+
+```bash
+cd opencode-iterm/web
 node server.js
 # Or use pm2 for production:
 # pm2 start ecosystem.config.js

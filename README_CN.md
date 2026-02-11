@@ -73,17 +73,44 @@ cat > config_private.json << 'EOF'
 {
   "llm": {
     "apiKey": "your-api-key",
-    "apiUrl": "https://api.deepseek.com/v1/chat/completions",
-    "model": "deepseek-chat"
+    "apiUrl": "https://api.deerapi.com/v1/chat/completions",
+    "model": "deepseek-v3.2"
   }
 }
 EOF
+```
 
-# 生成自签名证书（可选，iPhone 访问需要 HTTPS）
+### SSL 证书配置（iPhone 访问必需）
+
+**方案 A：mkcert（推荐，浏览器无警告）**
+
+```bash
+brew install mkcert
+mkcert -install
+cd opencode-iterm/web
+mkcert -key-file key.pem -cert-file cert.pem localhost 127.0.0.1 $(ipconfig getifaddr en0)
+```
+
+**iPhone 安装 CA 证书：**
+1. 启动 server 后，用 iPhone Safari 打开 `http://<你的IP>:8280`（自动提供下载页）
+2. 点击"下载 CA 证书"
+3. 设置 → 已下载描述文件 → 安装
+4. 设置 → 通用 → 关于本机 → 证书信任设置 → 启用完全信任
+
+**方案 B：自签名证书（浏览器会有安全提示）**
+
+```bash
+cd opencode-iterm/web
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout key.pem -out cert.pem -subj "/CN=localhost"
+```
 
-# 启动服务
+> 如果没有证书文件，server 自动降级为 HTTP 模式（无 WSS，iPhone 支持有限）。
+
+### 启动服务
+
+```bash
+cd opencode-iterm/web
 node server.js
 # 或使用 pm2 守护进程：
 # pm2 start ecosystem.config.js
