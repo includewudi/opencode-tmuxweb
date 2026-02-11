@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Terminal, Settings, ChevronRight, ChevronDown, Plus,
   X, Menu, FolderOpen, Hash, Monitor, RefreshCw,
-  Maximize2, Minimize2, PanelLeftClose, PanelLeftOpen
+  Maximize2, Minimize2, PanelLeftClose, PanelLeftOpen,
+  GripVertical, FolderPlus, Bookmark, Trash2, Edit3, Check
 } from 'lucide-react';
 import TerminalPane from './components/TerminalPane';
 import VoiceInput from './components/VoiceInput';
@@ -80,6 +81,33 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
 
+  // Session groups (persisted)
+  const [sessionGroups, setSessionGroups] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('sessionGroups') || '{}'); } catch { return {}; }
+  });
+  // Session ordering within sidebar (persisted)
+  const [sessionOrder, setSessionOrder] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('sessionOrder') || '[]'); } catch { return []; }
+  });
+  // Profiles (persisted)
+  const [profiles, setProfiles] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('sidebarProfiles') || '[]'); } catch { return []; }
+  });
+  const [showProfileForm, setShowProfileForm] = useState(false);
+  const [editingGroupName, setEditingGroupName] = useState(null);
+  const [newGroupName, setNewGroupName] = useState('');
+
+  // Persist groups, order, profiles
+  useEffect(() => {
+    localStorage.setItem('sessionGroups', JSON.stringify(sessionGroups));
+  }, [sessionGroups]);
+  useEffect(() => {
+    localStorage.setItem('sessionOrder', JSON.stringify(sessionOrder));
+  }, [sessionOrder]);
+  useEffect(() => {
+    localStorage.setItem('sidebarProfiles', JSON.stringify(profiles));
+  }, [profiles]);
+
   // Persist tabs to localStorage
   useEffect(() => {
     localStorage.setItem('openTabs', JSON.stringify(openTabs));
@@ -117,13 +145,7 @@ export default function App() {
       const data = await res.json();
       rlog.info('Sessions loaded', { count: (data.sessions || []).length });
       setSessions(data.sessions || []);
-
-      // Auto-expand all sessions on first load
-      if (Object.keys(expandedNodes).length === 0) {
-        const expanded = {};
-        (data.sessions || []).forEach(s => { expanded[s.id] = true; });
-        setExpandedNodes(expanded);
-      }
+      // Tree defaults to collapsed — no auto-expand
     } catch (err) {
       rlog.error('Failed to fetch sessions', { error: err.message });
     } finally {
@@ -173,6 +195,82 @@ export default function App() {
 
   const activeTab = openTabs.find(t => t.id === activeTabId);
 
+  // ── Group helpers ──
+  const addGroup = () => {
+    const name = prompt('输入分组名称:');
+    if (name && name.trim()) {
+      setSessionGroups(prev => ({ ...prev, [name.trim()]: [] }));
+    }
+  };
+  const deleteGroup = (groupName) => {
+    setSessionGroups(prev => {
+      const next = { ...prev };
+      delete next[groupName];
+      return next;
+    });
+  };
+  const renameGroup = (oldName, newName) => {
+    if (!newName.trim() || newName === oldName) return;
+    setSessionGroups(prev => {
+      const next = { ...prev };
+      next[newName.trim()] = next[oldName] || [];
+      delete next[oldName];
+      return next;
+    });
+  };
+  const moveSessionToGroup = (sessionId, groupName) => {
+    setSessionGroups(prev => {
+      const next = { ...prev };
+      // Remove from all groups
+      Object.keys(next).forEach(g => {
+        next[g] = next[g].filter(id => id !== sessionId);
+      });
+      // Add to target group (null = ungrouped)
+      if (groupName && next[groupName]) {
+        next[groupName] = [...next[groupName], sessionId];
+      }
+      return next;
+    });
+  };
+
+  // ── Profile helpers ──
+  const addProfile = (name, target) => {
+    const id = `profile-${Date.now()}`;
+    setProfiles(prev => [...prev, { id, name, target }]);
+    setShowProfileForm(false);
+  };
+  const deleteProfile = (id) => {
+    setProfiles(prev => prev.filter(p => p.id !== id));
+  };
+
+  // ── Drag-to-reorder ──
+  const dragItem = useRef(null);
+  const dragOverItem = useRef(null);
+  const handleDragStart = (idx) => { dragItem.current = idx; };
+  const handleDragEnter = (idx) => { dragOverItem.current = idx; };
+  const handleDragEnd = () => {
+    if (dragItem.current === null || dragOverItem.current === null) return;
+    const reordered = [...orderedSessions];
+    const [dragged] = reordered.splice(dragItem.current, 1);
+    reordered.splice(dragOverItem.current, 0, dragged);
+    setSessionOrder(reordered.map(s => s.id));
+    dragItem.current = null;
+    dragOverItem.current = null;
+  };
+
+  // ── Ordered sessions ──
+  const orderedSessions = React.useMemo(() => {
+    if (!sessionOrder.length) return sessions;
+    const byId = Object.fromEntries(sessions.map(s => [s.id, s]));
+    const ordered = sessionOrder.filter(id => byId[id]).map(id => byId[id]);
+    const rest = sessions.filter(s => !sessionOrder.includes(s.id));
+    return [...ordered, ...rest];
+  }, [sessions, sessionOrder]);
+
+  // ── Grouped sessions ──
+  const groupedSessionIds = new Set(Object.values(sessionGroups).flat());
+  const ungroupedSessions = orderedSessions.filter(s => !groupedSessionIds.has(s.id));
+
   // ── Sidebar content (shared by mobile drawer & desktop fixed) ──
   const sidebarContent = (
     <>
@@ -183,6 +281,7 @@ export default function App() {
           <span className="text-sm font-bold tracking-wider text-white">SESSIONS</span>
         </div>
         <div className="flex gap-1">
+          <IconButton icon={FolderPlus} onClick={addGroup} className="opacity-60 hover:opacity-100" />
           <IconButton icon={RefreshCw} onClick={fetchSessions} />
           {isMobile && <IconButton icon={ChevronRight} onClick={() => setSidebarOpen(false)} />}
         </div>
@@ -200,13 +299,108 @@ export default function App() {
             No tmux sessions found
           </div>
         ) : (
-          <SessionTree
-            sessions={sessions}
-            expandedNodes={expandedNodes}
-            toggleExpand={toggleExpand}
-            openPane={openPane}
-            activeTarget={activeTab?.paneTarget}
-          />
+          <div className="flex flex-col gap-0.5 pb-2">
+            {/* Profiles section */}
+            {profiles.length > 0 && (
+              <div className="mb-2">
+                <div className="flex items-center px-4 py-1.5">
+                  <Bookmark className="w-3 h-3 text-amber-500 mr-2" />
+                  <span className="text-[10px] font-bold tracking-wider text-[#6b717d] uppercase">Profiles</span>
+                </div>
+                {profiles.map(p => (
+                  <div key={p.id}
+                    className="flex items-center px-4 py-2 cursor-pointer hover:bg-[#2c313a] group"
+                    onClick={() => {
+                      const pane = { target: p.target };
+                      const parts = p.target.split(':');
+                      openPane(pane, parts[0] || p.name, parts[1] || '');
+                    }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mr-3" />
+                    <span className="text-[13px] text-gray-300 flex-1">{p.name}</span>
+                    <Trash2
+                      className="w-3 h-3 text-red-400 opacity-0 group-hover:opacity-60 hover:!opacity-100 cursor-pointer"
+                      onClick={(e) => { e.stopPropagation(); deleteProfile(p.id); }}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Grouped sessions */}
+            {Object.entries(sessionGroups).map(([groupName, groupIds]) => {
+              const groupSessions = orderedSessions.filter(s => groupIds.includes(s.id));
+              if (groupSessions.length === 0 && !editingGroupName) return null;
+              return (
+                <div key={groupName} className="mb-1">
+                  <div className="flex items-center px-4 py-1.5 group">
+                    <FolderOpen className="w-3 h-3 text-[#4d78cc] mr-2" />
+                    {editingGroupName === groupName ? (
+                      <input
+                        autoFocus
+                        className="text-[10px] font-bold tracking-wider text-white bg-transparent border-b border-[#4d78cc] outline-none flex-1"
+                        defaultValue={groupName}
+                        onBlur={(e) => { renameGroup(groupName, e.target.value); setEditingGroupName(null); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { renameGroup(groupName, e.target.value); setEditingGroupName(null); } }}
+                      />
+                    ) : (
+                      <span className="text-[10px] font-bold tracking-wider text-[#6b717d] uppercase flex-1">{groupName}</span>
+                    )}
+                    <Edit3
+                      className="w-3 h-3 text-[#6b717d] opacity-0 group-hover:opacity-60 hover:!opacity-100 cursor-pointer mr-1"
+                      onClick={() => setEditingGroupName(groupName)}
+                    />
+                    <Trash2
+                      className="w-3 h-3 text-red-400 opacity-0 group-hover:opacity-60 hover:!opacity-100 cursor-pointer"
+                      onClick={() => deleteGroup(groupName)}
+                    />
+                  </div>
+                  {groupSessions.map(session => (
+                    <SessionNode
+                      key={session.id}
+                      session={session}
+                      expandedNodes={expandedNodes}
+                      toggleExpand={toggleExpand}
+                      openPane={openPane}
+                      activeTarget={activeTab?.paneTarget}
+                      onMoveToGroup={moveSessionToGroup}
+                      groups={Object.keys(sessionGroups)}
+                      onAddProfile={addProfile}
+                    />
+                  ))}
+                </div>
+              );
+            })}
+
+            {/* Ungrouped sessions (with drag-to-reorder) */}
+            {ungroupedSessions.length > 0 && Object.keys(sessionGroups).length > 0 && (
+              <div className="flex items-center px-4 py-1.5">
+                <span className="text-[10px] font-bold tracking-wider text-[#6b717d] uppercase">未分组</span>
+              </div>
+            )}
+            {ungroupedSessions.map((session, idx) => (
+              <div
+                key={session.id}
+                draggable
+                onDragStart={() => handleDragStart(orderedSessions.indexOf(session))}
+                onDragEnter={() => handleDragEnter(orderedSessions.indexOf(session))}
+                onDragEnd={handleDragEnd}
+                onDragOver={(e) => e.preventDefault()}
+              >
+                <SessionNode
+                  session={session}
+                  expandedNodes={expandedNodes}
+                  toggleExpand={toggleExpand}
+                  openPane={openPane}
+                  activeTarget={activeTab?.paneTarget}
+                  onMoveToGroup={moveSessionToGroup}
+                  groups={Object.keys(sessionGroups)}
+                  onAddProfile={addProfile}
+                  draggable
+                />
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -426,31 +620,22 @@ export default function App() {
 /**
  * SESSION TREE
  */
-const SessionTree = ({ sessions, expandedNodes, toggleExpand, openPane, activeTarget }) => (
-  <div className="flex flex-col gap-0.5 pb-10">
-    {sessions.map(session => (
-      <SessionNode
-        key={session.id}
-        session={session}
-        expandedNodes={expandedNodes}
-        toggleExpand={toggleExpand}
-        openPane={openPane}
-        activeTarget={activeTarget}
-      />
-    ))}
-  </div>
-);
-
-const SessionNode = ({ session, expandedNodes, toggleExpand, openPane, activeTarget }) => {
+const SessionNode = ({ session, expandedNodes, toggleExpand, openPane, activeTarget, onMoveToGroup, groups, onAddProfile, draggable: isDraggable }) => {
   const isExpanded = expandedNodes[session.id];
   const hasWindows = session.windows && session.windows.length > 0;
+  const [showMenu, setShowMenu] = useState(false);
 
   return (
-    <div className="relative">
+    <div className="relative group/session">
       <div
         className="flex items-center px-4 py-3 cursor-pointer hover:bg-[#2c313a] active:bg-[#3e4451] transition-colors"
         onClick={() => toggleExpand(session.id)}
+        onContextMenu={(e) => { e.preventDefault(); setShowMenu(!showMenu); }}
       >
+        {/* Drag handle */}
+        {isDraggable && (
+          <GripVertical className="w-3 h-3 text-[#3e4451] mr-1 opacity-0 group-hover/session:opacity-60 cursor-grab active:cursor-grabbing shrink-0" />
+        )}
         <div className="w-5 flex justify-center mr-1">
           {hasWindows ? (
             isExpanded ? <ChevronDown className="w-4 h-4 text-[#9da5b4]" /> : <ChevronRight className="w-4 h-4 text-[#9da5b4]" />
@@ -464,6 +649,50 @@ const SessionNode = ({ session, expandedNodes, toggleExpand, openPane, activeTar
           </span>
         )}
       </div>
+
+      {/* Context menu */}
+      {showMenu && (
+        <div className="absolute right-2 top-10 z-50 bg-[#2c313a] border border-[#3e4451] rounded-lg shadow-xl py-1 min-w-[140px]">
+          {groups.length > 0 && (
+            <>
+              <div className="px-3 py-1 text-[10px] text-[#6b717d] uppercase tracking-wider">移动到分组</div>
+              {groups.map(g => (
+                <button key={g}
+                  className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#3e4451] flex items-center gap-2"
+                  onClick={(e) => { e.stopPropagation(); onMoveToGroup(session.id, g); setShowMenu(false); }}
+                >
+                  <FolderOpen className="w-3 h-3" /> {g}
+                </button>
+              ))}
+              <button
+                className="w-full text-left px-3 py-1.5 text-xs text-gray-400 hover:bg-[#3e4451] flex items-center gap-2"
+                onClick={(e) => { e.stopPropagation(); onMoveToGroup(session.id, null); setShowMenu(false); }}
+              >
+                <X className="w-3 h-3" /> 取消分组
+              </button>
+              <div className="border-t border-[#3e4451] my-1" />
+            </>
+          )}
+          {hasWindows && session.windows.map(w => w.panes?.map(p => (
+            <button key={p.id}
+              className="w-full text-left px-3 py-1.5 text-xs text-gray-300 hover:bg-[#3e4451] flex items-center gap-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddProfile(`${session.name}:${w.name}`, p.target);
+                setShowMenu(false);
+              }}
+            >
+              <Bookmark className="w-3 h-3 text-amber-500" /> 收藏 {session.name}:{w.name}
+            </button>
+          )))}
+          <button
+            className="w-full text-left px-3 py-1.5 text-xs text-gray-400 hover:bg-[#3e4451]"
+            onClick={() => setShowMenu(false)}
+          >
+            取消
+          </button>
+        </div>
+      )}
 
       {isExpanded && hasWindows && (
         <div className="flex flex-col ml-5 border-l border-[#3e4451] pl-1">
