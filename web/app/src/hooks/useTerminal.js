@@ -73,24 +73,18 @@ export function useTerminal({ containerRef, paneTarget, active }) {
         // Initial fit — may fail if container is hidden, will retry on activation
         try { fitAddon.fit(); } catch { }
 
-        // --- WebSocket with auto-reconnect (cycling 2→3→4→5s, max 8 attempts) ---
-        const RECONNECT_DELAYS = [2000, 3000, 4000, 5000];
-        const MAX_RETRIES = 8;
+        // --- WebSocket with auto-reconnect (2s, one try then prompt reload) ---
         let manualReconnectDisposable = null;
 
         function connectWs() {
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const wsUrl = `${protocol}//${window.location.host}/ws?target=${encodeURIComponent(paneTarget)}`;
-            const attempt = reconnectAttemptRef.current;
-            rlog.info('WS connecting', { wsUrl, attempt });
+            rlog.info('WS connecting', { wsUrl });
 
-            // Clear any pending reconnect timer
             if (reconnectTimerRef.current) {
                 clearTimeout(reconnectTimerRef.current);
                 reconnectTimerRef.current = null;
             }
-
-            // Remove manual reconnect listener if exists
             if (manualReconnectDisposable) {
                 manualReconnectDisposable.dispose();
                 manualReconnectDisposable = null;
@@ -120,35 +114,24 @@ export function useTerminal({ containerRef, paneTarget, active }) {
             };
 
             ws.onclose = (e) => {
-                rlog.warn('WS closed', { paneTarget, code: e.code, reason: e.reason, wasClean: e.wasClean });
-
+                rlog.warn('WS closed', { paneTarget, code: e.code });
                 if (intentionalCloseRef.current) return;
 
                 reconnectAttemptRef.current += 1;
-                const attempts = reconnectAttemptRef.current;
 
-                if (attempts > MAX_RETRIES) {
-                    // Max retries exceeded — reload page for clean reconnect
-                    term.write(`\r\n\x1b[31m[重连失败，已尝试 ${MAX_RETRIES} 次]\x1b[0m\r\n`);
-                    term.write('\x1b[33m[3秒后刷新页面重连，按任意键立即刷新...]\x1b[0m\r\n');
-                    // Auto-reload after 3 seconds
-                    const reloadTimer = setTimeout(() => window.location.reload(), 3000);
+                if (reconnectAttemptRef.current <= 1) {
+                    // First disconnect: auto-retry once after 2s
+                    term.write('\r\n\x1b[33m[连接断开，2秒后重连...]\x1b[0m\r\n');
+                    reconnectTimerRef.current = setTimeout(() => {
+                        if (!intentionalCloseRef.current) connectWs();
+                    }, 2000);
+                } else {
+                    // Second failure: prompt manual reload
+                    term.write('\r\n\x1b[31m[重连失败]\x1b[0m \x1b[33m按任意键刷新页面\x1b[0m\r\n');
                     manualReconnectDisposable = term.onData(() => {
-                        clearTimeout(reloadTimer);
                         window.location.reload();
                     });
-                    return;
                 }
-
-                const delayIdx = (attempts - 1) % RECONNECT_DELAYS.length;
-                const delay = RECONNECT_DELAYS[delayIdx];
-                term.write(`\r\n\x1b[33m[连接断开，${delay / 1000}秒后重连... (${attempts}/${MAX_RETRIES})]\x1b[0m\r\n`);
-
-                reconnectTimerRef.current = setTimeout(() => {
-                    if (!intentionalCloseRef.current) {
-                        connectWs();
-                    }
-                }, delay);
             };
 
             ws.onerror = (e) => {
