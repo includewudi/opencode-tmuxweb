@@ -38,4 +38,10 @@
 
 .xterm-container .xterm-viewport {
     overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Allow touch scrolling on mobile (vertical swipe = scroll history) */
+.xterm-container .xterm-screen {
+    touch-action: pan-y;
 }

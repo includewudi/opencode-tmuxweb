@@ -30,7 +30,7 @@ const KEY_ROW_2 = [
     { label: '←', data: '\x1b[D' },
     { label: '→', data: '\x1b[C' },
     { label: '^C', data: '\x03' },
-    { label: '^S', data: '\x13' },
+    { label: '⏎', data: '\r' },
 ];
 
 const TABS = [
