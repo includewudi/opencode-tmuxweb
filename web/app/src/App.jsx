@@ -305,10 +305,22 @@ export default function App() {
             </div>
           )}
 
-          {/* Terminal — full remaining height */}
-          <main className="flex-1 relative overflow-hidden">
-            {terminalViewport}
-          </main>
+          {/* Terminal + Toolbox side by side */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* Terminal — fills remaining space */}
+            <main className="flex-1 relative overflow-hidden">
+              {terminalViewport}
+            </main>
+
+            {/* Toolbox — right panel */}
+            <div className={`w-80 flex flex-col shrink-0 border-l ${THEME.border}`}>
+              <BottomToolbox
+                onSend={sendToActiveTerminal}
+                disabled={!activeTabId}
+                voiceRef={voiceRef}
+              />
+            </div>
+          </div>
         </div>
       </div>
     );
