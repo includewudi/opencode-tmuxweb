@@ -11,6 +11,7 @@
     "install:all": "npm install && cd web && npm install"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "express": "^4.18.2",

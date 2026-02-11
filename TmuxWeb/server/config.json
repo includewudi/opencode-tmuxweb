@@ -1,4 +1,5 @@
 {
+  "_说明": "公共配置文件，敏感信息请放在 web/config_private.json（不提交 git）",
   "port": 8215,
   "bind": "0.0.0.0",
   "token": "tmuxweb-dev-token",
@@ -6,18 +7,47 @@
   "frontendPort": 5215,
   "tmuxSocket": null,
   "allowedOrigins": [
-    "http://localhost:5215", 
-    "http://127.0.0.1:5215",
-    "http://10.147.20.237:5215",
-    "http://172.29.15.223:5215",
-    "http://192.168.10.64:5215",
-    "http://100.64.0.28:5215"
+    "http://localhost:5215",
+    "http://127.0.0.1:5215"
   ],
+  "_summaryService_说明": "摘要服务（可选）",
   "summaryServiceUrl": "",
   "summaryServiceToken": "",
+  "_xfyun_说明": "讯飞语音识别 - 在 config_private.json 中填写真实密钥",
   "xfyun": {
-    "appId": "58110c96",
-    "apiKey": "d7a334a600966e75c13e68af559b50b8",
-    "apiSecret": "OWY5NjFlMDdjMzljMDUwZTEzMDBhMjMy"
+    "appId": "YOUR_XFYUN_APP_ID",
+    "apiKey": "YOUR_XFYUN_API_KEY",
+    "apiSecret": "YOUR_XFYUN_API_SECRET"
+  },
+  "_llm_说明": [
+    "AI 命令生成 - 支持 OpenAI 兼容 API（DeerAPI / DeepSeek / OpenAI / Moonshot 等）",
+    "默认配置对所有角色生效；可在 roles 中为特定角色配置不同模型",
+    "角色 ID: cli(命令行大神), ops(运维专家), prompt(提示词优化),",
+    "         frontend(前端优化), backend(后端优化), ui(UI优化)",
+    "每个 role 可覆盖: apiKey, apiUrl, model"
+  ],
+  "llm": {
+    "_default_说明": "所有角色的默认配置",
+    "apiKey": "",
+    "apiUrl": "https://api.deerapi.com/v1/chat/completions",
+    "model": "deepseek-v3.2",
+    "_roles_说明": "为特定角色指定不同模型（可选，不配则用默认）",
+    "roles": {
+      "_示例_cli": {
+        "_说明": "命令行大神 - 可用更擅长代码的模型",
+        "model": "deepseek-v3.2"
+      },
+      "_示例_prompt": {
+        "_说明": "提示词优化 - 可用更擅长文字的模型",
+        "apiUrl": "https://api.openai.com/v1/chat/completions",
+        "apiKey": "sk-xxx",
+        "model": "gpt-4o"
+      }
+    }
+  },
+  "_gemini_说明": "Gemini API（可选）",
+  "gemini": {
+    "apiKey": "YOUR_GEMINI_API_KEY",
+    "modelName": "gemini-1.5-pro"
   }
 }

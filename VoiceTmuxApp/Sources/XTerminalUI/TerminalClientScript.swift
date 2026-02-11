@@ -2,118 +2,164 @@ import Foundation
 
 public struct TerminalClientScript {
     public static let js = ##"""
+    // --- UI Helpers ---
+    function showToast(message, type = 'info', duration = 3000) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+        const el = document.createElement('div');
+        el.className = 'toast ' + type;
+        el.textContent = message;
+        container.appendChild(el);
+        
+        // Trigger reflow
+        el.offsetHeight;
+        el.classList.add('show');
+        
+        setTimeout(() => {
+            el.classList.remove('show');
+            setTimeout(() => {
+                if (el.parentNode) el.remove();
+            }, 300);
+        }, duration);
+    }
+
+    // 全局错误捕获，直接显示在界面上
     window.onerror = function(message, source, lineno, colno, error) {
+        const errorMsg = String(message);
+        showToast("JS Error: " + errorMsg, 'error', 5000);
         try {
             window.webkit.messageHandlers.terminalBridge.postMessage({
                 "type": "jsError",
-                "message": String(message)
+                "message": errorMsg
             });
         } catch(e) {}
     };
 
-    // Terminal Initialization
-    const term = new Terminal({
-        cursorBlink: true,
-        fontFamily: 'fontFamilyPlaceholder', // Will be replaced
-        fontSize: fontSizePlaceholder,       // Will be replaced
-        theme: { background: '#000000' },
-        allowProposedApi: true
-    });
+    // --- Terminal Setup ---
+    let term;
+    let fitAddon;
 
-    const fitAddon = new FitAddon.FitAddon();
-    term.loadAddon(fitAddon);
-    term.open(document.getElementById('terminal'));
-    term.focus();
-    fitAddon.fit();
-    
-    // Initial Resize
-    const dims = fitAddon.proposeDimensions();
-    if (dims) {
-        term.resize(dims.cols, dims.rows);
-    }
-    term.write('\x1b[2J\x1b[H');
-
-    // Debug Status Overlay
-    const statusEl = document.createElement('div');
-    statusEl.style.position = 'absolute';
-    statusEl.style.left = '6px';
-    statusEl.style.top = '6px';
-    statusEl.style.zIndex = '9999';
-    statusEl.style.fontSize = '10px';
-    statusEl.style.color = '#fff';
-    statusEl.style.background = 'rgba(0,0,0,0.5)';
-    statusEl.style.padding = '2px 4px';
-    statusEl.style.borderRadius = '4px';
-    statusEl.textContent = 'xterm (modular 2)';
-    document.body.appendChild(statusEl);
-
-    // Notify Bridge Ready
     try {
-        window.webkit.messageHandlers.terminalBridge.postMessage({
-            "type": "ready"
+        term = new Terminal({
+            cursorBlink: true,
+            cursorStyle: 'bar', // 移动端光标用 bar 更容易看清
+            fontFamily: 'fontFamilyPlaceholder',
+            fontSize: fontSizePlaceholder,
+            lineHeight: 1.2, // 增加行高，提升阅读体验
+            theme: { 
+                background: '#000000',
+                foreground: '#ffffff',
+                cursor: '#007AFF', // iOS 蓝光标
+                selectionBackground: 'rgba(0, 122, 255, 0.3)' 
+            },
+            allowProposedApi: true,
+            scrollback: 1000,
+            drawBoldTextInBrightColors: true
         });
-    } catch(e) {}
-    
-    // Input Handling
+
+        fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+        
+        const terminalElem = document.getElementById('terminal');
+        term.open(terminalElem);
+        
+        // 初始适配
+        fitAddon.fit();
+        term.focus();
+        
+        // 欢迎信息
+        // term.write('\x1b[2mTerminal Ready.\x1b[0m\r\n');
+
+    } catch (e) {
+        showToast("Init Failed: " + e.message, 'error');
+    }
+
+    // --- Interaction Logic ---
+
+    // 监听输入并传回原生层
     term.onData(data => {
         window.webkit.messageHandlers.terminalBridge.postMessage({
             "type": "input",
             "data": data
         });
     });
+    
+    // 自定义 Title 变化监听 (如果支持)
+    term.onTitleChange(title => {
+        // 可选：传回原生层更新导航栏标题
+    });
 
-    // Custom Write Function with Debugging
+    // 核心写入函数
     window.write = function(data) {
         try {
-            const container = document.getElementById('terminal');
-            statusEl.textContent = 'write len:' + data.length + 
-                ' cols=' + term.cols + ' rows=' + term.rows +
-                ' w=' + container.clientWidth + ' h=' + container.clientHeight;
             term.write(data);
         } catch(e) {
-            statusEl.textContent = 'write ERROR: ' + e.message;
-            window.webkit.messageHandlers.terminalBridge.postMessage({
-                "type": "jsError",
-                "message": "write() exception: " + e.message
-            });
+            showToast("Write Error: " + e.message, 'error');
         }
     };
 
-    window.writeFallback = function(data) {
-        statusEl.textContent = 'fallback len: ' + data.length;
-    };
-
-    // Resize Logic
-    function notifyResize() {
-        try {
-            fitAddon.fit();
-            window.webkit.messageHandlers.terminalBridge.postMessage({
-                "type": "resize",
-                "cols": term.cols,
-                "rows": term.rows
-            });
-        } catch(e) {}
-    }
-
-    new ResizeObserver(() => {
-        notifyResize();
-    }).observe(document.getElementById('terminal'));
+    // --- Layout & Resize ---
     
-    setTimeout(notifyResize, 500);
+    let resizeTimeout;
+    function handleResize() {
+        if (!term) return;
+        
+        // 重新计算尺寸
+        try {
+            // Logic fix: Capture old dimensions *before* fitting to detect change
+            const oldCols = term.cols;
+            const oldRows = term.rows;
 
-    // Public API
-    function write(data) {
-        if (window.write) {
-            window.write(data);
-        } else {
-            term.write(data);
+            fitAddon.fit();
+            
+            // Only notify native layer if dimensions actually changed
+            if (term.cols !== oldCols || term.rows !== oldRows) {
+                window.webkit.messageHandlers.terminalBridge.postMessage({
+                    "type": "resize",
+                    "cols": term.cols,
+                    "rows": term.rows
+                });
+            }
+        } catch(e) {
+            console.error(e);
         }
     }
 
-    function writeFallback(data) {
-        if (window.writeFallback) {
-            window.writeFallback(data);
+    // 使用 ResizeObserver 监听容器大小变化（比 window.onresize 更准确）
+    const resizeObserver = new ResizeObserver(entries => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(handleResize, 100); // 防抖 100ms
+    });
+    
+    const container = document.getElementById('terminal-container');
+    if (container) {
+        resizeObserver.observe(container);
+    } else {
+        resizeObserver.observe(document.getElementById('terminal'));
+    }
+
+    // 通知原生层 JS 已就绪
+    setTimeout(() => {
+        try {
+            window.webkit.messageHandlers.terminalBridge.postMessage({
+                "type": "ready"
+            });
+            handleResize(); // 再次确保尺寸正确
+        } catch(e) {}
+    }, 100);
+
+    // 暴露给外部调用
+    window.setTheme = function(themeConfig) {
+        if (term) {
+            term.options.theme = themeConfig;
         }
     }
-"""##
+    
+    window.setFontSize = function(size) {
+        if (term) {
+            term.options.fontSize = size;
+            handleResize();
+        }
+    }
+    """##
 }

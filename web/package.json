@@ -1,0 +1,14 @@
+{
+    "name": "iterm-preview",
+    "version": "1.0.0",
+    "description": "Web preview server for VoiceTmux terminal UI",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "dev": "node server.js"
+    },
+    "dependencies": {
+        "node-pty": "^1.0.0",
+        "ws": "^8.16.0"
+    }
+}

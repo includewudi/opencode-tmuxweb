@@ -86,3 +86,12 @@ iOSInjectionProject/
 node_modules/
 dist/
 *.log
+
+# Private config (API keys)
+web/config_private.json
+
+# SSL certificates
+web/*.pem
+
+# Custom roles data
+web/custom_roles.json

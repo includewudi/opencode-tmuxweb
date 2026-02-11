@@ -1,12 +1,15 @@
 const express = require('express');
 const { pool } = require('../db/pool');
 const config = require('../config.json');
+const geminiService = require('../services/gemini');
+const { execSync } = require('child_process');
 
 const taskSummariesRouter = express.Router();
 const paneSummariesRouter = express.Router();
 
 function isSummaryServiceConfigured() {
-  return config.summaryServiceUrl && config.summaryServiceUrl.trim() !== '';
+  return (config.summaryServiceUrl && config.summaryServiceUrl.trim() !== '') ||
+    (config.gemini && config.gemini.apiKey && config.gemini.apiKey.trim() !== '');
 }
 
 function parsePaneKey(paneKey) {
@@ -43,23 +46,79 @@ taskSummariesRouter.post('/:taskId/summarize', async (req, res) => {
       });
     }
 
+    // 1. Get segment info to find the pane
+    const [segments] = await pool.query(
+      `SELECT session_name, window_index, pane_index 
+       FROM tmux_task_segment 
+       WHERE id = ?`,
+      [taskId]
+    );
+
+    if (segments.length === 0) {
+      return res.status(404).json({ error: 'task_not_found' });
+    }
+
+    const { session_name, window_index, pane_index } = segments[0];
+    const paneTarget = `${session_name}:${window_index}.${pane_index}`;
+
+    // 2. Capture pane content
+    let capturedContent = '';
+    try {
+      capturedContent = execSync(`tmux capture-pane -p -t "${paneTarget}" -S -2000`, { encoding: 'utf-8' });
+    } catch (e) {
+      console.warn(`[Summarize] Failed to capture pane ${paneTarget}:`, e.message);
+      capturedContent = 'Error capturing terminal content.';
+    }
+
     const now = Math.floor(Date.now() / 1000);
     const date = new Date();
     const year = date.getFullYear();
     const mon = date.getMonth() + 1;
     const summaryJobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+    // 3. Create pending entry
     const [result] = await pool.query(
       `INSERT INTO tmux_task_summary 
        (year, mon, segment_id, summary_job_id, summary_status, ctime, mtime)
-       VALUES (?, ?, ?, ?, 'pending', ?, ?)`,
+       VALUES (?, ?, ?, ?, 'running', ?, ?)`,
       [year, mon, parseInt(taskId, 10), summaryJobId, now, now]
     );
 
+    const summaryId = result.insertId;
+
+    // 4. Trigger generation (async updates DB)
+    // We do this asynchronously so we can return the job ID immediately
+    // or we can await it if we want to return the result immediately. 
+    // Given the previous implementation returned 'pending', let's stick to that 
+    // but trigger the async process.
+
+    (async () => {
+      try {
+        console.log(`[Summarize] Generating summary for task ${taskId}...`);
+        const summary = await geminiService.generateTaskSummary(capturedContent);
+
+        await pool.query(
+          `UPDATE tmux_task_summary 
+                 SET command_summary = ?, output_summary = ?, summary_status = 'done', generated_at = ?
+                 WHERE id = ?`,
+          [summary.command_summary, summary.output_summary, Math.floor(Date.now() / 1000), summaryId]
+        );
+        console.log(`[Summarize] Summary generated for task ${taskId}`);
+      } catch (err) {
+        console.error(`[Summarize] Async generation failed for task ${taskId}:`, err);
+        await pool.query(
+          `UPDATE tmux_task_summary 
+                 SET summary_status = 'error', summary_error = ?
+                 WHERE id = ?`,
+          [err.message, summaryId]
+        );
+      }
+    })();
+
     res.json({
-      id: result.insertId,
+      id: summaryId,
       summary_job_id: summaryJobId,
-      summary_status: 'pending'
+      summary_status: 'running'
     });
   } catch (err) {
     console.error('[summaries/summarize POST]', err);
