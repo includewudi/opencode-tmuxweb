@@ -8,6 +8,11 @@
         "dev": "node server.js"
     },
     "dependencies": {
+        "@google/generative-ai": "^0.24.1",
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.6",
+        "express": "^5.2.1",
+        "mysql2": "^3.17.0",
         "node-pty": "^1.0.0",
         "ws": "^8.16.0"
     }

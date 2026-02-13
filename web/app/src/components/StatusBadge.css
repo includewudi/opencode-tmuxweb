@@ -1,0 +1,120 @@
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+}
+
+.status-badge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-badge--small {
+  font-size: 0.75rem;
+}
+
+.status-badge--small .status-badge__dot {
+  width: 6px;
+  height: 6px;
+}
+
+.status-badge--medium {
+  font-size: 0.85rem;
+}
+
+.status-badge--medium .status-badge__dot {
+  width: 10px;
+  height: 10px;
+}
+
+.status-badge--idle .status-badge__dot {
+  background: var(--zinc-600);
+  box-shadow: 0 0 0 2px rgba(113, 113, 122, 0.2);
+}
+
+.status-badge--in_progress .status-badge__dot {
+  background: var(--blue-500);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.status-badge--done .status-badge__dot {
+  background: var(--green-500);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+}
+
+.status-badge__label {
+  color: currentColor;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.status-badge--idle .status-badge__label {
+  color: var(--zinc-500);
+}
+
+.status-badge--in_progress .status-badge__label {
+  color: var(--blue-500);
+}
+
+.status-badge--done .status-badge__label {
+  color: var(--green-500);
+}
+
+.status-badge--editable {
+  position: relative;
+  cursor: pointer;
+}
+
+.status-badge__select {
+  appearance: none;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 2px 16px 2px 4px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.status-badge__select:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.status-badge__select:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.status-badge--idle .status-badge__select {
+  color: var(--zinc-500);
+}
+
+.status-badge--in_progress .status-badge__select {
+  color: var(--blue-500);
+}
+
+.status-badge--done .status-badge__select {
+  color: var(--green-500);
+}
+
+.status-badge__select option {
+  background: var(--zinc-900);
+  color: var(--zinc-200);
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 8px 3px rgba(59, 130, 246, 0.4);
+  }
+}

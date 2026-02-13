@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
+import { getToken } from '../utils/auth';
 
 /**
  * VoiceInput — Xunfei speech-to-text button
@@ -20,8 +21,13 @@ const VoiceInput = forwardRef(function VoiceInput({ onText, onPartial, disabled 
     const processorRef = useRef(null);
     const audioContextRef = useRef(null);
     const resultsRef = useRef(new Map());
+    const connectTimeoutRef = useRef(null);
 
     const cleanup = useCallback(() => {
+        if (connectTimeoutRef.current) {
+            clearTimeout(connectTimeoutRef.current);
+            connectTimeoutRef.current = null;
+        }
         if (processorRef.current) {
             processorRef.current.disconnect();
             processorRef.current = null;
@@ -133,18 +139,30 @@ const VoiceInput = forwardRef(function VoiceInput({ onText, onPartial, disabled 
 
             // Connect to speech WebSocket (via Vite proxy → backend)
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws/speech`;
+            const token = getToken();
+            const wsUrl = `${protocol}//${window.location.host}/ws/speech?token=${encodeURIComponent(token)}`;
             const ws = new WebSocket(wsUrl);
             wsRef.current = ws;
 
             ws.onopen = () => {
                 ws.send(JSON.stringify({ type: 'start' }));
+                // Timeout: if Xunfei doesn't send 'ready' within 10s, abort
+                connectTimeoutRef.current = setTimeout(() => {
+                    console.warn('[Voice] Connection timeout — no ready message');
+                    cleanup();
+                    setStatus('idle');
+                    setPartialText('');
+                }, 10000);
             };
 
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
 
                 if (data.type === 'ready') {
+                    if (connectTimeoutRef.current) {
+                        clearTimeout(connectTimeoutRef.current);
+                        connectTimeoutRef.current = null;
+                    }
                     setStatus('recording');
                     startAudioCapture(stream);
                 } else if (data.type === 'partial') {
