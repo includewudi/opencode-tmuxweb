@@ -10,27 +10,40 @@ import AiCommandTab from './AiCommandTab';
  * Snippets panel for saved custom commands, AI placeholder.
  */
 
-// Quick-key definitions — 2 rows
-const KEY_ROW_1 = [
-    { label: 'esc', data: '\x1b' },
-    { label: 'tab', data: '\t' },
-    { label: '|', data: '|' },
-    { label: '/', data: '/' },
-    { label: '-', data: '-' },
-    { label: '~', data: '~' },
-    { label: '^C', data: '\x03' },
-    { label: 'clr', data: '\x15' },  // Ctrl+U = clear input line
-];
+function useTmuxPrefix() {
+    const [prefix, setPrefix] = useState({ code: '\x02', label: 'Ctrl+B' });
+    
+    useEffect(() => {
+        fetch('/api/tmux-config')
+            .then(res => res.json())
+            .then(data => setPrefix(data))
+            .catch(() => {});
+    }, []);
+    
+    return prefix;
+}
 
-const KEY_ROW_2 = [
-    { label: 'ctrl', modifier: 'ctrl' },
-    { label: 'alt', modifier: 'alt' },
-    { label: '↑', data: '\x1b[A' },
-    { label: '↓', data: '\x1b[B' },
-    { label: '←', data: '\x1b[D' },
-    { label: '→', data: '\x1b[C' },
-    { label: '📜', data: '\x02[' },   // tmux copy mode (Ctrl+B [) — arrows scroll, q exits
-    { label: '⏎', data: '\r' },
+const createKeyRows = (prefixCode) => [
+    [
+        { label: 'esc', data: '\x1b' },
+        { label: 'tab', data: '\t' },
+        { label: '|', data: '|' },
+        { label: '/', data: '/' },
+        { label: '-', data: '-' },
+        { label: '~', data: '~' },
+        { label: '^C', data: '\x03' },
+        { label: 'clr', data: '\x15' },
+    ],
+    [
+        { label: 'ctrl', modifier: 'ctrl' },
+        { label: 'alt', modifier: 'alt' },
+        { label: '↑', data: '\x1b[A' },
+        { label: '↓', data: '\x1b[B' },
+        { label: '←', data: '\x1b[D' },
+        { label: '→', data: '\x1b[C' },
+        { label: '📜', data: prefixCode + '[', title: 'tmux copy mode' },
+        { label: '⏎', data: '\r' },
+    ],
 ];
 
 const TABS = [
@@ -47,8 +60,11 @@ export default function BottomToolbox({ onSend, disabled, voiceRef }) {
     const [showAddForm, setShowAddForm] = useState(false);
     const [newName, setNewName] = useState('');
     const [newCmd, setNewCmd] = useState('');
-    const [keyboardMode, setKeyboardMode] = useState(false); // true = iOS keyboard shown, toolbox hidden
-    const [voiceText, setVoiceText] = useState(''); // Voice text → AI tab input
+    const [keyboardMode, setKeyboardMode] = useState(false);
+    const [voiceText, setVoiceText] = useState('');
+    
+    const tmuxPrefix = useTmuxPrefix();
+    const KEY_ROWS = createKeyRows(tmuxPrefix.code);
 
     // Fetch snippets
     const fetchSnippets = useCallback(async () => {
@@ -173,12 +189,12 @@ export default function BottomToolbox({ onSend, disabled, voiceRef }) {
                 >
                     <LayoutGrid className="w-4 h-4" />
                 </button>
-                {KEY_ROW_1.map((key, i) => renderKey(key, i))}
+                {KEY_ROWS[0].map((key, i) => renderKey(key, i))}
             </div>
 
             {/* QUICK-KEY ROW 2 */}
             <div className="flex items-center gap-1 px-2 h-10 bg-[#1a1c20] border-b border-[#2b2d31] shrink-0">
-                {KEY_ROW_2.map((key, i) => renderKey(key, i))}
+                {KEY_ROWS[1].map((key, i) => renderKey(key, i))}
             </div>
 
             {/* PANEL CONTENT — scrollable */}

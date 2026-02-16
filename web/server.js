@@ -53,6 +53,26 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// --- Tmux Config ---
+function getTmuxPrefix() {
+  try {
+    const prefix = execSync('tmux show-option -gv prefix', { encoding: 'utf8', timeout: 2000 }).trim();
+    const match = prefix.match(/^C-(.)$/);
+    if (match) {
+      const key = match[1].toUpperCase();
+      const ctrlCode = String.fromCharCode(key.charCodeAt(0) - 64);
+      return { prefix, key, code: ctrlCode, label: `Ctrl+${key}` };
+    }
+    return { prefix, key: null, code: '\x02', label: 'Ctrl+B (default)' };
+  } catch (e) {
+    return { prefix: 'C-b', key: 'B', code: '\x02', label: 'Ctrl+B (default)' };
+  }
+}
+
+app.get('/api/tmux-config', (req, res) => {
+  res.json(getTmuxPrefix());
+});
+
 app.get('/healthz', async (req, res) => {
   const timestamp = new Date().toISOString();
   try {

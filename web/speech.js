@@ -8,12 +8,14 @@
  */
 const crypto = require('crypto');
 const WebSocket = require('ws');
+const { HttpsProxyAgent } = require('https-proxy-agent');
 const config = require('./config');
 
-// --- Xunfei Credentials ---
-// Uses 中英识别大模型 (slm / zh_cn)
-const XFYUN_HOST = 'iat.cn-huabei-1.xf-yun.com';
-const XFYUN_PATH = '/v1';
+const XFYUN_HOST = config.xfyun?.host || 'iat.cn-huabei-1.xf-yun.com';
+const XFYUN_PATH = config.xfyun?.path || '/v1';
+
+const PROXY_URL = process.env.https_proxy || process.env.HTTPS_PROXY || null;
+const proxyAgent = PROXY_URL ? new HttpsProxyAgent(PROXY_URL) : undefined;
 
 const XFYUN_CONFIG = {
     appId: process.env.XFYUN_APP_ID || config.xfyun?.appId || '',
@@ -153,11 +155,12 @@ function handleSpeechConnection(clientWs) {
             const data = JSON.parse(message.toString());
 
             if (data.type === 'start') {
-                // Connect to Xunfei
                 const url = generateAuthUrl();
                 console.log('[Speech] Connecting to Xunfei...');
+                console.log('[Speech] URL:', url.substring(0, 100) + '...');
+                console.log('[Speech] Proxy:', proxyAgent ? 'enabled' : 'disabled');
 
-                xfyunWs = new WebSocket(url);
+                xfyunWs = new WebSocket(url, { agent: proxyAgent });
 
                 xfyunWs.on('open', () => {
                     console.log('[Speech] Xunfei connected');
