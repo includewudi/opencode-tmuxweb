@@ -5,6 +5,7 @@ import { Header } from '../components/Header';
 import { TerminalKeyboard } from '../components/TerminalKeyboard';
 import { AccessoryBar } from '../components/AccessoryBar';
 import { XtermTerminal, XtermTerminalRef } from '../components/XtermTerminal';
+import { TerminalInputPanel } from '../components/TerminalInputPanel';
 import { sshService, tmuxService } from '../services';
 import remoteLogger from '../services/remoteLogger';
 import { ReconnectStateMachine, ReconnectContext } from '../utils/reconnectStateMachine';
@@ -362,6 +363,7 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
         </View>
 
         <AccessoryBar onPaste={handlePaste} isConnected={isConnected} />
+        <TerminalInputPanel onInput={sendToShell} isConnected={isConnected} />
 
         {showSystemKeyboard && (
           <TextInput

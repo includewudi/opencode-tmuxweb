@@ -42,7 +42,7 @@ export function useTerminal({ containerRef, paneTarget, active }) {
             cursorBlink: true,
             cursorStyle: 'bar',
             fontFamily: "'Menlo', 'Courier New', monospace",
-            fontSize: 13,
+            fontSize: 6.5,
             lineHeight: 1.2,
             theme: {
                 background: '#0f1115',
