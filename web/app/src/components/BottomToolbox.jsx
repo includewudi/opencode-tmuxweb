@@ -53,7 +53,7 @@ const TABS = [
 
 const preventFocus = (e) => e.preventDefault();
 
-export default function BottomToolbox({ onSend, disabled, voiceRef }) {
+export default function BottomToolbox({ onSend, disabled, voiceRef, fontSize, onFontSizeChange }) {
     const [activeTab, setActiveTab] = useState('snippets');
     const [activeModifier, setActiveModifier] = useState(null);
     const [snippets, setSnippets] = useState([]);
@@ -179,18 +179,36 @@ export default function BottomToolbox({ onSend, disabled, voiceRef }) {
         <div className="flex flex-col bg-[#13151a] border-t border-[#2b2d31] select-none"
             style={{ height: '50%', minHeight: 0 }}>
 
-            {/* QUICK-KEY ROW 1 + grid toggle */}
-            <div className="flex items-center gap-1 px-2 h-10 bg-[#1a1c20] border-b border-[#1e2028] shrink-0">
-                <button
-                    onClick={toggleKeyboard}
-                    onMouseDown={preventFocus}
-                    className="flex items-center justify-center w-9 h-[34px] rounded-md bg-[#2c313a] text-[#abb2bf] hover:bg-[#3e4451] active:bg-[#4d78cc] active:text-white transition-all shrink-0"
-                    style={{ touchAction: 'manipulation' }}
-                >
-                    <LayoutGrid className="w-4 h-4" />
-                </button>
-                {KEY_ROWS[0].map((key, i) => renderKey(key, i))}
-            </div>
+             {/* QUICK-KEY ROW 1 + grid toggle */}
+             <div className="flex items-center gap-1 px-2 h-10 bg-[#1a1c20] border-b border-[#1e2028] shrink-0">
+                 <button
+                     onClick={toggleKeyboard}
+                     onMouseDown={preventFocus}
+                     className="flex items-center justify-center w-9 h-[34px] rounded-md bg-[#2c313a] text-[#abb2bf] hover:bg-[#3e4451] active:bg-[#4d78cc] active:text-white transition-all shrink-0"
+                     style={{ touchAction: 'manipulation' }}
+                 >
+                     <LayoutGrid className="w-4 h-4" />
+                 </button>
+                 {/* Font size slider — compact inline */}
+                 <div className="flex items-center gap-1 px-1 shrink-0" onMouseDown={preventFocus} onTouchStart={preventFocus}>
+                     <span className="text-[10px] text-[#6b717d] tabular-nums w-4 text-right">{fontSize}</span>
+                     <input
+                         type="range"
+                         min={6}
+                         max={12}
+                         step={0.5}
+                         value={fontSize || 9}
+                         onChange={(e) => onFontSizeChange?.(parseFloat(e.target.value))}
+                         onMouseDown={preventFocus}
+                         onTouchStart={(e) => e.stopPropagation()}
+                         className="w-16 h-1 appearance-none bg-[#2c313a] rounded-full cursor-pointer
+                             [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3
+                             [&::-webkit-slider-thumb]:bg-[#4d78cc] [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:cursor-pointer"
+                         style={{ touchAction: 'none' }}
+                     />
+                 </div>
+                 {KEY_ROWS[0].map((key, i) => renderKey(key, i))}
+             </div>
 
             {/* QUICK-KEY ROW 2 */}
             <div className="flex items-center gap-1 px-2 h-10 bg-[#1a1c20] border-b border-[#2b2d31] shrink-0">

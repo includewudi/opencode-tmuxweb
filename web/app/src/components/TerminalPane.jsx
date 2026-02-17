@@ -8,10 +8,11 @@ import { useTerminal } from '../hooks/useTerminal';
  *   paneTarget - tmux pane target (e.g. "session:0.0")
  *   active     - whether this pane is currently visible
  *   onSendRef  - callback receiving a sendInput(text) function for external input (e.g. voice)
+ *   fontSize   - font size for the terminal (default 9)
  */
-export default function TerminalPane({ paneTarget, active, onSendRef }) {
+export default function TerminalPane({ paneTarget, active, onSendRef, fontSize }) {
     const containerRef = useRef(null);
-    const { ws } = useTerminal({ containerRef, paneTarget, active });
+    const { ws } = useTerminal({ containerRef, paneTarget, active, fontSize });
 
     // Register send function for external callers (voice input, etc.)
     useEffect(() => {

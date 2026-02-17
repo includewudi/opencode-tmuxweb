@@ -95,6 +95,10 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem('openTabs') || '[]'); } catch { return []; }
   });
   const [activeTabId, setActiveTabId] = useState(() => localStorage.getItem('activeTabId') || null);
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem('terminalFontSize');
+    return saved !== null ? parseFloat(saved) : 9;
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [groupSheetOpen, setGroupSheetOpen] = useState(false);
@@ -104,6 +108,10 @@ export default function App() {
     localStorage.setItem('openTabs', JSON.stringify(openTabs));
     localStorage.setItem('activeTabId', activeTabId || '');
   }, [openTabs, activeTabId]);
+
+  useEffect(() => {
+    localStorage.setItem('terminalFontSize', fontSize.toString());
+  }, [fontSize]);
 
   // Refs for terminal write callbacks (keyed by tab id)
   const terminalSendRefs = useRef({});
@@ -298,16 +306,17 @@ export default function App() {
   // ── Terminal viewport (shared) ──
   const terminalViewport = (
     <>
-      {activeTab ? (
-        openTabs.map(tab => (
-          <div key={tab.id} className={`absolute inset-0 ${tab.id === activeTabId ? '' : 'hidden'}`}>
-            <TerminalPane
-              paneTarget={tab.paneTarget}
-              active={tab.id === activeTabId}
-              onSendRef={(sendFn) => { terminalSendRefs.current[tab.id] = sendFn; }}
-            />
-          </div>
-        ))
+       {activeTab ? (
+         openTabs.map(tab => (
+           <div key={tab.id} className={`absolute inset-0 ${tab.id === activeTabId ? '' : 'hidden'}`}>
+             <TerminalPane
+               paneTarget={tab.paneTarget}
+               active={tab.id === activeTabId}
+               onSendRef={(sendFn) => { terminalSendRefs.current[tab.id] = sendFn; }}
+               fontSize={fontSize}
+             />
+           </div>
+         ))
       ) : (
         <div className="flex flex-col items-center justify-center h-full text-[#6b717d] gap-4">
           <Terminal className="w-12 h-12 opacity-30" />
@@ -424,16 +433,18 @@ export default function App() {
               {terminalViewport}
             </main>
 
-            {/* Toolbox — right panel, hidden in fullscreen */}
-            {!fullscreen && (
-              <div className={`w-80 flex flex-col shrink-0 border-l ${THEME.border}`}>
-                <BottomToolbox
-                  onSend={sendToActiveTerminal}
-                  disabled={!activeTabId}
-                  voiceRef={voiceRef}
-                />
-              </div>
-            )}
+             {/* Toolbox — right panel, hidden in fullscreen */}
+             {!fullscreen && (
+               <div className={`w-80 flex flex-col shrink-0 border-l ${THEME.border}`}>
+                 <BottomToolbox
+                   onSend={sendToActiveTerminal}
+                   disabled={!activeTabId}
+                   voiceRef={voiceRef}
+                   fontSize={fontSize}
+                   onFontSizeChange={setFontSize}
+                 />
+               </div>
+             )}
 
             {!fullscreen && detailsPanelOpen && selectedPaneKey && currentProfile && (
               <div className={`w-80 flex flex-col shrink-0 border-l ${THEME.border} overflow-y-auto`}>
@@ -502,12 +513,14 @@ export default function App() {
         </main>
       </div>
 
-      {/* BOTTOM TOOLBOX — bottom half */}
-      <BottomToolbox
-        onSend={sendToActiveTerminal}
-        disabled={!activeTabId}
-        voiceRef={voiceRef}
-      />
+       {/* BOTTOM TOOLBOX — bottom half */}
+       <BottomToolbox
+         onSend={sendToActiveTerminal}
+         disabled={!activeTabId}
+         voiceRef={voiceRef}
+         fontSize={fontSize}
+         onFontSizeChange={setFontSize}
+       />
 
       {currentProfile && (
         <GroupManagerSheet

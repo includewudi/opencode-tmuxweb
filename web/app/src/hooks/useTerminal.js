@@ -11,8 +11,9 @@ import rlog from '../utils/rlog';
  * @param {HTMLElement} options.containerRef - Ref to the DOM container
  * @param {string} options.paneTarget - Target pane identifier (e.g. session:window.pane) 
  * @param {boolean} options.active - Whether this terminal is the active/visible one
+ * @param {number} options.fontSize - Font size for the terminal (default 9)
  */
-export function useTerminal({ containerRef, paneTarget, active }) {
+export function useTerminal({ containerRef, paneTarget, active, fontSize = 9 }) {
     const termRef = useRef(null);
     const fitRef = useRef(null);
     const wsRef = useRef(null);
@@ -42,7 +43,7 @@ export function useTerminal({ containerRef, paneTarget, active }) {
             cursorBlink: true,
             cursorStyle: 'bar',
             fontFamily: "'Menlo', 'Courier New', monospace",
-            fontSize: 6.5,
+            fontSize: fontSize,
             lineHeight: 1.2,
             theme: {
                 background: '#0f1115',
@@ -220,6 +221,16 @@ export function useTerminal({ containerRef, paneTarget, active }) {
             wsRef.current = null;
         };
     }, [paneTarget]);
+
+    useEffect(() => {
+        if (termRef.current && fitRef.current) {
+            termRef.current.options.fontSize = fontSize;
+            try { fitRef.current.fit(); } catch {}
+            if (wsRef.current?.readyState === WebSocket.OPEN) {
+                wsRef.current.send(JSON.stringify({ type: 'resize', cols: termRef.current.cols, rows: termRef.current.rows }));
+            }
+        }
+    }, [fontSize]);
 
     // Re-fit when becoming active — with retries for iOS layout settling
     useEffect(() => {
