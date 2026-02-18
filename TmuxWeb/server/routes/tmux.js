@@ -59,6 +59,29 @@ router.get('/tree', (req, res) => {
   res.json({ sessions });
 });
 
+router.get('/config', (req, res) => {
+  try {
+    const raw = runTmuxCommand('show-option -gv prefix');
+    if (!raw) {
+      return res.json({ code: '\x02', label: 'Ctrl+B', raw: 'C-b' });
+    }
+    const match = raw.match(/^C-(.+)$/i);
+    if (match) {
+      const key = match[1].toLowerCase();
+      const ctrlCode = key.charCodeAt(0) - 96;
+      return res.json({
+        code: String.fromCharCode(ctrlCode),
+        label: `Ctrl+${key.toUpperCase()}`,
+        raw,
+      });
+    }
+    res.json({ code: raw, label: raw, raw });
+  } catch (err) {
+    console.error('[tmux config]', err);
+    res.json({ code: '\x02', label: 'Ctrl+B', raw: 'C-b' });
+  }
+});
+
 router.put('/windows/:sessionName/:windowIndex/rename', (req, res) => {
   const { sessionName, windowIndex } = req.params;
   const { name } = req.body;
@@ -75,6 +98,31 @@ router.put('/windows/:sessionName/:windowIndex/rename', (req, res) => {
     res.json({ success: true, name: sanitizedName });
   } catch (err) {
     res.status(500).json({ error: 'tmux_error', message: err.message });
+  }
+});
+
+// GET /api/tmux/pane-mode?paneId=%XX
+// Returns { alternate_on, mouse_any_flag } for deciding scroll strategy
+router.get('/pane-mode', (req, res) => {
+  const { paneId } = req.query;
+  if (!paneId) {
+    return res.status(400).json({ error: 'missing_paneId', message: 'paneId is required' });
+  }
+  try {
+    const raw = runTmuxCommand(
+      `display-message -t "${paneId}" -p "#{alternate_on} #{mouse_any_flag}"`
+    );
+    if (raw === null) {
+      return res.status(404).json({ error: 'pane_not_found', message: `Pane ${paneId} not found` });
+    }
+    const parts = raw.split(' ');
+    res.json({
+      alternate_on: parts[0] === '1',
+      mouse_any_flag: parts[1] === '1',
+    });
+  } catch (err) {
+    console.error('[tmux pane-mode]', err);
+    res.status(500).json({ error: 'internal_error', message: err.message });
   }
 });
 
