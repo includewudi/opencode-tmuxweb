@@ -89,9 +89,12 @@ dist/
 
 # Private config (API keys)
 web/config_private.json
+TmuxWeb/server/config_private.json
+**/config_private.json
 
 # SSL certificates
 web/*.pem
+TmuxWeb/server/*.pem
 
 # Custom roles data
 web/custom_roles.json

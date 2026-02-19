@@ -1,21 +1,34 @@
-import { useState, useEffect } from 'react'
-import { Settings, LogOut, ChevronLeft, ChevronRight, Menu, X, Smartphone } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Settings, LogOut, ChevronLeft, ChevronRight, Menu, X, Smartphone, Maximize2, Minimize2 } from 'lucide-react'
 import { TmuxTree } from './components/TmuxTree'
 import { TerminalTabs } from './components/TerminalTabs'
 import { LoginModal } from './components/LoginModal'
 import { ProfileSelector } from './components/ProfileSelector'
 import { GroupManager } from './components/GroupManager'
 import { PaneDetails } from './components/PaneDetails'
+import { DesktopToolbox } from './components/DesktopToolbox'
 import { checkAuth, logout } from './utils/auth'
 import { isMobile } from './utils/platform'
 import { TmuxSession, OpenTab, Profile, SessionGroup } from './types'
+import { VoiceInputHandle } from './components/VoiceInput'
 import './styles/app.css'
+
+function loadTabs(): OpenTab[] {
+  try {
+    const raw = localStorage.getItem('openTabs')
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function loadActiveTabId(): string | null {
+  return localStorage.getItem('activeTabId') || null
+}
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [sessions, setSessions] = useState<TmuxSession[]>([])
-  const [tabs, setTabs] = useState<OpenTab[]>([])
-  const [activeTabId, setActiveTabId] = useState<string | null>(null)
+  const [tabs, setTabs] = useState<OpenTab[]>(loadTabs)
+  const [activeTabId, setActiveTabId] = useState<string | null>(loadActiveTabId)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
@@ -27,8 +40,35 @@ export default function App() {
   const [statusRefreshToken, setStatusRefreshToken] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [showMobileHint, setShowMobileHint] = useState(() => isMobile())
+  const [fullscreen, setFullscreen] = useState(false)
+
+  const terminalSendRefs = useRef<Record<string, (text: string) => void>>({})
+  const voiceRef = useRef<VoiceInputHandle>(null)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'M') {
+        e.preventDefault()
+        voiceRef.current?.toggle()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const handleStatusChanged = () => setStatusRefreshToken(prev => prev + 1)
+
+  useEffect(() => {
+    localStorage.setItem('openTabs', JSON.stringify(tabs))
+  }, [tabs])
+
+  useEffect(() => {
+    if (activeTabId) {
+      localStorage.setItem('activeTabId', activeTabId)
+    } else {
+      localStorage.removeItem('activeTabId')
+    }
+  }, [activeTabId])
 
   useEffect(() => {
     checkAuth().then(ok => setIsAuthenticated(ok))
@@ -105,10 +145,16 @@ export default function App() {
   }
 
   function closeTab(tabId: string) {
-    setTabs(prev => prev.filter(t => t.id !== tabId))
-    if (activeTabId === tabId) {
-      setActiveTabId(tabs.length > 1 ? tabs[0].id : null)
-    }
+    setTabs(prev => {
+      const filtered = prev.filter(t => t.id !== tabId)
+      if (activeTabId === tabId && filtered.length > 0) {
+        setActiveTabId(filtered[filtered.length - 1].id)
+      } else if (activeTabId === tabId) {
+        setActiveTabId(null)
+      }
+      return filtered
+    })
+    delete terminalSendRefs.current[tabId]
   }
 
   function handlePaneSelect(paneKey: string) {
@@ -119,6 +165,16 @@ export default function App() {
   function toggleDetailsPanel() {
     setDetailsPanelOpen(!detailsPanelOpen)
   }
+
+  const handleSendRef = useCallback((tabId: string, sendFn: (text: string) => void) => {
+    terminalSendRefs.current[tabId] = sendFn
+  }, [])
+
+  const sendToActiveTerminal = useCallback((text: string) => {
+    if (activeTabId && terminalSendRefs.current[activeTabId]) {
+      terminalSendRefs.current[activeTabId](text)
+    }
+  }, [activeTabId])
 
   if (isAuthenticated === null) {
     return <div className="loading">Loading...</div>
@@ -139,7 +195,7 @@ export default function App() {
   const showDetailsPanel = selectedPaneKey && currentProfile
 
   return (
-    <div className="app">
+    <div className={`app ${fullscreen ? 'app-fullscreen' : ''}`}>
       {showMobileHint && (
         <div className="mobile-hint">
           <Smartphone size={16} />
@@ -148,52 +204,57 @@ export default function App() {
           <button className="mobile-hint-close" onClick={() => setShowMobileHint(false)}>×</button>
         </div>
       )}
-      <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
-        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-      </button>
+
+      {!fullscreen && (
+        <button className="sidebar-toggle" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
+      )}
       
       {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
       
-      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
-          <ProfileSelector 
-            currentProfile={currentProfile} 
-            onProfileChange={handleProfileChange} 
-          />
-          <div className="header-actions">
-            <button 
-              className="group-btn" 
-              onClick={() => setShowGroupManager(!showGroupManager)}
-              title="Manage groups"
-            >
-              <Settings size={16} />
-            </button>
-            <button className="logout-btn" onClick={handleLogout} title="Sign out">
-              <LogOut size={16} />
-            </button>
+      {!fullscreen && (
+        <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+          <div className="sidebar-header">
+            <ProfileSelector 
+              currentProfile={currentProfile} 
+              onProfileChange={handleProfileChange} 
+            />
+            <div className="header-actions">
+              <button 
+                className="group-btn" 
+                onClick={() => setShowGroupManager(!showGroupManager)}
+                title="Manage groups"
+              >
+                <Settings size={16} />
+              </button>
+              <button className="logout-btn" onClick={handleLogout} title="Sign out">
+                <LogOut size={16} />
+              </button>
+            </div>
           </div>
-        </div>
-        
-        {showGroupManager && currentProfile && (
-          <GroupManager 
-            profileKey={currentProfile.profile_key}
+          
+          {showGroupManager && currentProfile && (
+            <GroupManager 
+              profileKey={currentProfile.profile_key}
+              sessions={sessions}
+              onGroupsChanged={fetchTree}
+            />
+          )}
+          
+          <TmuxTree 
             sessions={sessions}
-            onGroupsChanged={fetchTree}
+            groups={groups}
+            profileId={currentProfile?.id}
+            profileKey={currentProfile?.profile_key}
+            onSelectPane={openPane} 
+            onRefresh={fetchTree}
+            onOrderChange={() => currentProfile && fetchGroups(currentProfile.profile_key)}
+            onPaneContextMenu={handlePaneSelect}
+            statusRefreshToken={statusRefreshToken}
           />
-        )}
-        
-        <TmuxTree 
-          sessions={sessions}
-          groups={groups}
-          profileId={currentProfile?.id}
-          profileKey={currentProfile?.profile_key}
-          onSelectPane={openPane} 
-          onRefresh={fetchTree}
-          onOrderChange={() => currentProfile && fetchGroups(currentProfile.profile_key)}
-          onPaneContextMenu={handlePaneSelect}
-          statusRefreshToken={statusRefreshToken}
-        />
-      </aside>
+        </aside>
+      )}
       
       <main className={`main ${showDetailsPanel && detailsPanelOpen ? 'with-details' : ''}`}>
         <TerminalTabs
@@ -201,10 +262,41 @@ export default function App() {
           activeTabId={activeTabId}
           onSelectTab={setActiveTabId}
           onCloseTab={closeTab}
+          onSendRef={handleSendRef}
+          headerRight={
+            <>
+              {fullscreen && (
+                <button
+                  className="fullscreen-sidebar-btn"
+                  onClick={() => setFullscreen(false)}
+                  title="退出全屏"
+                >
+                  <Menu size={16} />
+                </button>
+              )}
+              <button
+                className="fullscreen-btn"
+                onClick={() => setFullscreen(f => !f)}
+                title={fullscreen ? '退出全屏' : '全屏模式'}
+              >
+                {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+              </button>
+            </>
+          }
         />
       </main>
 
-      {showDetailsPanel && (
+      {!fullscreen && (
+        <aside className="toolbox-panel">
+          <DesktopToolbox
+            onSend={sendToActiveTerminal}
+            disabled={!activeTabId}
+            voiceRef={voiceRef}
+          />
+        </aside>
+      )}
+
+      {!fullscreen && showDetailsPanel && (
         <aside className={`details-panel ${detailsPanelOpen ? 'open' : 'collapsed'}`}>
           <button 
             className="details-toggle" 

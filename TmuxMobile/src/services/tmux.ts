@@ -153,6 +153,12 @@ class TmuxService {
     await sshService.execute(serverId, SHELL_PREFIX + `tmux send-keys -t "${target}" -l "${keys}"`);
   }
 
+  async selectWindow(serverId: number, sessionName: string, windowIndex: number): Promise<void> {
+    remoteLogger.log('TmuxService', 'selectWindow', { serverId, sessionName, windowIndex });
+    await sshService.writeToShell(serverId, `\x02:select-window -t ${windowIndex}\r`);
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
   async detach(serverId: number): Promise<void> {
     await sshService.writeToShell(serverId, '\x02d');
   }

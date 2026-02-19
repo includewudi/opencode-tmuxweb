@@ -1,0 +1,251 @@
+.role-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.role-modal {
+  width: 100%;
+  max-width: 400px;
+  max-height: 80vh;
+  background: #1e2028;
+  border: 1px solid #2c313a;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+}
+
+.role-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid #2c313a;
+  flex-shrink: 0;
+}
+
+.role-modal-title {
+  color: #abb2bf;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.role-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  color: #7a818c;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.role-modal-close:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.role-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 16px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.role-modal-empty {
+  color: #555a66;
+  font-size: 13px;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.role-modal-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #2c313a;
+}
+
+.role-modal-item:last-child {
+  border-bottom: none;
+}
+
+.role-modal-item-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.role-modal-item-emoji {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.role-modal-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.role-modal-item-label {
+  color: #abb2bf;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.role-modal-item-desc {
+  color: #555a66;
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-modal-item-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.role-modal-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  color: #7a818c;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 0;
+}
+
+.role-modal-action-btn:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.role-modal-delete-btn {
+  color: #e06c75;
+}
+
+.role-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  margin-top: 8px;
+  background: #13151a;
+  border: 1px solid #2c313a;
+  border-radius: 8px;
+}
+
+.role-modal-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #abb2bf;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.role-modal-row {
+  display: flex;
+  gap: 6px;
+}
+
+.role-modal-input {
+  width: 100%;
+  background: #1e2028;
+  border: 1px solid #2c313a;
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #abb2bf;
+  font-size: 13px;
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.role-modal-input:focus {
+  border-color: #4d78cc;
+}
+
+.role-modal-input-emoji {
+  width: 56px;
+  flex-shrink: 0;
+}
+
+.role-modal-textarea {
+  width: 100%;
+  background: #1e2028;
+  border: 1px solid #2c313a;
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #abb2bf;
+  font-size: 13px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.role-modal-textarea:focus {
+  border-color: #4d78cc;
+}
+
+.role-modal-save-btn {
+  width: 100%;
+  padding: 8px;
+  background: #4d78cc;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.role-modal-save-btn:active {
+  background: #3d68bc;
+}
+
+.role-modal-footer {
+  padding: 12px 16px;
+  border-top: 1px solid #2c313a;
+  flex-shrink: 0;
+}
+
+.role-modal-create-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  background: #4d78cc;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.role-modal-create-btn:active {
+  background: #3d68bc;
+}

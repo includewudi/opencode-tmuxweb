@@ -1,0 +1,10 @@
+[
+  {
+    "name": "Oc",
+    "command": "opencode"
+  },
+  {
+    "name": "退出",
+    "command": "/exit"
+  }
+]

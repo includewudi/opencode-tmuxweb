@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, TextInput, Alert, LayoutChangeEvent, AppState } from 'react-native';
+import { View, Text, Pressable, TextInput, Alert, LayoutChangeEvent, AppState, ScrollView } from 'react-native';
 import { ChevronLeft, Keyboard, Sparkles } from 'lucide-react-native';
 import { Header } from '../components/Header';
 import { TerminalKeyboard } from '../components/TerminalKeyboard';
@@ -15,6 +15,7 @@ interface TerminalScreenProps {
   server: Server;
   session: TmuxSession;
   window: TmuxWindow;
+  allWindows: TmuxWindow[];
   onBack: () => void;
   onOpenAI: () => void;
 }
@@ -23,9 +24,13 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
   server,
   session,
   window: tmuxWindow,
+  allWindows,
   onBack,
   onOpenAI,
 }) => {
+  const [activeWindow, setActiveWindow] = useState<TmuxWindow>(tmuxWindow);
+  const activeWindowRef = useRef(activeWindow);
+  activeWindowRef.current = activeWindow;
   const [inputBuffer, setInputBuffer] = useState('');
   const [showSystemKeyboard, setShowSystemKeyboard] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -44,20 +49,18 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
   // Initialize reconnect state machine with callbacks
   useEffect(() => {
     const handleReconnectAttempt = async (): Promise<boolean> => {
+      const currentWindow = activeWindowRef.current;
       try {
         remoteLogger.log('TerminalScreen', 'Reconnect attempt starting', {
           serverId: server.id,
           sessionName: session.name,
-          windowIndex: tmuxWindow.index,
+          windowIndex: currentWindow.index,
         });
 
-        // Disconnect any existing connection
         sshService.disconnect(server.id);
         
-        // Wait briefly for disconnect to complete
         await new Promise(resolve => setTimeout(resolve, 100));
 
-        // Reconnect and attach to window
         const connected = await sshService.connect(server);
         if (!connected) {
           terminalRef.current?.write('\x1b[31mReconnect failed: Could not connect to server\x1b[0m\r\n');
@@ -65,7 +68,7 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
         }
 
         const { cols, rows } = terminalDimensions.current;
-        await tmuxService.attachToWindow(server.id, session.name, tmuxWindow.index, cols, rows);
+        await tmuxService.attachToWindow(server.id, session.name, currentWindow.index, cols, rows);
         
         remoteLogger.log('TerminalScreen', 'Reconnect successful', {
           serverId: server.id,
@@ -114,7 +117,7 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
       reconnectMachineRef.current?.destroy();
       reconnectMachineRef.current = null;
     };
-  }, [server, session.name, tmuxWindow.index]);
+  }, [server, session.name]);
 
   const [layoutReady, setLayoutReady] = useState(false);
 
@@ -139,6 +142,8 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
     }
   }, [layoutReady]);
 
+  const initialWindowRef = useRef(tmuxWindow);
+
   const connectAndAttach = useCallback(async () => {
     setIsConnecting(true);
     terminalRef.current?.write('Connecting to server...\r\n');
@@ -155,7 +160,7 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
 
       terminalRef.current?.write('Connected. Attaching to tmux session...\r\n');
       const { cols, rows } = terminalDimensions.current;
-      await tmuxService.attachToWindow(server.id, session.name, tmuxWindow.index, cols, rows);
+      await tmuxService.attachToWindow(server.id, session.name, initialWindowRef.current.index, cols, rows);
       setIsConnected(true);
       terminalRef.current?.clear();
     } catch (error) {
@@ -164,7 +169,25 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
     } finally {
       setIsConnecting(false);
     }
-  }, [server, session.name, tmuxWindow.index]);
+  }, [server, session.name]);
+
+  const handleSwitchWindow = useCallback(async (targetWindow: TmuxWindow) => {
+    if (targetWindow.index === activeWindow.index) return;
+    if (!isConnected) return;
+
+    try {
+      remoteLogger.log('TerminalScreen', 'Switching window', {
+        from: activeWindow.index,
+        to: targetWindow.index,
+        sessionName: session.name,
+      });
+      await tmuxService.selectWindow(server.id, session.name, targetWindow.index);
+      setActiveWindow(targetWindow);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      terminalRef.current?.write(`\x1b[31mSwitch error: ${errorMessage}\x1b[0m\r\n`);
+    }
+  }, [activeWindow.index, isConnected, server.id, session.name]);
 
   const debugCountRef = useRef(0);
   
@@ -328,7 +351,8 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
     }
   };
 
-  const windowTitle = `${tmuxWindow.name} (${tmuxWindow.panes} pane${tmuxWindow.panes !== 1 ? 's' : ''})`;
+  const windowTitle = `${session.name}`;
+  const showTabs = allWindows.length > 1;
 
   return (
     <View className="flex-1 bg-black">
@@ -340,10 +364,38 @@ export const TerminalScreen: React.FC<TerminalScreenProps> = ({
         onRightClick={onOpenAI}
       />
 
+      {showTabs && (
+        <View className="bg-slate-900 border-b border-slate-800">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 8 }}
+          >
+            {allWindows.map((w) => {
+              const isActive = w.index === activeWindow.index;
+              return (
+                <Pressable
+                  key={w.id}
+                  onPress={() => handleSwitchWindow(w)}
+                  className={`px-3 py-2 mr-1 rounded-t-lg ${isActive ? 'bg-black' : 'active:bg-slate-800'}`}
+                >
+                  <Text
+                    className={`text-xs font-medium ${isActive ? 'text-emerald-400' : 'text-slate-500'}`}
+                    style={{ fontFamily: 'monospace' }}
+                  >
+                    {w.index}:{w.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+
       <View className="flex-1 bg-black">
         <View className="flex-row items-center justify-between px-3 py-2 border-b border-slate-800/50">
           <Text className="text-xs text-slate-500" style={{ fontFamily: 'monospace' }}>
-            {server.user}@{server.ip} • {session.name}
+            {server.user}@{server.ip} • {session.name}:{activeWindow.index}
             {isConnecting && ' (connecting...)'}
             {!isConnecting && !isConnected && ' (disconnected)'}
           </Text>

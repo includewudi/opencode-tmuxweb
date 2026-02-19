@@ -21,9 +21,10 @@ const SPACE_BURST_WINDOW_MS = 500
 interface Props {
   paneId: string
   active: boolean
+  onSendRef?: (sendFn: (text: string) => void) => void
 }
 
-export function Terminal({ paneId, active }: Props) {
+export function Terminal({ paneId, active, onSendRef }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const termRef = useRef<XTerm | null>(null)
   const fitRef = useRef<FitAddon | null>(null)
@@ -46,6 +47,10 @@ export function Terminal({ paneId, active }: Props) {
       wsRef.current.send(text)
     }
   }, [])
+
+  useEffect(() => {
+    onSendRef?.(sendText)
+  }, [onSendRef, sendText])
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -81,11 +86,8 @@ export function Terminal({ paneId, active }: Props) {
 
     const buildWsUrl = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-      const backendPort = window.location.port === '5215' ? '8215' : window.location.port
-      const host = window.location.hostname
-      const wsHost = backendPort ? `${host}:${backendPort}` : host
       const token = getToken()
-      return `${protocol}//${wsHost}/ws/terminal?paneId=${encodeURIComponent(paneId)}&token=${token}`
+      return `${protocol}//${window.location.host}/ws/terminal?paneId=${encodeURIComponent(paneId)}&token=${token}`
     }
 
     const connect = () => {

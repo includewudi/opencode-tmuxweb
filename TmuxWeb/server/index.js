@@ -3,9 +3,11 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const { WebSocketServer } = require('ws');
 const http = require('http');
+const https = require('https');
+const fs = require('fs');
 const path = require('path');
 
-const config = require('./config.json');
+const config = require('./config-loader');
 const { tokenMiddleware, validateToken } = require('./middleware/auth');
 const { router: authRouter } = require('./routes/auth');
 const tmuxRouter = require('./routes/tmux');
@@ -19,12 +21,24 @@ const segmentsRouter = require('./routes/segments');
 const { taskSummariesRouter, paneSummariesRouter } = require('./routes/summaries');
 const taskEventsRouter = require('./routes/task-events');
 const telemetryRouter = require('./routes/telemetry');
+const aiRouter = require('./routes/ai');
+const { router: rolesRouter } = require('./routes/roles');
+const snippetsRouter = require('./routes/snippets');
+const hotwordsRouter = require('./routes/hotwords');
 const { handleTerminalConnection } = require('./services/terminal');
 const { handleSpeechConnection } = require('./services/speech');
 const { pool, testConnection } = require('./db/pool');
 
 const app = express();
-const server = http.createServer(app);
+
+const CERT_FILE = path.join(__dirname, 'cert.pem');
+const KEY_FILE = path.join(__dirname, 'key.pem');
+const hasCerts = fs.existsSync(CERT_FILE) && fs.existsSync(KEY_FILE);
+
+const server = hasCerts
+  ? https.createServer({ cert: fs.readFileSync(CERT_FILE), key: fs.readFileSync(KEY_FILE) }, app)
+  : http.createServer(app);
+const PROTOCOL = hasCerts ? 'https' : 'http';
 
 app.use(cors({
   origin: config.allowedOrigins,
@@ -60,6 +74,10 @@ app.use('/api/profiles', tokenMiddleware, profilesRouter);
 app.use('/api/segments', tokenMiddleware, segmentsRouter);
 app.use('/api/tasks', tokenMiddleware, taskSummariesRouter);
 app.use('/api/panes', tokenMiddleware, paneSummariesRouter);
+app.use('/api/ai', tokenMiddleware, aiRouter);
+app.use('/api/roles', tokenMiddleware, rolesRouter);
+app.use('/api/snippets', tokenMiddleware, snippetsRouter);
+app.use('/api/hotwords', tokenMiddleware, hotwordsRouter);
 
 app.use(express.static(path.join(__dirname, '../web/dist')));
 
@@ -121,7 +139,7 @@ speechWss.on('connection', (ws, req) => {
 });
 
 server.listen(config.port, config.bind, () => {
-  console.log(`TmuxWeb backend listening on http://${config.bind}:${config.port}`);
+  console.log(`TmuxWeb backend listening on ${PROTOCOL}://${config.bind}:${config.port}`);
   
   testConnection().then(ok => {
     if (ok) {
@@ -131,3 +149,27 @@ server.listen(config.port, config.bind, () => {
     }
   });
 });
+
+if (hasCerts) {
+  const CA_ROOT = path.join(require('os').homedir(), 'Library/Application Support/mkcert/rootCA.pem');
+  const CERT_PORT = 8280;
+  http.createServer((req, res) => {
+    if (req.url === '/rootCA.pem' && fs.existsSync(CA_ROOT)) {
+      res.writeHead(200, {
+        'Content-Type': 'application/x-pem-file',
+        'Content-Disposition': 'attachment; filename="rootCA.pem"',
+      });
+      fs.createReadStream(CA_ROOT).pipe(res);
+    } else {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(`<html><body style="font-family:system-ui;text-align:center;padding:60px 20px;background:#1a1c20;color:#fff">
+        <h2>Install CA Certificate</h2>
+        <p style="color:#aaa">Open this page in Safari on iPhone</p>
+        <a href="/rootCA.pem" style="display:inline-block;margin:20px;padding:16px 32px;background:#4d78cc;color:#fff;border-radius:12px;text-decoration:none;font-size:18px">Download CA Certificate</a>
+        <p style="color:#888;font-size:14px;margin-top:30px">After download: Settings → Downloaded Profile → Install<br>Then: Settings → General → About → Certificate Trust Settings → Enable</p>
+      </body></html>`);
+    }
+  }).listen(CERT_PORT, '0.0.0.0', () => {
+    console.log(`[Server] CA cert download at http://0.0.0.0:${CERT_PORT}`);
+  });
+}

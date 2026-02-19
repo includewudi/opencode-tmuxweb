@@ -120,7 +120,7 @@ export function GroupManager({ profileKey, sessions, onGroupsChanged }: Props) {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ group_id: groupId })
+        body: JSON.stringify({ profile_key: profileKey, group_id: groupId })
       })
       setAssigningSession(null)
       fetchGroups()

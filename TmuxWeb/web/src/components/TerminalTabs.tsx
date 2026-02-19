@@ -1,3 +1,4 @@
+import { ReactNode } from 'react'
 import { X } from 'lucide-react'
 import { OpenTab } from '../types'
 import { Terminal } from './Terminal'
@@ -8,11 +9,18 @@ interface Props {
   activeTabId: string | null
   onSelectTab: (tabId: string) => void
   onCloseTab: (tabId: string) => void
+  onSendRef?: (tabId: string, sendFn: (text: string) => void) => void
+  headerRight?: ReactNode
 }
 
-export function TerminalTabs({ tabs, activeTabId, onSelectTab, onCloseTab }: Props) {
+export function TerminalTabs({ tabs, activeTabId, onSelectTab, onCloseTab, onSendRef, headerRight }: Props) {
   if (tabs.length === 0) {
-    return <div className="no-tabs">Select a pane from the tree to open</div>
+    return (
+      <div className="no-tabs-wrapper">
+        {headerRight && <div className="tabs-bar"><div className="tabs-bar-spacer" />{headerRight}</div>}
+        <div className="no-tabs">Select a pane from the tree to open</div>
+      </div>
+    )
   }
 
   return (
@@ -33,6 +41,8 @@ export function TerminalTabs({ tabs, activeTabId, onSelectTab, onCloseTab }: Pro
             </button>
           </div>
         ))}
+        <div className="tabs-bar-spacer" />
+        {headerRight}
       </div>
       <div className="tabs-content">
         {tabs.map(tab => (
@@ -40,7 +50,11 @@ export function TerminalTabs({ tabs, activeTabId, onSelectTab, onCloseTab }: Pro
             key={tab.id}
             className={`tab-panel ${tab.id === activeTabId ? 'visible' : 'hidden'}`}
           >
-            <Terminal paneId={tab.paneId} active={tab.id === activeTabId} />
+            <Terminal
+              paneId={tab.paneId}
+              active={tab.id === activeTabId}
+              onSendRef={onSendRef ? (sendFn) => onSendRef(tab.id, sendFn) : undefined}
+            />
           </div>
         ))}
       </div>

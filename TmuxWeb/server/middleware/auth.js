@@ -1,4 +1,4 @@
-const config = require('../config.json');
+const config = require('../config-loader');
 const { verifySessionValue, COOKIE_NAME } = require('../routes/auth');
 
 function validateToken(token) {

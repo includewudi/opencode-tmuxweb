@@ -1,6 +1,6 @@
 const express = require('express');
 const { pool } = require('../db/pool');
-const config = require('../config.json');
+const config = require('../config-loader');
 const geminiService = require('../services/gemini');
 const { execSync } = require('child_process');
 

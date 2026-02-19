@@ -16,10 +16,7 @@ const FLUSH_INTERVAL_MS = 1000
 const FLUSH_BATCH_SIZE = 50
 
 function getEndpointUrl(): string {
-  const backendPort = window.location.port === '5215' ? '8215' : window.location.port
-  const host = window.location.hostname
-  const base = backendPort ? `${window.location.protocol}//${host}:${backendPort}` : window.location.origin
-  return `${base}/api/telemetry?debug=1`
+  return `${window.location.origin}/api/telemetry?debug=1`
 }
 
 function postEvents(events: MobileTelemetryEvent[]): void {

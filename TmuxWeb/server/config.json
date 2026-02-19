@@ -1,5 +1,5 @@
 {
-  "_说明": "公共配置文件，敏感信息请放在 web/config_private.json（不提交 git）",
+  "_说明": "公共配置文件，敏感信息请放在 server/config_private.json（不提交 git）",
   "port": 8215,
   "bind": "0.0.0.0",
   "token": "tmuxweb-dev-token",
@@ -8,7 +8,13 @@
   "tmuxSocket": null,
   "allowedOrigins": [
     "http://localhost:5215",
-    "http://127.0.0.1:5215"
+    "http://127.0.0.1:5215",
+    "https://localhost:5215",
+    "https://127.0.0.1:5215",
+    "https://172.29.15.223:5215",
+    "https://192.168.1.117:5215",
+    "https://172.29.15.223:8215",
+    "https://192.168.1.117:8215"
   ],
   "_summaryService_说明": "摘要服务（可选）",
   "summaryServiceUrl": "",

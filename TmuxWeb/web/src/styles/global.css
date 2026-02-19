@@ -35,6 +35,19 @@ html, body, #root {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Prevent xterm internal scroll — let tmux handle scrollback */
+.xterm-container .xterm-viewport,
+.mobile-terminal-container .xterm-viewport {
+  overflow-y: hidden !important;
+}
+
+/* Prevent touch gestures from scrolling the page inside terminal */
+.xterm-container .xterm-screen,
+.mobile-terminal-container .xterm-screen {
+  touch-action: none;
 }
 
 body {

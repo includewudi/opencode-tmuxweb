@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -27,7 +27,10 @@ import {
   FolderOpen,
   RefreshCw,
   MoreHorizontal,
-  Pencil
+  Pencil,
+  FolderInput,
+  FolderMinus,
+  FolderPlus
 } from 'lucide-react'
 import { TmuxSession, SessionGroup, PaneStatus, PaneStatusInfo } from '../types'
 import { StatusBadge } from './StatusBadge'
@@ -43,6 +46,7 @@ interface Props {
   onOrderChange?: () => void
   onPaneContextMenu?: (paneKey: string) => void
   statusRefreshToken?: number
+  defaultExpanded?: boolean
 }
 
 async function renameWindow(sessionName: string, windowIndex: number, newName: string): Promise<boolean> {
@@ -114,6 +118,200 @@ function DragHandle() {
   )
 }
 
+interface QuickGroupMenuProps {
+  sessionName: string
+  currentGroupId: number | null
+  groups: SessionGroup[]
+  profileKey: string
+  position: { x: number; y: number }
+  onClose: () => void
+  onDone: () => void
+}
+
+function QuickGroupMenu({ sessionName, currentGroupId, groups, profileKey, position, onClose, onDone }: QuickGroupMenuProps) {
+  const [creating, setCreating] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [loading, setLoading] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (creating && inputRef.current) inputRef.current.focus()
+  }, [creating])
+
+  // Adjust menu position to stay in viewport
+  useEffect(() => {
+    if (!menuRef.current) return
+    const rect = menuRef.current.getBoundingClientRect()
+    if (rect.right > window.innerWidth) {
+      menuRef.current.style.left = `${window.innerWidth - rect.width - 8}px`
+    }
+    if (rect.bottom > window.innerHeight) {
+      menuRef.current.style.top = `${window.innerHeight - rect.height - 8}px`
+    }
+  }, [creating])
+
+  const assignToGroup = async (groupId: number | null) => {
+    if (loading) return
+    setLoading(true)
+    try {
+      await fetch(`/api/sessions/${encodeURIComponent(sessionName)}/group`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile_key: profileKey, group_id: groupId })
+      })
+      onDone()
+    } catch (err) {
+      console.error('Failed to assign group:', err)
+    } finally {
+      setLoading(false)
+      onClose()
+    }
+  }
+
+  const createAndAssign = async () => {
+    if (!newName.trim() || loading) return
+    setLoading(true)
+    try {
+      const res = await fetch('/api/groups', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile_key: profileKey, group_name: newName.trim() })
+      })
+      const data = await res.json()
+      if (data.id) {
+        await fetch(`/api/sessions/${encodeURIComponent(sessionName)}/group`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profile_key: profileKey, group_id: data.id })
+        })
+        onDone()
+      }
+    } catch (err) {
+      console.error('Failed to create group:', err)
+    } finally {
+      setLoading(false)
+      onClose()
+    }
+  }
+
+  return (
+    <>
+      <div className="quick-group-backdrop" onClick={onClose} onTouchEnd={(e) => { e.preventDefault(); onClose() }} />
+      <div
+        ref={menuRef}
+        className="quick-group-menu"
+        style={{ left: position.x, top: position.y }}
+      >
+        <div className="quick-group-title">移动到分组</div>
+
+        {groups.length > 0 && groups.map(g => (
+          <button
+            key={g.id}
+            className={`quick-group-item ${g.id === currentGroupId ? 'current' : ''}`}
+            onClick={() => assignToGroup(g.id)}
+            disabled={loading || g.id === currentGroupId}
+          >
+            <FolderInput size={14} />
+            <span>{g.group_name}</span>
+            {g.id === currentGroupId && <span className="quick-group-check">✓</span>}
+          </button>
+        ))}
+
+        {currentGroupId !== null && (
+          <button
+            className="quick-group-item ungroup"
+            onClick={() => assignToGroup(null)}
+            disabled={loading}
+          >
+            <FolderMinus size={14} />
+            <span>移出分组</span>
+          </button>
+        )}
+
+        <div className="quick-group-divider" />
+
+        {creating ? (
+          <div className="quick-group-create-row">
+            <input
+              ref={inputRef}
+              type="text"
+              className="quick-group-input"
+              placeholder="分组名称..."
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') createAndAssign()
+                if (e.key === 'Escape') { setCreating(false); setNewName('') }
+              }}
+              disabled={loading}
+            />
+            <button
+              className="quick-group-confirm"
+              onClick={createAndAssign}
+              disabled={loading || !newName.trim()}
+            >
+              ✓
+            </button>
+          </div>
+        ) : (
+          <button
+            className="quick-group-item create"
+            onClick={() => setCreating(true)}
+            disabled={loading}
+          >
+            <FolderPlus size={14} />
+            <span>新建分组</span>
+          </button>
+        )}
+      </div>
+    </>
+  )
+}
+
+function useLongPress(callback: (pos: { x: number; y: number }) => void, ms = 500) {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const movedRef = useRef(false)
+  const firedRef = useRef(false)
+  const posRef = useRef({ x: 0, y: 0 })
+
+  const start = useCallback((e: React.TouchEvent | React.MouseEvent) => {
+    movedRef.current = false
+    firedRef.current = false
+    if ('touches' in e && e.touches.length > 0) {
+      posRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    } else if ('clientX' in e) {
+      posRef.current = { x: (e as React.MouseEvent).clientX, y: (e as React.MouseEvent).clientY }
+    }
+    timerRef.current = setTimeout(() => {
+      if (!movedRef.current) {
+        firedRef.current = true
+        callback(posRef.current)
+      }
+    }, ms)
+  }, [callback, ms])
+
+  const move = useCallback(() => {
+    movedRef.current = true
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+  }, [])
+
+  const end = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+  }, [])
+
+  return { onTouchStart: start, onTouchMove: move, onTouchEnd: end, onMouseDown: start, onMouseMove: move, onMouseUp: end, firedRef }
+}
+
 interface SortableSessionProps {
   item: TreeItem
   session: TmuxSession
@@ -123,12 +321,17 @@ interface SortableSessionProps {
   onSelectPane: (paneId: string, paneName: string) => void
   onPaneContextMenu?: (paneKey: string) => void
   onRefresh: () => void
+  defaultExpanded?: boolean
+  groups?: SessionGroup[]
+  profileKey?: string
+  onGroupChanged?: () => void
 }
 
-function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelectPane, onPaneContextMenu, onRefresh }: SortableSessionProps) {
-  const [expanded, setExpanded] = useState(false)
+function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelectPane, onPaneContextMenu, onRefresh, defaultExpanded = false, groups = [], profileKey = '', onGroupChanged }: SortableSessionProps) {
+  const [expanded, setExpanded] = useState(defaultExpanded)
   const [editingWindowIndex, setEditingWindowIndex] = useState<number | null>(null)
   const [editWindowName, setEditWindowName] = useState('')
+  const [quickGroupMenu, setQuickGroupMenu] = useState<{ x: number; y: number } | null>(null)
   
   const {
     attributes,
@@ -143,6 +346,13 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
     transform: CSS.Transform.toString(transform),
     transition,
   }
+
+  const handleLongPress = useCallback((pos: { x: number; y: number }) => {
+    if (!profileKey || !groups) return
+    setQuickGroupMenu(pos)
+  }, [profileKey, groups])
+
+  const longPress = useLongPress(handleLongPress, 500)
   
   return (
     <div
@@ -150,7 +360,10 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
       style={style}
       className={`session-node ${isDragging ? 'dragging' : ''} ${isOver ? 'drop-target' : ''} ${isInGroup ? 'in-group' : ''}`}
     >
-      <div className="session-row">
+      <div
+        className="session-row"
+        {...longPress}
+      >
         <span {...attributes} {...listeners}>
           <DragHandle />
         </span>
@@ -163,6 +376,18 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
         <Terminal size={14} style={{ color: 'var(--blue-500)' }} />
         <span className="session-name">{session.sessionName}</span>
       </div>
+
+      {quickGroupMenu && profileKey && (
+        <QuickGroupMenu
+          sessionName={session.sessionName}
+          currentGroupId={item.groupId}
+          groups={groups}
+          profileKey={profileKey}
+          position={quickGroupMenu}
+          onClose={() => setQuickGroupMenu(null)}
+          onDone={() => { setQuickGroupMenu(null); onGroupChanged?.() }}
+        />
+      )}
       
       {expanded && session.windows.map(window => (
         <div key={window.windowId} className="window-node">
@@ -328,7 +553,8 @@ export function TmuxTree({
   onRefresh, 
   onOrderChange,
   onPaneContextMenu,
-  statusRefreshToken
+  statusRefreshToken,
+  defaultExpanded = false
 }: Props) {
   const [sessionOrders, setSessionOrders] = useState<SessionOrder[]>([])
   const [groupOrders, setGroupOrders] = useState<{ id: number; sort_order: number }[]>([])
@@ -376,7 +602,7 @@ export function TmuxTree({
         })))
       })
       .catch(err => console.error('Failed to fetch order:', err))
-  }, [profileId])
+  }, [profileId, groups])
   
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -648,6 +874,10 @@ export function TmuxTree({
                           onSelectPane={onSelectPane}
                           onPaneContextMenu={onPaneContextMenu}
                           onRefresh={onRefresh}
+                          defaultExpanded={defaultExpanded}
+                          groups={groups}
+                          profileKey={profileKey}
+                          onGroupChanged={onOrderChange}
                         />
                       ))
                     )}
@@ -667,6 +897,10 @@ export function TmuxTree({
                     onSelectPane={onSelectPane}
                     onPaneContextMenu={onPaneContextMenu}
                     onRefresh={onRefresh}
+                    defaultExpanded={defaultExpanded}
+                    groups={groups}
+                    profileKey={profileKey}
+                    onGroupChanged={onOrderChange}
                   />
                 )
               }

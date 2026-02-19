@@ -434,7 +434,7 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef }:
 
   return (
     <div className="mobile-terminal-wrapper">
-      <div ref={containerRef} className="mobile-terminal-container" style={{ height: '50%' }} />
+      <div ref={containerRef} className="mobile-terminal-container" />
       <MobileToolbox
         onSend={sendText}
         disabled={false}

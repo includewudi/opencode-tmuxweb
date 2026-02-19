@@ -60,7 +60,12 @@ export function SessionTreeSidebar({
   };
 
   const handleSessionWindowClick = (server: Server, session: TmuxSession, window: TmuxWindow) => {
-    navigation.navigate('Terminal', { server, session, window });
+    navigation.navigate('Terminal', {
+      server,
+      session,
+      window,
+      allWindows: session.structure,
+    });
     navigation.closeDrawer();
   };
 

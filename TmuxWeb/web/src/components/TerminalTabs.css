@@ -87,3 +87,13 @@
   color: var(--zinc-600);
   font-size: 1.1em;
 }
+
+.no-tabs-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tabs-bar-spacer {
+  flex: 1;
+}

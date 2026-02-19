@@ -13,7 +13,7 @@ export type DrawerParamList = {
   ServerList: undefined;
   ServerDetail: { server: Server };
   ServerEdit: { server?: Server } | undefined;
-  Terminal: { server: Server; session: TmuxSession; window: TmuxWindow };
+  Terminal: { server: Server; session: TmuxSession; window: TmuxWindow; allWindows?: TmuxWindow[] };
 };
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
@@ -84,7 +84,12 @@ export const AppNavigator = forwardRef<NavigationContainerRef<DrawerParamList>, 
                   server={server}
                   onBack={() => props.navigation.navigate('ServerList')}
                   onSessionClick={(session, window) => {
-                    props.navigation.navigate('Terminal', { server, session, window });
+                    props.navigation.navigate('Terminal', {
+                      server,
+                      session,
+                      window,
+                      allWindows: session.structure,
+                    });
                   }}
                 />
               );
@@ -111,11 +116,13 @@ export const AppNavigator = forwardRef<NavigationContainerRef<DrawerParamList>, 
             {(props) => {
               const params = props.route.params;
               if (!params?.server || !params?.session || !params?.window) return null;
+              const allWindows = params.allWindows || params.session.structure || [params.window];
               return (
                 <TerminalScreen
                   server={params.server}
                   session={params.session}
                   window={params.window}
+                  allWindows={allWindows}
                   onBack={() => props.navigation.goBack()}
                   onOpenAI={onOpenAI}
                 />

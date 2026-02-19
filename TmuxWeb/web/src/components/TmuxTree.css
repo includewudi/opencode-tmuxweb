@@ -338,3 +338,120 @@
 .drag-preview .expand-btn {
   pointer-events: none;
 }
+
+/* Quick Group Menu */
+.quick-group-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+}
+
+.quick-group-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 180px;
+  max-width: 240px;
+  background: var(--zinc-800);
+  border: 1px solid var(--zinc-700);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  padding: 6px 0;
+  overflow: hidden;
+}
+
+.quick-group-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--zinc-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 12px 4px;
+}
+
+.quick-group-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  color: var(--zinc-300);
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.quick-group-item:hover {
+  background: var(--zinc-700);
+}
+
+.quick-group-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.quick-group-item.current {
+  color: var(--blue-500);
+}
+
+.quick-group-item.ungroup {
+  color: var(--zinc-400);
+}
+
+.quick-group-item.create {
+  color: var(--blue-400);
+}
+
+.quick-group-check {
+  margin-left: auto;
+  font-size: 12px;
+}
+
+.quick-group-divider {
+  height: 1px;
+  background: var(--zinc-700);
+  margin: 4px 0;
+}
+
+.quick-group-create-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+}
+
+.quick-group-input {
+  flex: 1;
+  background: var(--zinc-900);
+  border: 1px solid var(--zinc-600);
+  border-radius: 4px;
+  color: var(--zinc-200);
+  font-size: 13px;
+  padding: 4px 8px;
+  outline: none;
+}
+
+.quick-group-input:focus {
+  border-color: var(--blue-500);
+}
+
+.quick-group-confirm {
+  background: var(--blue-600);
+  border: none;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.quick-group-confirm:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

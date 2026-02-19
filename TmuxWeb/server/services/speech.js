@@ -1,9 +1,44 @@
 const crypto = require('crypto');
 const WebSocket = require('ws');
-const config = require('../config.json');
+const fs = require('fs');
+const path = require('path');
+const config = require('../config-loader');
 
-const XFYUN_HOST = 'iat.cn-huabei-1.xf-yun.com';
+const XFYUN_HOST = 'iat.xf-yun.com';
 const XFYUN_PATH = '/v1';
+
+const HOTWORDS_PATH = path.join(__dirname, '..', 'hotwords.json');
+
+function loadHotwords() {
+  try {
+    const raw = fs.readFileSync(HOTWORDS_PATH, 'utf8');
+    return JSON.parse(raw);
+  } catch {
+    return { hotwords: [], replacements: {} };
+  }
+}
+
+function buildDhw() {
+  const { hotwords } = loadHotwords();
+  if (!hotwords.length) return null;
+  const dhw = 'utf-8;' + hotwords.join('|');
+  if (dhw.length > 1024) {
+    return dhw.slice(0, 1024);
+  }
+  return dhw;
+}
+
+function applyReplacements(text) {
+  const { replacements } = loadHotwords();
+  if (!replacements || !Object.keys(replacements).length) return text;
+  let result = text;
+  for (const [from, to] of Object.entries(replacements)) {
+    if (result.includes(from)) {
+      result = result.split(from).join(to);
+    }
+  }
+  return result;
+}
 
 function generateAuthUrl() {
   const { apiKey, apiSecret } = config.xfyun;
@@ -25,25 +60,28 @@ function generateAuthUrl() {
 }
 
 function createFirstFrame(audioBase64, seq) {
+  const iatParams = {
+    domain: 'slm',
+    language: 'zh_cn',
+    accent: 'mandarin',
+    eos: 6000,
+    vinfo: 1,
+    dwa: 'wpgs',
+    result: {
+      encoding: 'utf8',
+      compress: 'raw',
+      format: 'json'
+    }
+  };
+  const dhw = buildDhw();
+  if (dhw) iatParams.dhw = dhw;
+
   return JSON.stringify({
     header: {
       app_id: config.xfyun.appId,
       status: 0
     },
-    parameter: {
-      iat: {
-        domain: 'slm',
-        language: 'mul_cn',
-        accent: 'mandarin',
-        eos: 3000,
-        vinfo: 1,
-        result: {
-          encoding: 'utf8',
-          compress: 'raw',
-          format: 'json'
-        }
-      }
-    },
+    parameter: { iat: iatParams },
     payload: {
       audio: {
         encoding: 'raw',
@@ -114,9 +152,11 @@ function parseResult(response) {
         }
       }
       return { 
-        text, 
+        text: applyReplacements(text), 
         sn: textData.sn, 
         ls: textData.ls,
+        pgs: textData.pgs,
+        rg: textData.rg,
         status: data.header.status 
       };
     }
@@ -163,7 +203,9 @@ function handleSpeechConnection(clientWs) {
               type: 'partial', 
               text: result.text,
               sn: result.sn,
-              ls: result.ls
+              ls: result.ls,
+              pgs: result.pgs,
+              rg: result.rg
             }));
           }
           

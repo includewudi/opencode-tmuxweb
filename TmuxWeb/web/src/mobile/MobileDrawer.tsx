@@ -1,38 +1,65 @@
-import { RefreshCw, X, ChevronRight, Terminal } from 'lucide-react'
-import { TmuxSession, TmuxPane } from '../types'
+import { RefreshCw, X, Settings, LogOut } from 'lucide-react'
+import { TmuxSession, Profile, SessionGroup } from '../types'
+import { ProfileSelector } from '../components/ProfileSelector'
+import { GroupManager } from '../components/GroupManager'
+import { TmuxTree } from '../components/TmuxTree'
+import { useState } from 'react'
 
 interface Props {
   open: boolean
   sessions: TmuxSession[]
-  selectedPaneId: string | null
-  onSelectPane: (pane: TmuxPane, sessionName: string, windowName: string) => void
+  currentProfile: Profile | null
+  groups: SessionGroup[]
+  onProfileChange: (profile: Profile) => void
+  onGroupsChanged: () => void
+  onSelectPane: (paneId: string, paneName: string) => void
   onClose: () => void
   onRefresh: () => void
+  onLogout: () => void
 }
 
-export function MobileDrawer({ 
-  open, 
-  sessions, 
-  selectedPaneId, 
-  onSelectPane, 
-  onClose, 
-  onRefresh 
+export function MobileDrawer({
+  open,
+  sessions,
+  currentProfile,
+  groups,
+  onProfileChange,
+  onGroupsChanged,
+  onSelectPane,
+  onClose,
+  onRefresh,
+  onLogout,
 }: Props) {
+  const [showGroupManager, setShowGroupManager] = useState(false)
+
+  const handleSelectPane = (paneId: string, paneName: string) => {
+    onSelectPane(paneId, paneName)
+    onClose()
+  }
+
   return (
     <aside className={`mobile-drawer ${open ? 'open' : ''}`}>
       <div className="mobile-drawer-header">
         <span className="mobile-drawer-title">Sessions</span>
         <div className="mobile-drawer-actions">
-          <button 
-            className="mobile-drawer-btn" 
+          <button
+            className="mobile-drawer-btn"
+            onClick={() => setShowGroupManager(!showGroupManager)}
+            type="button"
+            title="Manage groups"
+          >
+            <Settings size={18} />
+          </button>
+          <button
+            className="mobile-drawer-btn"
             onClick={onRefresh}
             type="button"
             title="Refresh"
           >
             <RefreshCw size={18} />
           </button>
-          <button 
-            className="mobile-drawer-btn" 
+          <button
+            className="mobile-drawer-btn"
             onClick={onClose}
             type="button"
             title="Close"
@@ -43,36 +70,39 @@ export function MobileDrawer({
       </div>
 
       <div className="mobile-drawer-content">
-        {sessions.length === 0 ? (
-          <div className="mobile-drawer-empty">No sessions found</div>
-        ) : (
-          sessions.map(session => (
-            <div key={session.sessionId} className="mobile-session">
-              <div className="mobile-session-name">
-                <ChevronRight size={14} />
-                {session.sessionName}
-              </div>
-              {session.windows.map(window => (
-                <div key={window.windowId} className="mobile-window">
-                  <div className="mobile-window-name">{window.windowName}</div>
-                  {window.panes.map(pane => (
-                    <button
-                      key={pane.paneId}
-                      className={`mobile-pane ${selectedPaneId === pane.paneId ? 'selected' : ''}`}
-                      onClick={() => onSelectPane(pane, session.sessionName, window.windowName)}
-                      type="button"
-                    >
-                      <Terminal size={14} />
-                      <span className="mobile-pane-title">
-                        {pane.paneTitle || pane.paneCommand || pane.paneId}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              ))}
-            </div>
-          ))
+        <div className="mobile-drawer-profile">
+          <ProfileSelector
+            currentProfile={currentProfile}
+            onProfileChange={onProfileChange}
+          />
+          <button
+            className="mobile-drawer-logout"
+            onClick={onLogout}
+            type="button"
+            title="Sign out"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
+
+        {showGroupManager && currentProfile && (
+          <GroupManager
+            profileKey={currentProfile.profile_key}
+            sessions={sessions}
+            onGroupsChanged={onGroupsChanged}
+          />
         )}
+
+        <TmuxTree
+          sessions={sessions}
+          groups={groups}
+          profileId={currentProfile?.id}
+          profileKey={currentProfile?.profile_key}
+          onSelectPane={handleSelectPane}
+          onRefresh={onRefresh}
+          onOrderChange={onGroupsChanged}
+          defaultExpanded={false}
+        />
       </div>
     </aside>
   )

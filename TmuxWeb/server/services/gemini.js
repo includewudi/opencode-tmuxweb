@@ -1,5 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const config = require('../config.json');
+const config = require('../config-loader');
 
 class GeminiService {
     constructor() {

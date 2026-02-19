@@ -93,6 +93,42 @@
 .main {
   flex: 1;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.fullscreen-btn,
+.fullscreen-sidebar-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  background: none;
+  border: none;
+  border-left: 1px solid var(--zinc-800);
+  color: var(--zinc-500);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.fullscreen-sidebar-btn {
+  border-left: none;
+  border-right: 1px solid var(--zinc-800);
+}
+
+.fullscreen-btn:hover,
+.fullscreen-sidebar-btn:hover {
+  color: var(--zinc-200);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.toolbox-panel {
+  width: 300px;
+  flex-shrink: 0;
+  background: var(--zinc-950);
+  border-left: 1px solid var(--zinc-800);
+  overflow: hidden;
 }
 
 .loading, .error {
