@@ -7,7 +7,7 @@
   border-top: 1px solid #2c313a;
   min-height: 0;
   overflow: hidden;
-  padding-bottom: 44px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .mobile-toolbox.keyboard-mode {
@@ -145,11 +145,6 @@
   flex-shrink: 0;
   border-top: 1px solid #2c313a;
   background: #13151a;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 

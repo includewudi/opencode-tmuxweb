@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, PanelRightOpen } from 'lucide-react'
 import { MobileDrawer } from './MobileDrawer'
 import { MobileTerminal } from './MobileTerminal'
+import { PaneDetails } from '../components/PaneDetails'
 import { LoginModal } from '../components/LoginModal'
 import { checkAuth, logout } from '../utils/auth'
 import { TmuxSession, OpenTab, Profile, SessionGroup } from '../types'
@@ -20,6 +21,21 @@ function getAllPaneIds(sessions: TmuxSession[]): Set<string> {
     }
   }
   return ids
+}
+
+/** Map a raw tmux paneId (e.g. "%4") to a structured paneKey (e.g. "session:0:0") */
+function getPaneKey(sessions: TmuxSession[], paneId: string): string | null {
+  for (const s of sessions) {
+    for (let wi = 0; wi < s.windows.length; wi++) {
+      const w = s.windows[wi]
+      for (let pi = 0; pi < w.panes.length; pi++) {
+        if (w.panes[pi].paneId === paneId) {
+          return `${s.sessionName}:${w.windowIndex}:${pi}`
+        }
+      }
+    }
+  }
+  return null
 }
 
 function loadTabs(): OpenTab[] {
@@ -51,6 +67,7 @@ export default function MobileApp() {
   const [tabs, setTabs] = useState<OpenTab[]>(loadTabs)
   const [activeTabId, setActiveTabId] = useState<string | null>(loadActiveTabId)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [rightPanelOpen, setRightPanelOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fontSize, setFontSize] = useState(() => {
@@ -208,6 +225,10 @@ export default function MobileApp() {
     setDrawerOpen(prev => !prev)
   }, [])
 
+  const toggleRightPanel = useCallback(() => {
+    setRightPanelOpen(prev => !prev)
+  }, [])
+
   if (isAuthenticated === null) {
     return <div className="mobile-loading">Loading...</div>
   }
@@ -225,6 +246,7 @@ export default function MobileApp() {
   }
 
   const activeTab = tabs.find(t => t.id === activeTabId) ?? null
+  const activePaneKey = activeTab ? getPaneKey(sessions, activeTab.paneId) : null
 
   return (
     <div className="mobile-app">
@@ -254,10 +276,15 @@ export default function MobileApp() {
         ) : (
           <span className="mobile-title">Select a pane</span>
         )}
+        {activeTab && (
+          <button className="mobile-menu-btn" onClick={toggleRightPanel} type="button">
+            <PanelRightOpen size={22} />
+          </button>
+        )}
       </header>
 
-      {drawerOpen && (
-        <div className="mobile-overlay" onClick={() => setDrawerOpen(false)} />
+      {(drawerOpen || rightPanelOpen) && (
+        <div className="mobile-overlay" onClick={() => { setDrawerOpen(false); setRightPanelOpen(false) }} />
       )}
 
       <MobileDrawer
@@ -272,6 +299,16 @@ export default function MobileApp() {
         onRefresh={fetchTree}
         onLogout={handleLogout}
       />
+
+      <aside className={`mobile-right-panel ${rightPanelOpen ? 'open' : ''}`}>
+        {rightPanelOpen && activePaneKey && (
+          <PaneDetails
+            paneKey={activePaneKey}
+            profileKey={currentProfile?.profile_key || ''}
+            onClose={() => setRightPanelOpen(false)}
+          />
+        )}
+      </aside>
 
       <main className="mobile-main">
         {tabs.length > 0 ? (

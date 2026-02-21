@@ -4,6 +4,12 @@ export type MobileTelemetryEventType =
   | 'mobile-onData'
   | 'mobile-suppress'
   | 'mobile-transition'
+  | 'touch-start'
+  | 'touch-move'
+  | 'touch-end'
+  | 'touch-scroll'
+  | 'touch-click-blocked'
+  | 'touch-gesture-info'
 
 export interface MobileTelemetryEvent {
   ts: number

@@ -130,9 +130,6 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef }:
     termRef.current = term
     fitRef.current = fit
 
-    // Touch swipe scrolling — hybrid: arrow keys for TUI apps, SGR mouse for normal panes
-    let touchStartY: number | null = null
-    let touchAccum = 0
     let paneInAltScreen = false
 
     const checkPaneMode = () => {
@@ -148,52 +145,122 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef }:
     checkPaneMode()
     const paneModeInterval = setInterval(checkPaneMode, 5000)
 
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches.length === 1) {
-        touchStartY = e.touches[0].clientY
-        touchAccum = 0
+    const sendScroll = (lines: number) => {
+      if (lines === 0 || wsRef.current?.readyState !== WebSocket.OPEN) return
+      const count = Math.min(Math.abs(lines), 10)
+      // Always use SGR mouse wheel events — works both in normal mode
+      // and alt-screen (tmux mouse on handles it). Arrow keys get eaten
+      // by TUI input fields like opencode's prompt.
+      const cols = termRef.current?.cols ?? 80
+      const rows = termRef.current?.rows ?? 24
+      const cx = Math.floor(cols / 2)
+      const cy = Math.floor(rows / 2)
+      const button = lines > 0 ? 65 : 64
+      for (let i = 0; i < count; i++) {
+        wsRef.current!.send(`\x1b[<${button};${cx};${cy}M`)
       }
     }
 
+    type GestureState = 'idle' | 'oneFinger' | 'twoFingerScroll'
+    let gesture: GestureState = 'idle'
+    let twoFingerStartY = 0
+    let twoFingerAccum = 0
+    let clickBlockedUntil = 0
+
+    const onTouchStart = (e: TouchEvent) => {
+      const prevGesture = gesture
+      if (e.touches.length === 2) {
+        gesture = 'twoFingerScroll'
+        e.preventDefault()
+        e.stopPropagation()
+        twoFingerStartY = (e.touches[0].clientY + e.touches[1].clientY) / 2
+        twoFingerAccum = 0
+      } else if (e.touches.length === 1 && gesture === 'idle') {
+        gesture = 'oneFinger'
+      }
+      emitter.emit('touch-start', {
+        touches: e.touches.length,
+        prevGesture,
+        newGesture: gesture,
+        prevented: e.touches.length === 2,
+        y0: e.touches[0]?.clientY,
+        y1: e.touches[1]?.clientY,
+      })
+    }
+
     const onTouchMove = (e: TouchEvent) => {
-      if (touchStartY === null || e.touches.length !== 1) return
-      e.preventDefault()
-      const deltaY = touchStartY - e.touches[0].clientY
-      touchAccum += deltaY
-      touchStartY = e.touches[0].clientY
-      const lines = Math.trunc(touchAccum / SCROLL_THRESHOLD)
-      if (lines !== 0 && wsRef.current?.readyState === WebSocket.OPEN) {
-        touchAccum -= lines * SCROLL_THRESHOLD
-        const count = Math.min(Math.abs(lines), 10)
-        if (paneInAltScreen) {
-          const key = lines > 0 ? '\x1b[A' : '\x1b[B'
-          for (let i = 0; i < count; i++) {
-            wsRef.current.send(key)
-          }
-        } else {
-          const cols = termRef.current?.cols ?? 80
-          const rows = termRef.current?.rows ?? 24
-          const cx = Math.floor(cols / 2)
-          const cy = Math.floor(rows / 2)
-          const button = lines > 0 ? 65 : 64
-          for (let i = 0; i < count; i++) {
-            wsRef.current.send(`\x1b[<${button};${cx};${cy}M`)
-          }
+      if (gesture === 'oneFinger' && e.touches.length === 2) {
+        gesture = 'twoFingerScroll'
+        e.preventDefault()
+        e.stopPropagation()
+        twoFingerStartY = (e.touches[0].clientY + e.touches[1].clientY) / 2
+        twoFingerAccum = 0
+        emitter.emit('touch-move', { upgrade: true, from: 'oneFinger', touches: 2 })
+        return
+      }
+      if (gesture === 'twoFingerScroll' && e.touches.length >= 2) {
+        e.preventDefault()
+        e.stopPropagation()
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2
+        const deltaY = twoFingerStartY - midY
+        twoFingerAccum += deltaY
+        twoFingerStartY = midY
+        const lines = Math.trunc(twoFingerAccum / SCROLL_THRESHOLD)
+        if (lines !== 0) {
+          twoFingerAccum -= lines * SCROLL_THRESHOLD
+          sendScroll(lines)
+          emitter.emit('touch-scroll', {
+            lines,
+            deltaY: Math.round(deltaY),
+            accum: Math.round(twoFingerAccum),
+            altScreen: paneInAltScreen,
+          })
         }
       }
     }
 
-    const onTouchEnd = () => {
-      touchStartY = null
-      touchAccum = 0
+    const onTouchEnd = (e: TouchEvent) => {
+      const prevGesture = gesture
+      if (gesture === 'twoFingerScroll') {
+        e.preventDefault()
+        e.stopPropagation()
+        if (e.touches.length === 0) {
+          clickBlockedUntil = Date.now() + 300
+          gesture = 'idle'
+        }
+      } else if (gesture === 'oneFinger' && e.touches.length === 0) {
+        gesture = 'idle'
+      }
+      emitter.emit('touch-end', {
+        prevGesture,
+        newGesture: gesture,
+        remainingTouches: e.touches.length,
+        prevented: prevGesture === 'twoFingerScroll',
+      })
+    }
+
+    const onClickBlock = (e: MouseEvent) => {
+      if (Date.now() < clickBlockedUntil) {
+        e.preventDefault()
+        e.stopPropagation()
+        emitter.emit('touch-click-blocked', { ttl: clickBlockedUntil - Date.now() })
+      }
     }
 
     const termContainer = containerRef.current
     const xtermScreen = termContainer.querySelector('.xterm-screen') as HTMLElement | null
     const touchTarget = xtermScreen || termContainer
-    touchTarget.addEventListener('touchstart', onTouchStart, { capture: true, passive: true } as AddEventListenerOptions)
-    touchTarget.addEventListener('touchmove', onTouchMove, { capture: true, passive: false } as AddEventListenerOptions)
-    touchTarget.addEventListener('touchend', onTouchEnd, { capture: true, passive: true } as AddEventListenerOptions)
+    touchTarget.addEventListener('touchstart', onTouchStart, { capture: true, passive: false })
+    touchTarget.addEventListener('touchmove', onTouchMove, { capture: true, passive: false })
+    touchTarget.addEventListener('touchend', onTouchEnd, { capture: true, passive: false })
+    touchTarget.addEventListener('touchcancel', onTouchEnd, { capture: true, passive: false })
+    touchTarget.addEventListener('click', onClickBlock, { capture: true })
+    emitter.emit('touch-gesture-info', {
+      msg: 'gesture-listeners-bound',
+      targetTag: touchTarget.tagName,
+      targetClass: touchTarget.className,
+      isXtermScreen: !!xtermScreen,
+    })
 
     const buildWsUrl = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
@@ -420,6 +487,8 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef }:
       touchTarget.removeEventListener('touchstart', onTouchStart, true)
       touchTarget.removeEventListener('touchmove', onTouchMove, true)
       touchTarget.removeEventListener('touchend', onTouchEnd, true)
+      touchTarget.removeEventListener('touchcancel', onTouchEnd, true)
+      touchTarget.removeEventListener('click', onClickBlock, true)
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current)
       }

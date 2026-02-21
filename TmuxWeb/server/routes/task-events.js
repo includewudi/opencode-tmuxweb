@@ -3,8 +3,67 @@ const { pool } = require('../db/pool');
 
 const router = express.Router();
 
+// CLI sends slash-separated pane_key ("session/window/pane"), frontend uses colon-separated
+function normalizePaneKey(key) {
+  if (!key) return key;
+  return key.replace(/\//g, ':');
+}
+
+const sseSubscribers = new Map();
+
+function addSubscriber(paneKey, res) {
+  if (!sseSubscribers.has(paneKey)) {
+    sseSubscribers.set(paneKey, new Set());
+  }
+  sseSubscribers.get(paneKey).add(res);
+}
+
+function removeSubscriber(paneKey, res) {
+  const subs = sseSubscribers.get(paneKey);
+  if (subs) {
+    subs.delete(res);
+    if (subs.size === 0) {
+      sseSubscribers.delete(paneKey);
+    }
+  }
+}
+
+function broadcast(paneKey, eventData) {
+  const subs = sseSubscribers.get(paneKey);
+  if (!subs || subs.size === 0) return;
+  const payload = `data: ${JSON.stringify(eventData)}\n\n`;
+  for (const res of subs) {
+    try {
+      res.write(payload);
+    } catch (err) {
+      console.error('[task-events] SSE write error:', err.message);
+    }
+  }
+}
+
+router.get('/stream/:pane_key(*)', (req, res) => {
+  const paneKey = normalizePaneKey(req.params.pane_key);
+
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.write('\n');
+
+  addSubscriber(paneKey, res);
+  console.log(`[task-events] SSE subscriber added for ${paneKey} (total: ${sseSubscribers.get(paneKey).size})`);
+
+  req.on('close', () => {
+    removeSubscriber(paneKey, res);
+    console.log(`[task-events] SSE subscriber removed for ${paneKey}`);
+  });
+});
+
 router.post('/', async (req, res) => {
-  const { event, conversation_id, pane_key, user_message, content, assistant_message, timestamp } = req.body;
+  const { event, conversation_id, user_message, content, assistant_message, timestamp } = req.body;
+  const rawPaneKey = req.body.pane_key;
 
   if (!event || !conversation_id) {
     return res.status(400).json({ error: 'missing required fields: event, conversation_id' });
@@ -18,9 +77,11 @@ router.post('/', async (req, res) => {
 
   try {
     if (event === 'task_started') {
-      if (!pane_key) {
+      if (!rawPaneKey) {
         return res.status(400).json({ error: 'task_started requires pane_key' });
       }
+
+      const paneKey = normalizePaneKey(rawPaneKey);
 
       await pool.query(
         `INSERT INTO ai_conversation 
@@ -30,15 +91,23 @@ router.post('/', async (req, res) => {
            user_message = VALUES(user_message),
            started_at = VALUES(started_at),
            mtime = VALUES(mtime)`,
-        [conversation_id, pane_key, user_message || '', eventTime, year, mon, now, now]
+        [conversation_id, paneKey, user_message || '', eventTime, year, mon, now, now]
       );
+
+      broadcast(paneKey, {
+        type: 'task_started',
+        conversation_id,
+        pane_key: paneKey,
+        user_message: user_message || '',
+        timestamp: eventTime,
+      });
 
       return res.json({ success: true, event: 'task_started' });
     }
 
     if (event === 'assistant_chunk') {
       const [existing] = await pool.query(
-        'SELECT id FROM ai_conversation WHERE conversation_id = ?',
+        'SELECT id, pane_key FROM ai_conversation WHERE conversation_id = ?',
         [conversation_id]
       );
 
@@ -62,6 +131,11 @@ router.post('/', async (req, res) => {
     }
 
     if (event === 'task_completed') {
+      const [existing] = await pool.query(
+        'SELECT pane_key FROM ai_conversation WHERE conversation_id = ?',
+        [conversation_id]
+      );
+
       const [result] = await pool.query(
         `UPDATE ai_conversation 
          SET assistant_message = ?, conv_status = 'completed', completed_at = ?, mtime = ?
@@ -71,6 +145,16 @@ router.post('/', async (req, res) => {
 
       if (result.affectedRows === 0) {
         return res.status(404).json({ error: 'conversation not found' });
+      }
+
+      if (existing.length > 0) {
+        broadcast(existing[0].pane_key, {
+          type: 'task_completed',
+          conversation_id,
+          pane_key: existing[0].pane_key,
+          assistant_message: assistant_message || '',
+          timestamp: eventTime,
+        });
       }
 
       return res.json({ success: true, event: 'task_completed' });
@@ -84,8 +168,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.get('/:pane_key', async (req, res) => {
-  const { pane_key } = req.params;
+router.get('/:pane_key(*)', async (req, res) => {
+  const paneKey = normalizePaneKey(req.params.pane_key);
   const limit = parseInt(req.query.limit, 10) || 20;
 
   try {
@@ -95,7 +179,7 @@ router.get('/:pane_key', async (req, res) => {
        WHERE pane_key = ? AND is_deleted = 0
        ORDER BY started_at DESC
        LIMIT ?`,
-      [pane_key, limit]
+      [paneKey, limit]
     );
 
     return res.json({ conversations });

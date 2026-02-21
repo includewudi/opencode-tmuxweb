@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
-import { X, Clock, MessageSquare, Code, Plus } from 'lucide-react'
-import { Task, TaskDetail, PaneStatus, ChatMessage, CommandRecord } from '../types'
+import { X, Clock, MessageSquare, Code, Plus, Bot } from 'lucide-react'
+import { Task, TaskDetail, PaneStatus, ChatMessage, CommandRecord, AiConversation } from '../types'
 import { TaskCard } from './TaskCard'
 import { LogAccordion } from './LogAccordion'
 import { SummarySection } from './SummarySection'
 import { SummaryCandidatePicker } from './SummaryCandidatePicker'
+import { useAIConversations } from '../hooks/useAIConversations'
 import './PaneDetails.css'
 
 interface Props {
@@ -22,13 +23,14 @@ export function PaneDetails({ paneKey, profileKey, onClose, onStatusChanged }: P
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [isCreatingTask, setIsCreatingTask] = useState(false)
   const [showCandidatePicker, setShowCandidatePicker] = useState(false)
+  const { conversations: aiConversations } = useAIConversations(paneKey)
 
   const parsePaneKey = (key: string) => {
-    const parts = key.split('/')
+    const parts = key.split(':')
     return {
-      session: parts[0] || '—',
-      window: parts[1] || '—',
-      pane: parts[2] || '—'
+      session: parts.slice(0, -2).join(':') || '—',
+      window: parts[parts.length - 2] || '—',
+      pane: parts[parts.length - 1] || '—'
     }
   }
 
@@ -323,6 +325,44 @@ export function PaneDetails({ paneKey, profileKey, onClose, onStatusChanged }: P
                         task={task}
                         onSelect={() => fetchTaskDetail(task.id)}
                       />
+                    ))}
+                  </div>
+                </LogAccordion>
+              </section>
+            )}
+
+            {aiConversations.length > 0 && (
+              <section className="drawer-section">
+                <LogAccordion
+                  title="AI Conversations"
+                  count={aiConversations.length}
+                  icon={<Bot size={14} />}
+                  defaultOpen
+                >
+                  <div className="log-list ai-conv-log">
+                    {aiConversations.map((conv: AiConversation) => (
+                      <div key={conv.conversation_id} className={`ai-conv-item ${conv.conv_status}`}>
+                        <div className="ai-conv-header">
+                          <span className={`task-badge ${conv.conv_status}`}>
+                            {conv.conv_status === 'in_progress' ? 'running' : conv.conv_status}
+                          </span>
+                          <span className="task-time">
+                            {new Date(conv.started_at * 1000).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="chat-msg user">
+                          <span className="msg-role">user:</span>
+                          <span className="msg-content">{conv.user_message || '—'}</span>
+                        </div>
+                        {conv.conv_status === 'completed' && conv.assistant_message ? (
+                          <div className="chat-msg assistant">
+                            <span className="msg-role">assistant:</span>
+                            <span className="msg-content">{conv.assistant_message}</span>
+                          </div>
+                        ) : conv.conv_status === 'in_progress' ? (
+                          <div className="ai-conv-pending">Processing...</div>
+                        ) : null}
+                      </div>
                     ))}
                   </div>
                 </LogAccordion>

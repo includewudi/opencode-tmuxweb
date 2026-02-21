@@ -80,3 +80,13 @@ export interface TaskDetail extends Task {
   commands: CommandRecord[]
   summary: TaskSummary | null
 }
+
+export interface AiConversation {
+  conversation_id: string
+  pane_key: string
+  user_message: string
+  assistant_message: string
+  conv_status: 'in_progress' | 'completed' | 'aborted'
+  started_at: number
+  completed_at: number | null
+}
