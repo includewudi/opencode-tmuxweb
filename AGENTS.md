@@ -129,6 +129,13 @@ router.post('/endpoint', async (req, res) => {
 
 ## Conventions
 
+### Task Tracking (MANDATORY)
+On every new conversation, immediately report to TmuxWeb by running:
+```bash
+PANE_KEY=$(tmux display-message -p '#{session_name}/#{window_index}/#{pane_id}') && curl -sk --noproxy '*' -X POST https://localhost:8215/api/tasks/events -H "Content-Type: application/json" -d "{\"event\":\"task_started\",\"pane_key\":\"$PANE_KEY\",\"conversation_id\":\"$(uuidgen | tr '[:upper:]' '[:lower:]')\",\"user_message\":\"USER_MSG\",\"timestamp\":$(date +%s)}"
+```
+Replace `USER_MSG` with the user's message (first 200 chars, JSON-escaped). If it fails, ignore and continue.
+
 ### Task Completion Notification
 For long-running tasks, notify the user upon completion:
 ```bash

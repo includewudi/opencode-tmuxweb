@@ -106,8 +106,8 @@ async function fetchPaneStatuses(profileKey: string, paneKeys: string[]): Promis
   return data.panes || []
 }
 
-function buildPaneKey(sessionName: string, windowIndex: number, paneIndex: number): string {
-  return `${sessionName}:${windowIndex}:${paneIndex}`
+function buildPaneKey(sessionName: string, windowIndex: number, paneId: string): string {
+  return `${sessionName}:${windowIndex}:${paneId}`
 }
 
 function DragHandle() {
@@ -425,8 +425,8 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
               </>
             )}
           </div>
-          {window.panes.map((pane, paneIndex) => {
-            const paneKey = buildPaneKey(session.sessionName, window.windowIndex, paneIndex)
+          {window.panes.map((pane) => {
+            const paneKey = buildPaneKey(session.sessionName, window.windowIndex, pane.paneId)
             const paneStatus = statusMap[paneKey] || 'idle'
             return (
               <div
@@ -619,8 +619,8 @@ export function TmuxTree({
     const keys: string[] = []
     sessions.forEach((session) => {
       session.windows.forEach((window) => {
-        window.panes.forEach((_, paneIndex) => {
-          keys.push(buildPaneKey(session.sessionName, window.windowIndex, paneIndex))
+        window.panes.forEach((pane) => {
+          keys.push(buildPaneKey(session.sessionName, window.windowIndex, pane.paneId))
         })
       })
     })

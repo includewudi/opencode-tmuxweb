@@ -23,14 +23,14 @@ function getAllPaneIds(sessions: TmuxSession[]): Set<string> {
   return ids
 }
 
-/** Map a raw tmux paneId (e.g. "%4") to a structured paneKey (e.g. "session:0:0") */
+/** Map a raw tmux paneId (e.g. "%4") to a structured paneKey (e.g. "session:0:%4") */
 function getPaneKey(sessions: TmuxSession[], paneId: string): string | null {
   for (const s of sessions) {
     for (let wi = 0; wi < s.windows.length; wi++) {
       const w = s.windows[wi]
       for (let pi = 0; pi < w.panes.length; pi++) {
         if (w.panes[pi].paneId === paneId) {
-          return `${s.sessionName}:${w.windowIndex}:${pi}`
+          return `${s.sessionName}:${w.windowIndex}:${w.panes[pi].paneId}`
         }
       }
     }
