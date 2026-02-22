@@ -57,8 +57,21 @@
 
 ### Prerequisites
 - macOS with tmux installed
-- Node.js ≥ 18
+- **Node.js v18.x ~ v20.x** (tested on v20.20.0)
+- **npm ≥ 8.x** (tested on 8.19.4)
 - Python 3 (for PTY helper)
+- MySQL 5.7+ (for task persistence)
+
+### Environment Versions
+
+| Dependency | Version | Notes |
+|------------|---------|-------|
+| Node.js | v20.20.0 | Recommended: v18.x ~ v20.x |
+| npm | 8.19.4 | Bundled with Node.js |
+| MySQL | 5.7+ | Required for task history |
+| tmux | ≥ 3.0 | With `mouse on` option |
+
+> ⚠️ Node.js v22+ may have compatibility issues. If you encounter errors, try v20.x.
 
 ### Setup
 

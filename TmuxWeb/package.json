@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "description": "Web-based tmux client with SSH proxy",
   "main": "server/index.js",
+  "engines": {
+    "node": ">=18.0.0 <23.0.0",
+    "npm": ">=8.0.0"
+  },
   "scripts": {
     "start": "node server/index.js",
     "dev": "node server/index.js",
