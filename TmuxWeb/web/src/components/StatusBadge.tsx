@@ -1,4 +1,5 @@
 import { PaneStatus } from '../types'
+import { Check, Circle, Loader2 } from 'lucide-react'
 import './StatusBadge.css'
 
 interface Props {
@@ -15,13 +16,25 @@ const statusLabels: Record<PaneStatus, string> = {
 
 const statusOptions: PaneStatus[] = ['idle', 'in_progress', 'done']
 
+function StatusIcon({ status, size }: { status: PaneStatus; size: 'small' | 'medium' }) {
+  const iconSize = size === 'small' ? 10 : 12
+  
+  if (status === 'in_progress') {
+    return <Loader2 size={iconSize} className="status-icon status-icon--spinning" />
+  }
+  if (status === 'done') {
+    return <Check size={iconSize} className="status-icon status-icon--done" />
+  }
+  return <Circle size={iconSize} className="status-icon status-icon--idle" />
+}
+
 export function StatusBadge({ status, onChange, size = 'small' }: Props) {
   const isEditable = !!onChange
 
   if (isEditable) {
     return (
       <div className={`status-badge status-badge--${status} status-badge--${size} status-badge--editable`}>
-        <span className="status-badge__dot" />
+        <StatusIcon status={status} size={size} />
         <select
           className="status-badge__select"
           value={status}
@@ -40,7 +53,7 @@ export function StatusBadge({ status, onChange, size = 'small' }: Props) {
 
   return (
     <div className={`status-badge status-badge--${status} status-badge--${size}`}>
-      <span className="status-badge__dot" />
+      <StatusIcon status={status} size={size} />
       {size === 'medium' && <span className="status-badge__label">{statusLabels[status]}</span>}
     </div>
   )

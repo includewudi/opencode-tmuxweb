@@ -202,37 +202,47 @@
 }
 
 .mobile-drawer .tmux-tree {
-  padding: 8px;
+  padding: 6px;
 }
 
 .mobile-drawer .tree-header {
-  padding-bottom: 8px;
-  margin-bottom: 8px;
+  padding-bottom: 6px;
+  margin-bottom: 6px;
+  gap: 6px;
+}
+
+.mobile-drawer .task-stats {
+  margin-left: 4px;
+}
+
+.mobile-drawer .task-stat {
+  font-size: 9px;
+  padding: 2px 5px;
 }
 
 .mobile-drawer .session-row,
 .mobile-drawer .group-row {
-  padding: 10px 8px;
-  min-height: 44px;
-}
-
-.mobile-drawer .pane-node {
-  padding: 10px 10px;
-  min-height: 44px;
-}
-
-.mobile-drawer .window-row {
-  padding: 8px;
+  padding: 8px 6px;
   min-height: 40px;
 }
 
+.mobile-drawer .pane-node {
+  padding: 8px 8px;
+  min-height: 40px;
+}
+
+.mobile-drawer .window-row {
+  padding: 6px;
+  min-height: 36px;
+}
+
 .mobile-drawer .drag-handle {
-  padding: 0 6px;
+  padding: 0 4px;
 }
 
 .mobile-drawer .expand-btn {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
 }
 
 .mobile-drawer .pane-details-btn {

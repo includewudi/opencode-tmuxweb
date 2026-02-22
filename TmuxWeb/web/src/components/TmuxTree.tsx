@@ -30,7 +30,9 @@ import {
   Pencil,
   FolderInput,
   FolderMinus,
-  FolderPlus
+  FolderPlus,
+  Loader2,
+  CheckCircle2
 } from 'lucide-react'
 import { TmuxSession, SessionGroup, PaneStatus, PaneStatusInfo } from '../types'
 import { StatusBadge } from './StatusBadge'
@@ -825,12 +827,35 @@ export function TmuxTree({
     return ids
   }, [treeItems.rootItems, groups])
   
+  const taskStats = useMemo(() => {
+    const values = Object.values(statusMap)
+    return {
+      inProgress: values.filter(s => s === 'in_progress').length,
+      done: values.filter(s => s === 'done').length,
+      total: values.length
+    }
+  }, [statusMap])
+  
   return (
     <div className="tmux-tree">
       <div className="tree-header">
         <span>Sessions</span>
+        <div className="task-stats">
+          {taskStats.inProgress > 0 && (
+            <span className="task-stat task-stat--progress" title="In progress">
+              <Loader2 size={10} />
+              {taskStats.inProgress}
+            </span>
+          )}
+          {taskStats.done > 0 && (
+            <span className="task-stat task-stat--done" title="Completed">
+              <CheckCircle2 size={10} />
+              {taskStats.done}
+            </span>
+          )}
+        </div>
         <button onClick={onRefresh} className="refresh-btn" title="Refresh">
-          <RefreshCw size={14} />
+          <RefreshCw size={12} />
         </button>
       </div>
       

@@ -33,7 +33,7 @@
 }
 
 .sidebar {
-  width: 280px;
+  width: 220px;
   background: var(--zinc-900);
   border-right: 1px solid var(--zinc-800);
   flex-shrink: 0;
@@ -46,23 +46,23 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 12px;
+  padding: 6px 8px;
   border-bottom: 1px solid var(--zinc-800);
-  gap: 8px;
+  gap: 6px;
 }
 
 .header-actions {
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 .group-btn {
-  padding: 6px 10px;
-  font-size: 1rem;
+  padding: 4px 6px;
+  font-size: 0.875rem;
   color: var(--zinc-400);
   background: transparent;
   border: 1px solid var(--zinc-700);
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
@@ -74,12 +74,12 @@
 }
 
 .logout-btn {
-  padding: 6px 10px;
-  font-size: 1rem;
+  padding: 4px 6px;
+  font-size: 0.875rem;
   color: var(--zinc-400);
   background: transparent;
   border: 1px solid var(--zinc-700);
-  border-radius: 6px;
+  border-radius: 4px;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
