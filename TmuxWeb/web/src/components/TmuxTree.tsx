@@ -99,8 +99,9 @@ async function saveOrder(profileId: number, orderData: OrderData) {
 
 async function fetchPaneStatuses(profileKey: string, paneKeys: string[]): Promise<PaneStatusInfo[]> {
   if (!paneKeys.length) return []
+  const encodedKeys = paneKeys.map(k => encodeURIComponent(k)).join(',')
   const res = await fetch(
-    `/api/panes/status?profile_key=${encodeURIComponent(profileKey)}&paneKeys=${paneKeys.join(',')}`,
+    `/api/panes/status?profile_key=${encodeURIComponent(profileKey)}&paneKeys=${encodedKeys}`,
     { credentials: 'include' }
   )
   if (!res.ok) return []
@@ -334,6 +335,23 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
   const [editingWindowIndex, setEditingWindowIndex] = useState<number | null>(null)
   const [editWindowName, setEditWindowName] = useState('')
   const [quickGroupMenu, setQuickGroupMenu] = useState<{ x: number; y: number } | null>(null)
+
+  // Aggregate session-level status from all panes
+  const sessionStatus = useMemo(() => {
+    let inProgress = 0
+    let done = 0
+    let total = 0
+    session.windows.forEach(w => {
+      w.panes.forEach(p => {
+        const key = buildPaneKey(session.sessionName, w.windowIndex, p.paneId)
+        const st = statusMap[key] || 'idle'
+        total++
+        if (st === 'in_progress') inProgress++
+        else if (st === 'done') done++
+      })
+    })
+    return { inProgress, done, total }
+  }, [session, statusMap])
   
   const {
     attributes,
@@ -377,6 +395,22 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
         </button>
         <Terminal size={14} style={{ color: 'var(--blue-500)' }} />
         <span className="session-name">{session.sessionName}</span>
+        {(sessionStatus.inProgress > 0 || sessionStatus.done > 0) && (
+          <span className="session-status-summary">
+            {sessionStatus.inProgress > 0 && (
+              <span className="session-stat session-stat--progress">
+                <Loader2 size={10} className="spinning" />
+                {sessionStatus.inProgress} 进行中
+              </span>
+            )}
+            {sessionStatus.done > 0 && (
+              <span className="session-stat session-stat--done">
+                <CheckCircle2 size={10} />
+                {sessionStatus.done} 已完成
+              </span>
+            )}
+          </span>
+        )}
       </div>
 
       {quickGroupMenu && profileKey && (
@@ -641,6 +675,21 @@ export function TmuxTree({
     })
   }, [profileKey, allPaneKeys, statusRefreshToken])
 
+  // Auto-poll pane statuses every 10 seconds
+  useEffect(() => {
+    if (!profileKey || allPaneKeys.length === 0) return
+    const interval = setInterval(() => {
+      fetchPaneStatuses(profileKey, allPaneKeys).then((items) => {
+        const map: Record<string, PaneStatus> = {}
+        items.forEach((s) => {
+          map[s.paneKey] = s.status
+        })
+        setStatusMap(map)
+      })
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [profileKey, allPaneKeys])
+
   const treeItems = useMemo(() => {
     const groupOrderMap = new Map(groupOrders.map(o => [o.id, o.sort_order]))
     const sortedGroups = [...groups].sort((a, b) => {
@@ -842,15 +891,15 @@ export function TmuxTree({
         <span>Sessions</span>
         <div className="task-stats">
           {taskStats.inProgress > 0 && (
-            <span className="task-stat task-stat--progress" title="In progress">
-              <Loader2 size={10} />
-              {taskStats.inProgress}
+            <span className="task-stat task-stat--progress">
+              <Loader2 size={10} className="spinning" />
+              {taskStats.inProgress} 进行中
             </span>
           )}
           {taskStats.done > 0 && (
-            <span className="task-stat task-stat--done" title="Completed">
+            <span className="task-stat task-stat--done">
               <CheckCircle2 size={10} />
-              {taskStats.done}
+              {taskStats.done} 已完成
             </span>
           )}
         </div>

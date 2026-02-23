@@ -1,5 +1,6 @@
 const express = require('express');
 const { pool } = require('../db/pool');
+const config = require('../config-loader');
 
 const router = express.Router();
 
@@ -7,6 +8,43 @@ const router = express.Router();
 function normalizePaneKey(key) {
   if (!key) return key;
   return key.replace(/\//g, ':');
+}
+
+// Sync pane status to tmux_session_meta so TmuxTree sidebar can show it
+async function syncPaneStatus(token, profileKey, paneKey, status) {
+  try {
+    const parts = paneKey.split(':');
+    if (parts.length < 3) return;
+    const sessionName = parts.slice(0, -2).join(':');
+    const windowIndex = parts[parts.length - 2];
+    const paneIndex = parts[parts.length - 1];
+    const paneStatusKey = `${windowIndex}:${paneIndex}`;
+    const now = Math.floor(Date.now() / 1000);
+
+    const [existingRows] = await pool.query(
+      `SELECT id, extra FROM tmux_session_meta WHERE token = ? AND profile_key = ? AND session_name = ?`,
+      [token, profileKey, sessionName]
+    );
+
+    if (existingRows.length > 0) {
+      let extra = {};
+      try { extra = existingRows[0].extra ? JSON.parse(existingRows[0].extra) : {}; } catch (e) { extra = {}; }
+      if (!extra.panes) extra.panes = {};
+      extra.panes[paneStatusKey] = status;
+      await pool.query(
+        `UPDATE tmux_session_meta SET extra = ?, mtime = ? WHERE id = ?`,
+        [JSON.stringify(extra), now, existingRows[0].id]
+      );
+    } else {
+      const extra = { panes: { [paneStatusKey]: status } };
+      await pool.query(
+        `INSERT INTO tmux_session_meta (token, profile_key, session_name, extra, ctime, mtime) VALUES (?, ?, ?, ?, ?, ?)`,
+        [token, profileKey, sessionName, JSON.stringify(extra), now, now]
+      );
+    }
+  } catch (err) {
+    console.error('[task-events] syncPaneStatus error:', err.message);
+  }
 }
 
 const sseSubscribers = new Map();
@@ -94,6 +132,10 @@ router.post('/', async (req, res) => {
         [conversation_id, paneKey, user_message || '', eventTime, year, mon, now, now]
       );
 
+      // Sync pane status to sidebar
+      const token = req.token || req.query.token || config.token;
+      await syncPaneStatus(token, 'default', paneKey, 'in_progress');
+
       broadcast(paneKey, {
         type: 'task_started',
         conversation_id,
@@ -135,30 +177,32 @@ router.post('/', async (req, res) => {
         'SELECT pane_key FROM ai_conversation WHERE conversation_id = ?',
         [conversation_id]
       );
-
-      const [result] = await pool.query(
-        `UPDATE ai_conversation 
-         SET assistant_message = ?, conv_status = 'completed', completed_at = ?, mtime = ?
-         WHERE conversation_id = ?`,
-        [assistant_message || '', eventTime, now, conversation_id]
-      );
-
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ error: 'conversation not found' });
-      }
-
       if (existing.length > 0) {
-        broadcast(existing[0].pane_key, {
+        const paneKeyForBroadcast = existing[0].pane_key;
+
+        // Sync pane status to sidebar
+        const token = req.token || req.query.token || config.token;
+        await syncPaneStatus(token, 'default', paneKeyForBroadcast, 'done');
+
+        broadcast(paneKeyForBroadcast, {
           type: 'task_completed',
           conversation_id,
-          pane_key: existing[0].pane_key,
+          pane_key: paneKeyForBroadcast,
           assistant_message: assistant_message || '',
           timestamp: eventTime,
         });
       }
 
+      await pool.query(
+        `UPDATE ai_conversation SET 
+         assistant_message = ?, conv_status = 'completed', completed_at = ?, mtime = ?
+         WHERE conversation_id = ?`,
+        [assistant_message || '', eventTime, now, conversation_id]
+      );
+
       return res.json({ success: true, event: 'task_completed' });
     }
+
 
     return res.status(400).json({ error: `unknown event type: ${event}` });
 

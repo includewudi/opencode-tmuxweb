@@ -94,6 +94,39 @@
   font-size: 12px;
 }
 
+
+/* Session-level status summary */
+.session-status-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.session-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  font-weight: 500;
+  padding: 1px 5px;
+  border-radius: 8px;
+  line-height: 1;
+}
+
+.session-stat--progress {
+  color: var(--blue-400);
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.session-stat--progress svg {
+  animation: spin 1.5s linear infinite;
+}
+
+.session-stat--done {
+  color: var(--green-400);
+  background: rgba(34, 197, 94, 0.15);
+}
 .window-node {
   margin-left: 10px;
   margin-bottom: 2px;

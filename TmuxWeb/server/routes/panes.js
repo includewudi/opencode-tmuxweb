@@ -16,7 +16,7 @@ function parsePaneKey(paneKey) {
   return {
     sessionName: parts.slice(0, -2).join(':'),
     windowIndex: parseInt(parts[parts.length - 2], 10),
-    paneIndex: parseInt(parts[parts.length - 1], 10)
+    paneIndex: parts[parts.length - 1]
   };
 }
 
@@ -96,7 +96,7 @@ router.get('/status', async (req, res) => {
       const paneStatusKey = `${parsed.windowIndex}:${parsed.paneIndex}`;
       const paneStatuses = sessionData.extra.panes || {};
       const status = paneStatuses[paneStatusKey] || 'idle';
-      const mtime = sessionData.mtime ? new Date(sessionData.mtime).getTime() : null;
+      const mtime = sessionData.mtime ? sessionData.mtime * 1000 : null;
 
       return { paneKey: key, status, mtime };
     });
