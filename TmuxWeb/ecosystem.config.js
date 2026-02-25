@@ -5,6 +5,7 @@ module.exports = {
       script: 'server/index.js',
       cwd: __dirname,
       instances: 1,
+      exec_mode: 'fork',
       autorestart: true,
       watch: false,
       env: {
@@ -17,6 +18,7 @@ module.exports = {
       args: 'preview --port 5216 --host',
       cwd: __dirname + '/web',
       instances: 1,
+      exec_mode: 'fork',
       autorestart: true,
       watch: false,
       env: {

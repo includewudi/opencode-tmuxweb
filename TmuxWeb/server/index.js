@@ -65,19 +65,22 @@ app.use('/api/auth', authRouter);
 app.use('/api/tasks/events', taskEventsRouter);
 app.use('/api/telemetry', telemetryRouter);
 app.use('/api/tmux', tokenMiddleware, tmuxRouter);
-app.use('/api/tasks', tokenMiddleware, tasksDbRouter);
 app.use('/api/groups', tokenMiddleware, groupsRouter);
 app.use('/api/sessions', tokenMiddleware, sessionsRouter);
-app.use('/api/panes', tokenMiddleware, panesRouter);
-app.use('/api/panes', tokenMiddleware, tasksDbRouter);
+// Pane routes: status (panes.js), task CRUD (tasks-db.js)
+app.use('/api/panes', tokenMiddleware, panesRouter);        // GET/PUT /status
+app.use('/api/panes', tokenMiddleware, tasksDbRouter);      // /:paneKey/tasks
+app.use('/api/panes', tokenMiddleware, paneSummariesRouter); // /:paneKey/summary
 app.use('/api/profiles', tokenMiddleware, profilesRouter);
 app.use('/api/segments', tokenMiddleware, segmentsRouter);
-app.use('/api/tasks', tokenMiddleware, taskSummariesRouter);
-app.use('/api/panes', tokenMiddleware, paneSummariesRouter);
 app.use('/api/ai', tokenMiddleware, aiRouter);
 app.use('/api/roles', tokenMiddleware, rolesRouter);
 app.use('/api/snippets', tokenMiddleware, snippetsRouter);
 app.use('/api/hotwords', tokenMiddleware, hotwordsRouter);
+
+// Task routes: task CRUD (tasks-db.js), summaries
+app.use('/api/tasks', tokenMiddleware, tasksDbRouter);       // /:id, /:id/complete, /:id/detail
+app.use('/api/tasks', tokenMiddleware, taskSummariesRouter); // /summaries
 
 // PTY debug endpoint
 app.get('/api/debug/pty-status', tokenMiddleware, (req, res) => {
@@ -94,7 +97,7 @@ const speechWss = new WebSocketServer({ noServer: true, perMessageDeflate: false
 // Manually handle HTTP upgrade to route to correct WebSocketServer
 server.on('upgrade', (request, socket, head) => {
   const pathname = new URL(request.url, `http://${request.headers.host}`).pathname;
-  
+
   if (pathname === '/ws/terminal') {
     terminalWss.handleUpgrade(request, socket, head, (ws) => {
       terminalWss.emit('connection', ws, request);
@@ -112,7 +115,7 @@ terminalWss.on('connection', (ws, req) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const token = url.searchParams.get('token');
   const paneId = url.searchParams.get('paneId');
-  
+
   console.log(`[WS] Connection attempt: paneId=${paneId}, token=${token ? 'present' : 'missing'}, from=${req.socket.remoteAddress}`);
 
   if (!validateToken(token)) {
@@ -134,18 +137,18 @@ terminalWss.on('connection', (ws, req) => {
 speechWss.on('connection', (ws, req) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const token = url.searchParams.get('token');
-  
+
   if (!validateToken(token)) {
     ws.close(4001, 'Unauthorized');
     return;
   }
-  
+
   handleSpeechConnection(ws);
 });
 
 server.listen(config.port, config.bind, () => {
   console.log(`TmuxWeb backend listening on ${PROTOCOL}://${config.bind}:${config.port}`);
-  
+
   testConnection().then(ok => {
     if (ok) {
       console.log('[DB] Database connection verified');

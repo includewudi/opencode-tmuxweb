@@ -3,6 +3,7 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 
 const execAsync = promisify(exec);
+const isDev = process.env.NODE_ENV !== 'production';
 
 // ── PTY Connection Manager ──────────────────────────────────────────
 const MAX_PTYS = 20;
@@ -187,18 +188,29 @@ async function handleTerminalConnection(ws, paneId) {
         ptyProcess.resize(parsed.cols, parsed.rows);
         return;
       }
-    } catch {}
+    } catch { }
 
     // Filter xterm.js terminal protocol responses (NOT user input)
     if (content === '\x1b[I' || content === '\x1b[O' ||
-        (content.startsWith('\x1b[?') && content.endsWith('c')) ||
-        (content.startsWith('\x1b[>') && content.endsWith('c')) ||
-        content.startsWith('\x1b]')) {
+      (content.startsWith('\x1b[?') && content.endsWith('c')) ||
+      (content.startsWith('\x1b[>') && content.endsWith('c')) ||
+      content.startsWith('\x1b]')) {
+      if (isDev) {
+        console.log(`[Terminal] Filtered control sequence from ${paneId}:`, JSON.stringify(content));
+      }
       return;
+    }
+
+    if (isDev) {
+      const charCodes = [...content].map(c => c.charCodeAt(0));
+      console.log(`[Terminal] Input from ${paneId}:`, { content: JSON.stringify(content), charCodes, len: content.length });
     }
 
     const now = Date.now();
     if (content === lastMessage && (now - lastMessageTime) < 30) {
+      if (isDev) {
+        console.log(`[Terminal] Dropped duplicate from ${paneId}`);
+      }
       return;
     }
     lastMessage = content;

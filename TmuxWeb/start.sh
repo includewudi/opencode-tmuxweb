@@ -25,8 +25,8 @@ cleanup() {
 trap cleanup SIGINT SIGTERM
 
 echo -e "${GREEN}=== TmuxWeb Startup ===${NC}"
-echo -e "Backend:  http://localhost:${BACKEND_PORT}"
-echo -e "Frontend: http://localhost:${FRONTEND_PORT}"
+echo -e "Backend:  https://localhost:${BACKEND_PORT}"
+echo -e "Frontend: https://localhost:${FRONTEND_PORT}"
 echo ""
 
 if [ ! -d "node_modules" ]; then
@@ -70,7 +70,7 @@ echo ""
 echo -e "${GREEN}=== TmuxWeb Running (PRODUCTION MODE) ===${NC}"
 echo -e "Backend:  ${GREEN}production${NC} (Node.js Direct)"
 echo -e "Frontend: ${GREEN}production${NC} (Vite Preview Mode)"
-echo -e "Open: ${YELLOW}http://localhost:${FRONTEND_PORT}?token=tmuxweb-dev-token${NC}"
+echo -e "Open: ${YELLOW}https://localhost:${FRONTEND_PORT}${NC}"
 echo -e "Press Ctrl+C to stop"
 echo ""
 

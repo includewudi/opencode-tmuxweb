@@ -1,21 +1,9 @@
 const express = require('express');
 const { pool } = require('../db/pool');
+const { parsePaneKey } = require('../utils');
 
 const router = express.Router();
 
-/**
- * Parse paneKey into components
- * Format: "sessionName:windowIndex:paneIndex"
- */
-function parsePaneKey(paneKey) {
-  const parts = paneKey.split(':');
-  if (parts.length < 3) return null;
-  return {
-    sessionName: parts.slice(0, -2).join(':'),
-    windowIndex: parseInt(parts[parts.length - 2], 10),
-    paneIndex: parseInt(parts[parts.length - 1], 10)
-  };
-}
 
 /**
  * POST /api/panes/:paneKey/tasks

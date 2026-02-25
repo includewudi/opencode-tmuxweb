@@ -1,24 +1,11 @@
 const express = require('express');
 const { pool } = require('../db/pool');
+const { parsePaneKey } = require('../utils');
 
 const router = express.Router();
 
 const VALID_STATUSES = ['idle', 'in_progress', 'done', 'failed', 'waiting'];
 
-/**
- * Parse paneKey into components
- * Format: "sessionName:windowIndex:paneIndex"
- * Assumes session names don't contain colons
- */
-function parsePaneKey(paneKey) {
-  const parts = paneKey.split(':');
-  if (parts.length < 3) return null;
-  return {
-    sessionName: parts.slice(0, -2).join(':'),
-    windowIndex: parseInt(parts[parts.length - 2], 10),
-    paneIndex: parts[parts.length - 1]
-  };
-}
 
 /**
  * GET /api/panes/status
@@ -87,7 +74,7 @@ router.get('/status', async (req, res) => {
       if (!parsed) {
         return { paneKey: key, status: 'idle', mtime: null };
       }
-      
+
       const sessionData = sessionDataMap.get(parsed.sessionName);
       if (!sessionData) {
         return { paneKey: key, status: 'idle', mtime: null };
@@ -153,7 +140,7 @@ router.put('/status', async (req, res) => {
       } catch (e) {
         extra = {};
       }
-      
+
       if (!extra.panes) extra.panes = {};
       extra.panes[paneStatusKey] = status;
 
