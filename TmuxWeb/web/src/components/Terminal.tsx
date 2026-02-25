@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react'
 import { Terminal as XTerm } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import { getToken } from '../utils/auth'
-import { isIOS, isMobile } from '../utils/platform'
+import { isIOS, isAndroid, isMobile } from '../utils/platform'
 import { log as telemetryLog, isDebugEnabled } from '../utils/telemetry'
 import { useKeyboardAvoider } from '../hooks/useKeyboardAvoider'
 import { VoiceInput } from '../shared/components/VoiceInput'
@@ -14,9 +14,11 @@ const DEC_1004_DISABLE = '\x1b[?1004l'
 const BURST_SUPPRESSION_WINDOW_MS = 200  // Increased from 50ms
 const SUPPRESSED_INPUTS = new Set([' ', '\r', '\n'])
 const ACCESSORY_BAR_HEIGHT = 44
-// Consecutive space detection - if we see N spaces in M ms, it's phantom
+// Consecutive space detection - if we see N spaces in M ms, it is phantom
 const SPACE_BURST_COUNT = 3
 const SPACE_BURST_WINDOW_MS = 500
+const ENTER_BURST_COUNT = 2
+const ENTER_BURST_WINDOW_MS = 500
 
 interface Props {
   paneId: string
@@ -170,46 +172,101 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
     let lastInputData = ''
     let lastInputTime = 0
     const spaceTimestamps: number[] = []
-    
-    const shouldSuppressBurst = (data: string): boolean => {
-      if (!isIOS()) return false
-      
-      const now = Date.now()
-      
-      // Track space timestamps for burst detection
+    const enterTimestamps: number[] = []
+
+    const shouldSuppressBurstIOS = (data: string, now: number): boolean => {
+      // iOS: space burst detection
       if (data === ' ') {
         spaceTimestamps.push(now)
-        // Keep only recent timestamps
         while (spaceTimestamps.length > 0 && now - spaceTimestamps[0] > SPACE_BURST_WINDOW_MS) {
           spaceTimestamps.shift()
         }
-        // If we see too many spaces in the window, it's phantom input
         if (spaceTimestamps.length >= SPACE_BURST_COUNT) {
-          telemetryLog('suppressed', { 
-            data: JSON.stringify(data), 
+          telemetryLog('suppressed', {
+            data: JSON.stringify(data),
             reason: 'space-burst',
             count: spaceTimestamps.length
           })
-          spaceTimestamps.length = 0  // Reset after suppression
+          spaceTimestamps.length = 0
           return true
         }
       }
-      
-      // Transition-based suppression (reconnect, visibility, keyboard)
+
+      // iOS: enter burst detection
+      if (data === '\r' || data === '\n') {
+        enterTimestamps.push(now)
+        while (enterTimestamps.length > 0 && now - enterTimestamps[0] > ENTER_BURST_WINDOW_MS) {
+          enterTimestamps.shift()
+        }
+        if (enterTimestamps.length >= ENTER_BURST_COUNT) {
+          telemetryLog('suppressed', {
+            data: JSON.stringify(data),
+            reason: 'enter-burst',
+            count: enterTimestamps.length
+          })
+          enterTimestamps.length = 0
+          return true
+        }
+      }
+
+      // iOS: post-transition suppression (reconnect, visibility, keyboard)
       if (!SUPPRESSED_INPUTS.has(data)) return false
-      
       const transition = lastTransitionRef.current
       if (!transition) return false
-      
       const elapsed = now - transition.time
       if (elapsed < BURST_SUPPRESSION_WINDOW_MS) {
-        telemetryLog('suppressed', { 
-          data: JSON.stringify(data), 
-          transitionType: transition.type, 
-          elapsed 
+        telemetryLog('suppressed', {
+          data: JSON.stringify(data),
+          transitionType: transition.type,
+          elapsed
         })
         return true
       }
+      return false
+    }
+
+    const shouldSuppressBurstAndroid = (data: string, now: number): boolean => {
+      // Android: space burst detection
+      if (data === ' ') {
+        spaceTimestamps.push(now)
+        while (spaceTimestamps.length > 0 && now - spaceTimestamps[0] > SPACE_BURST_WINDOW_MS) {
+          spaceTimestamps.shift()
+        }
+        if (spaceTimestamps.length >= SPACE_BURST_COUNT) {
+          telemetryLog('suppressed', {
+            data: JSON.stringify(data),
+            reason: 'space-burst',
+            count: spaceTimestamps.length
+          })
+          spaceTimestamps.length = 0
+          return true
+        }
+      }
+
+      // Android: enter burst detection
+      if (data === '\r' || data === '\n') {
+        enterTimestamps.push(now)
+        while (enterTimestamps.length > 0 && now - enterTimestamps[0] > ENTER_BURST_WINDOW_MS) {
+          enterTimestamps.shift()
+        }
+        if (enterTimestamps.length >= ENTER_BURST_COUNT) {
+          telemetryLog('suppressed', {
+            data: JSON.stringify(data),
+            reason: 'enter-burst',
+            count: enterTimestamps.length
+          })
+          enterTimestamps.length = 0
+          return true
+        }
+      }
+
+      return false
+    }
+
+    const shouldSuppressBurst = (data: string): boolean => {
+      const now = Date.now()
+      if (isIOS()) return shouldSuppressBurstIOS(data, now)
+      if (isAndroid()) return shouldSuppressBurstAndroid(data, now)
       return false
     }
     
