@@ -3,7 +3,7 @@ const { pool } = require('../db/pool');
 
 const router = express.Router();
 
-const VALID_STATUSES = ['idle', 'in_progress', 'done'];
+const VALID_STATUSES = ['idle', 'in_progress', 'done', 'failed', 'waiting'];
 
 /**
  * Parse paneKey into components
@@ -129,7 +129,7 @@ router.put('/status', async (req, res) => {
     }
 
     if (!VALID_STATUSES.includes(status)) {
-      return res.status(400).json({ error: 'invalid_status', message: 'Status must be idle, in_progress, or done' });
+      return res.status(400).json({ error: 'invalid_status', message: 'Status must be idle, in_progress, done, failed, or waiting' });
     }
 
     const parsed = parsePaneKey(paneKey);
@@ -137,7 +137,7 @@ router.put('/status', async (req, res) => {
       return res.status(400).json({ error: 'invalid_pane_key', message: 'Invalid paneKey format' });
     }
 
-    const now = new Date();
+    const now = Math.floor(Date.now() / 1000);
     const paneStatusKey = `${parsed.windowIndex}:${parsed.paneIndex}`;
 
     const [existingRows] = await pool.query(

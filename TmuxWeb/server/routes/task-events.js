@@ -218,7 +218,7 @@ router.post('/', async (req, res) => {
         const paneKeyForBroadcast = existing[0].pane_key;
 
         const token = req.token || req.query.token || config.token;
-        await syncPaneStatus(token, 'default', paneKeyForBroadcast, 'done');
+        await syncPaneStatus(token, 'default', paneKeyForBroadcast, 'failed');
 
         broadcast(paneKeyForBroadcast, {
           type: 'task_failed',

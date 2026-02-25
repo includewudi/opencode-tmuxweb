@@ -32,7 +32,9 @@ import {
   FolderMinus,
   FolderPlus,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  XCircle,
+  Clock
 } from 'lucide-react'
 import { TmuxSession, SessionGroup, PaneStatus, PaneStatusInfo } from '../../types'
 import { StatusBadge } from './StatusBadge'
@@ -340,6 +342,8 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
   const sessionStatus = useMemo(() => {
     let inProgress = 0
     let done = 0
+    let failed = 0
+    let waiting = 0
     let total = 0
     session.windows.forEach(w => {
       w.panes.forEach(p => {
@@ -348,9 +352,11 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
         total++
         if (st === 'in_progress') inProgress++
         else if (st === 'done') done++
+        else if (st === 'failed') failed++
+        else if (st === 'waiting') waiting++
       })
     })
-    return { inProgress, done, total }
+    return { inProgress, done, failed, waiting, total }
   }, [session, statusMap])
   
   const {
@@ -395,7 +401,7 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
         </button>
         <Terminal size={14} style={{ color: 'var(--blue-500)' }} />
         <span className="session-name">{session.sessionName}</span>
-        {(sessionStatus.inProgress > 0 || sessionStatus.done > 0) && (
+        {(sessionStatus.inProgress > 0 || sessionStatus.done > 0 || sessionStatus.failed > 0 || sessionStatus.waiting > 0) && (
           <span className="session-status-summary">
             {sessionStatus.inProgress > 0 && (
               <span className="session-stat session-stat--progress">
@@ -407,6 +413,18 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
               <span className="session-stat session-stat--done">
                 <CheckCircle2 size={10} />
                 {sessionStatus.done} 已完成
+              </span>
+            )}
+            {sessionStatus.failed > 0 && (
+              <span className="session-stat session-stat--failed">
+                <XCircle size={10} />
+                {sessionStatus.failed} 失败
+              </span>
+            )}
+            {sessionStatus.waiting > 0 && (
+              <span className="session-stat session-stat--waiting">
+                <Clock size={10} />
+                {sessionStatus.waiting} 等待中
               </span>
             )}
           </span>
@@ -881,6 +899,8 @@ export function TmuxTree({
     return {
       inProgress: values.filter(s => s === 'in_progress').length,
       done: values.filter(s => s === 'done').length,
+      failed: values.filter(s => s === 'failed').length,
+      waiting: values.filter(s => s === 'waiting').length,
       total: values.length
     }
   }, [statusMap])
@@ -900,6 +920,18 @@ export function TmuxTree({
             <span className="task-stat task-stat--done">
               <CheckCircle2 size={10} />
               {taskStats.done} 已完成
+            </span>
+          )}
+          {taskStats.failed > 0 && (
+            <span className="task-stat task-stat--failed">
+              <XCircle size={10} />
+              {taskStats.failed} 失败
+            </span>
+          )}
+          {taskStats.waiting > 0 && (
+            <span className="task-stat task-stat--waiting">
+              <Clock size={10} />
+              {taskStats.waiting} 等待中
             </span>
           )}
         </div>

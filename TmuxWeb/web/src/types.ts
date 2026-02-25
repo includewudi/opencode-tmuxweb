@@ -37,7 +37,7 @@ export interface SessionGroup {
   session_count: number
 }
 
-export type PaneStatus = 'idle' | 'in_progress' | 'done'
+export type PaneStatus = 'idle' | 'in_progress' | 'done' | 'failed' | 'waiting'
 
 export interface PaneStatusInfo {
   paneKey: string

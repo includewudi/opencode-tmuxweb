@@ -53,6 +53,16 @@
   background: rgba(34, 197, 94, 0.15);
 }
 
+.task-stat--failed {
+  color: var(--red-400);
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.task-stat--waiting {
+  color: var(--yellow-400);
+  background: rgba(234, 179, 8, 0.15);
+}
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
@@ -126,6 +136,16 @@
 .session-stat--done {
   color: var(--green-400);
   background: rgba(34, 197, 94, 0.15);
+}
+
+.session-stat--failed {
+  color: var(--red-400);
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.session-stat--waiting {
+  color: var(--yellow-400);
+  background: rgba(234, 179, 8, 0.15);
 }
 .window-node {
   margin-left: 10px;

@@ -61,6 +61,22 @@
   color: var(--green-500);
 }
 
+.status-badge--failed {
+  color: var(--red-500);
+}
+
+.status-badge--waiting {
+  color: var(--yellow-500);
+}
+
+.status-icon--failed {
+  color: var(--red-500);
+}
+
+.status-icon--waiting {
+  color: var(--yellow-500);
+}
+
 .status-badge__label {
   font-weight: 500;
   letter-spacing: 0.02em;
