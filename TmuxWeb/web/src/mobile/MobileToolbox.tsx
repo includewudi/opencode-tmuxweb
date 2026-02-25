@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef, RefObject } from 'react'
 import { Grid3X3, Clock, Bot } from 'lucide-react'
-import { VoiceInput, VoiceInputHandle } from '../components/VoiceInput'
-import { AiCommandTab } from '../components/AiCommandTab'
-import { SnippetsTab } from '../components/SnippetsTab'
+import { VoiceInput, VoiceInputHandle } from '../shared/components/VoiceInput'
+import { AiCommandTab } from '../shared/components/AiCommandTab'
+import { SnippetsTab } from '../shared/components/SnippetsTab'
 import { useTmuxPrefix } from '../hooks/useTmuxPrefix'
 import './MobileToolbox.css'
 

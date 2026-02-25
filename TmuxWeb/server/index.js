@@ -25,7 +25,7 @@ const aiRouter = require('./routes/ai');
 const { router: rolesRouter } = require('./routes/roles');
 const snippetsRouter = require('./routes/snippets');
 const hotwordsRouter = require('./routes/hotwords');
-const { handleTerminalConnection } = require('./services/terminal');
+const { handleTerminalConnection, getStats } = require('./services/terminal');
 const { handleSpeechConnection } = require('./services/speech');
 const { pool, testConnection } = require('./db/pool');
 
@@ -78,6 +78,11 @@ app.use('/api/ai', tokenMiddleware, aiRouter);
 app.use('/api/roles', tokenMiddleware, rolesRouter);
 app.use('/api/snippets', tokenMiddleware, snippetsRouter);
 app.use('/api/hotwords', tokenMiddleware, hotwordsRouter);
+
+// PTY debug endpoint
+app.get('/api/debug/pty-status', tokenMiddleware, (req, res) => {
+  res.json(getStats());
+});
 
 app.use(express.static(path.join(__dirname, '../web/dist')));
 

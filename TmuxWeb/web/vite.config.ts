@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import fs from 'fs'
@@ -7,13 +8,17 @@ const certFile = path.join(__dirname, '../server/cert.pem')
 const keyFile = path.join(__dirname, '../server/key.pem')
 const hasCerts = fs.existsSync(certFile) && fs.existsSync(keyFile)
 
-const backendTarget = hasCerts ? 'https://127.0.0.1:8215' : 'http://127.0.0.1:8215'
-const wsTarget = hasCerts ? 'wss://127.0.0.1:8215' : 'ws://127.0.0.1:8215'
+const backendTarget = hasCerts ? 'https://127.0.0.1:8216' : 'http://127.0.0.1:8216'
+const wsTarget = hasCerts ? 'wss://127.0.0.1:8216' : 'ws://127.0.0.1:8216'
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    environment: "jsdom",
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+  },
   server: {
-    port: 5215,
+    port: 5216,
     https: hasCerts ? { cert: fs.readFileSync(certFile), key: fs.readFileSync(keyFile) } : undefined,
     proxy: {
       '/api': {
@@ -30,7 +35,7 @@ export default defineConfig({
     }
   },
   preview: {
-    port: 5215,
+    port: 5216,
     https: hasCerts ? { cert: fs.readFileSync(certFile), key: fs.readFileSync(keyFile) } : undefined,
     proxy: {
       '/api': {

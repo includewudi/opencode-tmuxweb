@@ -6,7 +6,7 @@ import { isIOS } from '../utils/platform'
 import { log as telemetryLog } from '../utils/telemetry'
 import { createTelemetryEmitter, type TelemetryEmitter } from '../utils/telemetryEmitter'
 import { MobileToolbox } from './MobileToolbox'
-import { VoiceInputHandle } from '../components/VoiceInput'
+import { VoiceInputHandle } from '../shared/components/VoiceInput'
 import 'xterm/css/xterm.css'
 
 const DEC_1004_DISABLE = '\x1b[?1004l'

@@ -121,6 +121,12 @@ router.post('/', async (req, res) => {
 
       const paneKey = normalizePaneKey(rawPaneKey);
 
+      // Auto-close any stale in_progress conversations on this pane
+      await pool.query(
+        `UPDATE ai_conversation SET conv_status = "aborted", mtime = ? WHERE pane_key = ? AND conv_status = "in_progress" AND conversation_id != ?`,
+        [now, paneKey, conversation_id]
+      );
+
       await pool.query(
         `INSERT INTO ai_conversation 
          (conversation_id, pane_key, user_message, conv_status, started_at, year, mon, ctime, mtime)
@@ -201,6 +207,66 @@ router.post('/', async (req, res) => {
       );
 
       return res.json({ success: true, event: 'task_completed' });
+    }
+
+    if (event === 'task_failed') {
+      const [existing] = await pool.query(
+        'SELECT pane_key FROM ai_conversation WHERE conversation_id = ?',
+        [conversation_id]
+      );
+      if (existing.length > 0) {
+        const paneKeyForBroadcast = existing[0].pane_key;
+
+        const token = req.token || req.query.token || config.token;
+        await syncPaneStatus(token, 'default', paneKeyForBroadcast, 'done');
+
+        broadcast(paneKeyForBroadcast, {
+          type: 'task_failed',
+          conversation_id,
+          pane_key: paneKeyForBroadcast,
+          assistant_message: assistant_message || '',
+          timestamp: eventTime,
+        });
+      }
+
+      await pool.query(
+        `UPDATE ai_conversation SET
+         assistant_message = ?, conv_status = 'failed', completed_at = ?, mtime = ?
+         WHERE conversation_id = ?`,
+        [assistant_message || '', eventTime, now, conversation_id]
+      );
+
+      return res.json({ success: true, event: 'task_failed' });
+    }
+
+    if (event === 'task_waiting') {
+      const [existing] = await pool.query(
+        'SELECT pane_key FROM ai_conversation WHERE conversation_id = ?',
+        [conversation_id]
+      );
+      if (existing.length > 0) {
+        const paneKeyForBroadcast = existing[0].pane_key;
+
+        const token = req.token || req.query.token || config.token;
+        await syncPaneStatus(token, 'default', paneKeyForBroadcast, 'waiting');
+
+        broadcast(paneKeyForBroadcast, {
+          type: 'task_waiting',
+          conversation_id,
+          pane_key: paneKeyForBroadcast,
+          assistant_message: assistant_message || '',
+          timestamp: eventTime,
+        });
+      }
+
+      await pool.query(
+        `UPDATE ai_conversation SET
+         assistant_message = ?, conv_status = 'waiting', mtime = ?
+         WHERE conversation_id = ?`,
+        [assistant_message || '', now, conversation_id]
+      );
+
+      return res.json({ success: true, event: 'task_waiting' });
     }
 
 

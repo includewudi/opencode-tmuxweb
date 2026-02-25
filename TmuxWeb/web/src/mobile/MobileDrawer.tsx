@@ -1,8 +1,8 @@
 import { RefreshCw, X, Settings, LogOut } from 'lucide-react'
 import { TmuxSession, Profile, SessionGroup } from '../types'
-import { ProfileSelector } from '../components/ProfileSelector'
-import { GroupManager } from '../components/GroupManager'
-import { TmuxTree } from '../components/TmuxTree'
+import { ProfileSelector } from '../shared/components/ProfileSelector'
+import { GroupManager } from '../shared/components/GroupManager'
+import { TmuxTree } from '../shared/components/TmuxTree'
 import { useState } from 'react'
 
 interface Props {

@@ -36,7 +36,7 @@ export function useAIConversations(paneKey: string | null) {
     es.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
-        if (data.type === 'task_started' || data.type === 'task_completed') {
+        if (['task_started', 'task_completed', 'task_failed', 'task_waiting'].includes(data.type)) {
           fetchConversations()
         }
       } catch (err) {

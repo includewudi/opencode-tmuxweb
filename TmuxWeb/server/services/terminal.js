@@ -4,6 +4,51 @@ const { promisify } = require('util');
 
 const execAsync = promisify(exec);
 
+// ── PTY Connection Manager ──────────────────────────────────────────
+const MAX_PTYS = 20;
+const HEARTBEAT_INTERVAL = 30000; // 30s ping interval
+const HEARTBEAT_TIMEOUT = 10000;  // 10s pong timeout
+
+// Map<paneId, { ptyProcess, clients: Set<ws>, createdAt }>
+const activePTYs = new Map();
+
+// Track all WS connections for heartbeat
+const allConnections = new Set();
+
+function getStats() {
+  const panes = [];
+  for (const [paneId, entry] of activePTYs) {
+    panes.push({
+      paneId,
+      clients: entry.clients.size,
+      createdAt: entry.createdAt,
+    });
+  }
+  return {
+    totalPTYs: activePTYs.size,
+    maxPTYs: MAX_PTYS,
+    totalWsConnections: allConnections.size,
+    panes,
+  };
+}
+
+// ── Heartbeat: detect zombie WS connections ─────────────────────────
+const heartbeatTimer = setInterval(() => {
+  for (const ws of allConnections) {
+    if (ws._isAlive === false) {
+      console.log('[Terminal] Heartbeat timeout, terminating zombie WS');
+      ws.terminate();
+      continue;
+    }
+    ws._isAlive = false;
+    ws.ping();
+  }
+}, HEARTBEAT_INTERVAL);
+
+// Don't keep process alive just for heartbeat
+heartbeatTimer.unref();
+
+// ── Helpers ─────────────────────────────────────────────────────────
 async function getSessionForPane(paneId) {
   try {
     const { stdout } = await execAsync(
@@ -16,47 +61,126 @@ async function getSessionForPane(paneId) {
   }
 }
 
+function cleanupPTY(paneId) {
+  const entry = activePTYs.get(paneId);
+  if (!entry) return;
+
+  // Only kill PTY if no clients remain
+  if (entry.clients.size === 0) {
+    console.log(`[Terminal] No clients left for pane ${paneId}, killing PTY`);
+    try {
+      entry.ptyProcess.kill();
+    } catch (err) {
+      console.log(`[Terminal] PTY kill error for ${paneId}: ${err.message}`);
+    }
+    activePTYs.delete(paneId);
+    console.log(`[Terminal] PTY removed. Active: ${activePTYs.size}/${MAX_PTYS}`);
+  }
+}
+
+function removeClient(ws, paneId) {
+  allConnections.delete(ws);
+
+  const entry = activePTYs.get(paneId);
+  if (entry) {
+    entry.clients.delete(ws);
+    console.log(`[Terminal] Client removed from pane ${paneId}. Remaining: ${entry.clients.size}`);
+    cleanupPTY(paneId);
+  }
+}
+
+// ── Main handler ────────────────────────────────────────────────────
 async function handleTerminalConnection(ws, paneId) {
-  console.log(`[Terminal] handleTerminalConnection called for paneId=${paneId}`);
-  
-  const sessionName = await getSessionForPane(paneId);
-  if (!sessionName) {
-    console.log(`[Terminal] Pane ${paneId} not found or no session`);
-    ws.close(4003, `Pane ${paneId} not found`);
+  console.log(`[Terminal] handleTerminalConnection paneId=${paneId} (active: ${activePTYs.size}/${MAX_PTYS})`);
+
+  // ── Heartbeat setup ──
+  ws._isAlive = true;
+  ws.on('pong', () => { ws._isAlive = true; });
+  allConnections.add(ws);
+
+  // ── Check PTY limit ──
+  if (!activePTYs.has(paneId) && activePTYs.size >= MAX_PTYS) {
+    console.log(`[Terminal] PTY limit reached (${MAX_PTYS}). Rejecting pane ${paneId}`);
+    allConnections.delete(ws);
+    ws.close(4004, 'PTY limit reached');
     return;
   }
 
-  console.log(`[Terminal] Found session ${sessionName} for pane ${paneId}`);
+  // ── Reuse existing PTY or spawn new one ──
+  let entry = activePTYs.get(paneId);
 
-  const ptyProcess = pty.spawn('tmux', ['attach', '-t', sessionName, ';', 'select-pane', '-t', paneId], {
-    name: 'xterm-256color',
-    cols: 80,
-    rows: 24,
-    cwd: process.env.HOME || '/tmp',
-    env: process.env
-  });
-
-  console.log(`[Terminal] PTY spawned with tmux attach to session=${sessionName}, pane=${paneId}`);
-
-  ptyProcess.onData((data) => {
-    if (ws.readyState === ws.OPEN) {
-      ws.send(data, { binary: false, compress: false });
+  if (entry) {
+    // Reuse: attach this WS to existing PTY
+    console.log(`[Terminal] Reusing PTY for pane ${paneId} (existing clients: ${entry.clients.size})`);
+    entry.clients.add(ws);
+  } else {
+    // Spawn new PTY
+    const sessionName = await getSessionForPane(paneId);
+    if (!sessionName) {
+      console.log(`[Terminal] Pane ${paneId} not found or no session`);
+      allConnections.delete(ws);
+      ws.close(4003, `Pane ${paneId} not found`);
+      return;
     }
-  });
 
-  ptyProcess.onExit((code) => {
-    console.log(`[Terminal] PTY exited with code=${code?.exitCode}`);
-    if (ws.readyState === ws.OPEN) {
-      ws.close(1000, 'PTY exited');
+    console.log(`[Terminal] Spawning new PTY for session=${sessionName}, pane=${paneId}`);
+
+    let ptyProcess;
+    try {
+      ptyProcess = pty.spawn('tmux', ['attach', '-t', sessionName, ';', 'select-pane', '-t', paneId], {
+        name: 'xterm-256color',
+        cols: 80,
+        rows: 24,
+        cwd: process.env.HOME || '/tmp',
+        env: process.env,
+      });
+    } catch (err) {
+      console.error(`[Terminal] pty.spawn FAILED for pane ${paneId}: ${err.message}`);
+      allConnections.delete(ws);
+      ws.close(4005, 'PTY spawn failed');
+      return;
     }
-  });
 
+    entry = {
+      ptyProcess,
+      clients: new Set([ws]),
+      createdAt: Date.now(),
+    };
+    activePTYs.set(paneId, entry);
+    console.log(`[Terminal] PTY spawned. Active: ${activePTYs.size}/${MAX_PTYS}`);
+
+    // ── PTY → all WS clients (broadcast) ──
+    ptyProcess.onData((data) => {
+      for (const client of entry.clients) {
+        if (client.readyState === client.OPEN) {
+          client.send(data, { binary: false, compress: false });
+        }
+      }
+    });
+
+    ptyProcess.onExit((code) => {
+      console.log(`[Terminal] PTY exited for pane ${paneId}, code=${code?.exitCode}`);
+      // Close all clients when PTY exits
+      for (const client of entry.clients) {
+        if (client.readyState === client.OPEN) {
+          client.close(1000, 'PTY exited');
+        }
+      }
+      entry.clients.clear();
+      activePTYs.delete(paneId);
+      console.log(`[Terminal] PTY cleaned up. Active: ${activePTYs.size}/${MAX_PTYS}`);
+    });
+  }
+
+  const { ptyProcess } = entry;
+
+  // ── WS → PTY (input) ──
   let lastMessage = '';
   let lastMessageTime = 0;
 
   ws.on('message', (message) => {
     const content = message.toString();
-    
+
     try {
       const parsed = JSON.parse(content);
       if (parsed.type === 'resize' && parsed.cols && parsed.rows) {
@@ -64,40 +188,35 @@ async function handleTerminalConnection(ws, paneId) {
         return;
       }
     } catch {}
-    
+
     // Filter xterm.js terminal protocol responses (NOT user input)
-    // Focus: \x1b[I, \x1b[O | DA1: \x1b[?...c | DA2: \x1b[>...c | OSC: \x1b]...
     if (content === '\x1b[I' || content === '\x1b[O' ||
         (content.startsWith('\x1b[?') && content.endsWith('c')) ||
         (content.startsWith('\x1b[>') && content.endsWith('c')) ||
         content.startsWith('\x1b]')) {
-      console.log(`[Terminal] Filtered control sequence from ${paneId}:`, JSON.stringify(content));
       return;
     }
-    
-    const charCodes = [...content].map(c => c.charCodeAt(0));
-    console.log(`[Terminal] Input from ${paneId}:`, { content: JSON.stringify(content), charCodes, len: content.length });
-    
+
     const now = Date.now();
     if (content === lastMessage && (now - lastMessageTime) < 30) {
-      console.log(`[Terminal] Dropped duplicate from ${paneId}`);
       return;
     }
     lastMessage = content;
     lastMessageTime = now;
-    
+
     ptyProcess.write(content);
   });
 
+  // ── WS close / error → remove client ──
   ws.on('close', () => {
-    console.log(`[Terminal] WebSocket closed for pane ${paneId}`);
-    ptyProcess.kill();
+    console.log(`[Terminal] WS closed for pane ${paneId}`);
+    removeClient(ws, paneId);
   });
 
   ws.on('error', (err) => {
-    console.log(`[Terminal] WebSocket error for pane ${paneId}: ${err.message}`);
-    ptyProcess.kill();
+    console.log(`[Terminal] WS error for pane ${paneId}: ${err.message}`);
+    removeClient(ws, paneId);
   });
 }
 
-module.exports = { handleTerminalConnection };
+module.exports = { handleTerminalConnection, getStats };

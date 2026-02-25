@@ -26,7 +26,7 @@ npm run dev             # same as start
 ### Frontend (`TmuxWeb/web`)
 ```bash
 cd TmuxWeb/web
-npm run dev             # Vite dev server (port 5215)
+npm run dev             # Vite dev server (port 5216)
 npm run build           # Production build → TmuxWeb/web/dist
 npm run preview         # Preview production build
 ```
@@ -119,12 +119,12 @@ router.post('/endpoint', async (req, res) => {
 ### Voice / Xunfei Flow
 - Frontend: `web/src/components/VoiceInput.tsx` (getUserMedia + WS `/ws/speech`)
 - Backend: `server/services/speech.js` (proxy to Xunfei)
-- Debug page: `TmuxWeb/web/public/voice-debug.html` → `http://localhost:5215/voice-debug.html`
+- Debug page: `TmuxWeb/web/public/voice-debug.html` → `http://localhost:5216/voice-debug.html`
 
 ## Configuration
 
 - `TmuxWeb/server/config.json` — ports, token, xfyun, llm
-- `allowedOrigins` must include the frontend URL (`http://localhost:5215`)
+- `allowedOrigins` must include the frontend URL (`http://localhost:5216`)
 - `token` is required for all API/WS routes
 
 ## Conventions
@@ -132,7 +132,7 @@ router.post('/endpoint', async (req, res) => {
 ### Task Tracking (MANDATORY)
 On every new conversation, immediately report to TmuxWeb by running:
 ```bash
-PANE_KEY=$(tmux display-message -p '#{session_name}/#{window_index}/#{pane_id}') && curl -sk --noproxy '*' -X POST https://localhost:8215/api/tasks/events -H "Content-Type: application/json" -d "{\"event\":\"task_started\",\"pane_key\":\"$PANE_KEY\",\"conversation_id\":\"$(uuidgen | tr '[:upper:]' '[:lower:]')\",\"user_message\":\"USER_MSG\",\"timestamp\":$(date +%s)}"
+PANE_KEY=$(tmux display-message -p '#{session_name}/#{window_index}/#{pane_id}') && curl -sk --noproxy '*' -X POST https://localhost:8216/api/tasks/events -H "Content-Type: application/json" -d "{\"event\":\"task_started\",\"pane_key\":\"$PANE_KEY\",\"conversation_id\":\"$(uuidgen | tr '[:upper:]' '[:lower:]')\",\"user_message\":\"USER_MSG\",\"timestamp\":$(date +%s)}"
 ```
 Replace `USER_MSG` with the user's message (first 200 chars, JSON-escaped). If it fails, ignore and continue.
 

@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'tmuxweb-backend',
+      name: 'tmuxweb-dev-backend',
       script: 'server/index.js',
       cwd: __dirname,
       instances: 1,
@@ -12,9 +12,9 @@ module.exports = {
       }
     },
     {
-      name: 'tmuxweb-frontend',
+      name: 'tmuxweb-dev-frontend',
       script: 'node_modules/.bin/vite',
-      args: 'preview --port 5215 --host',
+      args: 'preview --port 5216 --host',
       cwd: __dirname + '/web',
       instances: 1,
       autorestart: true,
