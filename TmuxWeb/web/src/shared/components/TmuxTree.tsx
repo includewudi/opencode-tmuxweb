@@ -36,7 +36,7 @@ import {
   XCircle,
   Clock
 } from 'lucide-react'
-import { NewWindowButton } from './NewWindowButton'
+import { NewTmuxButton } from './NewTmuxButton'
 import { TmuxSession, SessionGroup, PaneStatus, PaneStatusInfo } from '../../types'
 import { StatusBadge } from './StatusBadge'
 import './TmuxTree.css'
@@ -431,11 +431,6 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
         </button>
         <Terminal size={14} style={{ color: 'var(--blue-500)' }} />
         <span className="session-name">{session.sessionName}</span>
-        <NewWindowButton
-          session={session.sessionName}
-          onCreated={onRefresh}
-          compact
-        />
         {(sessionStatus.inProgress > 0 || sessionStatus.done > 0 || sessionStatus.failed > 0 || sessionStatus.waiting > 0) && (
           <span className="session-status-summary">
             {sessionStatus.inProgress > 0 && (
@@ -988,6 +983,7 @@ export function TmuxTree({
         <button onClick={onRefresh} className="refresh-btn" title="Refresh">
           <RefreshCw size={12} />
         </button>
+        <NewTmuxButton sessions={sessions} onCreated={onRefresh} />
       </div>
 
       {sessions.length === 0 && groups.length === 0 && (

@@ -138,6 +138,35 @@ router.get('/quick-dirs', (req, res) => {
   res.json({ dirs });
 });
 
+// POST /api/tmux/new-session
+// body: { name?, dir? }
+router.post('/new-session', (req, res) => {
+  const { name, dir } = req.body;
+
+  let cmd = 'new-session -d'; // -d: detached (don't attach)
+
+  if (name && typeof name === 'string') {
+    const sanitizedName = name.replace(/['"\\]/g, '').slice(0, 60);
+    cmd += ` -s "${sanitizedName}"`;
+  }
+
+  if (dir && typeof dir === 'string') {
+    const resolvedDir = dir.replace(/^~/, os.homedir()).replace(/['"\\]/g, '');
+    cmd += ` -c "${resolvedDir}"`;
+  }
+
+  try {
+    runTmuxCommand(cmd);
+    // Return the new session name
+    const nameOut = name
+      ? name.replace(/['"\\]/g, '').slice(0, 60)
+      : runTmuxCommand('display-message -p "#{session_name}"');
+    return res.json({ success: true, sessionName: nameOut });
+  } catch (err) {
+    res.status(500).json({ error: 'tmux_error', message: err.message });
+  }
+});
+
 // POST /api/tmux/new-window
 // body: { session, dir? }  — dir 为可选工作目录（绝对路径）
 router.post('/new-window', (req, res) => {

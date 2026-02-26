@@ -1,0 +1,185 @@
+.ntb-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.ntb-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: transparent;
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    border-radius: 5px;
+    color: rgba(74, 222, 128, 0.7);
+    cursor: pointer;
+    padding: 0;
+    transition: all 0.15s;
+}
+
+.ntb-trigger:hover {
+    background: rgba(74, 222, 128, 0.12);
+    border-color: rgba(74, 222, 128, 0.6);
+    color: #4ade80;
+}
+
+.ntb-trigger:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+/* dropdown */
+.ntb-menu {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    width: 240px;
+    background: rgba(18, 20, 28, 0.98);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 6px;
+    z-index: 9999;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+}
+
+.ntb-section {
+    padding: 4px 2px;
+}
+
+.ntb-section-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 4px 8px 6px;
+    user-select: none;
+}
+
+.ntb-section-title.green {
+    color: #4ade80;
+}
+
+.ntb-section-title.blue {
+    color: #60a5fa;
+}
+
+.ntb-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px;
+    padding: 5px 8px;
+    outline: none;
+    margin-bottom: 6px;
+    transition: border-color 0.15s;
+}
+
+.ntb-input::placeholder {
+    color: rgba(255, 255, 255, 0.22);
+}
+
+.ntb-input:focus {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.ntb-select {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px;
+    padding: 5px 8px;
+    outline: none;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+
+.ntb-select option {
+    background: #1a1d24;
+    color: #fff;
+}
+
+.ntb-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.ntb-chip {
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    font-family: monospace;
+    cursor: pointer;
+    transition: all 0.12s;
+}
+
+.ntb-chip:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+.ntb-chip.active {
+    border-color: rgba(74, 222, 128, 0.5);
+    color: #4ade80;
+    background: rgba(74, 222, 128, 0.08);
+}
+
+.ntb-action {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    width: 100%;
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, filter 0.15s;
+    justify-content: center;
+}
+
+.ntb-action.green {
+    background: rgba(74, 222, 128, 0.18);
+    color: #4ade80;
+}
+
+.ntb-action.green:hover {
+    background: rgba(74, 222, 128, 0.28);
+}
+
+.ntb-action.blue {
+    background: rgba(96, 165, 250, 0.18);
+    color: #60a5fa;
+}
+
+.ntb-action.blue:hover {
+    background: rgba(96, 165, 250, 0.28);
+}
+
+.ntb-action:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.ntb-sep {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.07);
+    margin: 4px 0;
+}
