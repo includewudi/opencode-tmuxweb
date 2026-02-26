@@ -98,3 +98,6 @@ TmuxWeb/server/*.pem
 
 # Custom roles data
 web/custom_roles.json
+
+# Gemini folder
+.gemini/
