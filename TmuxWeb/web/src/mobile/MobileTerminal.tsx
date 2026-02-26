@@ -17,7 +17,7 @@ const SPACE_BURST_WINDOW_MS = 500
 const ENTER_BURST_COUNT = 2
 const ENTER_BURST_WINDOW_MS = 500
 const SCROLL_THRESHOLD = 20
-const MAX_RECONNECT_ATTEMPTS = 5
+const MAX_RECONNECT_ATTEMPTS = 3
 // 每个页面加载唯一 ID，用于服务端驱逐旧的 WS 连接（消除重影）
 const CLIENT_ID = Math.random().toString(36).slice(2)
 
@@ -326,10 +326,13 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
             if (!isCleanupRef.current && !intentionalCloseRef.current) connect()
           }, delay)
         } else {
-          termRef.current?.write('\r\n\x1b[31m[重连失败]\x1b[0m \x1b[33m按任意键刷新页面\x1b[0m\r\n')
+          termRef.current?.write('\r\n\x1b[31m[重连失败]\x1b[0m \x1b[33m按任意键重连，或关闭重新打开\x1b[0m\r\n')
           if (termRef.current) {
             manualReconnectDisposable.current = termRef.current.onData(() => {
-              window.location.reload()
+              manualReconnectDisposable.current?.dispose()
+              manualReconnectDisposable.current = null
+              reconnectAttemptRef.current = 0
+              connect()
             })
           }
         }
