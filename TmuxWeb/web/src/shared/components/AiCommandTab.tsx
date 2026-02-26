@@ -118,7 +118,20 @@ export function AiCommandTab({ onSend, disabled, initialText, onTextConsumed }: 
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '8px', gap: '8px', overflow: 'auto' }}>
-      {/* Role fixed to cli (命令行大神) — no selector shown */}
+      {/* Role: show cli (命令行大神) as a selected chip — no other roles */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <span style={{
+          padding: '3px 10px',
+          borderRadius: '12px',
+          border: '1px solid #4d78cc',
+          background: '#4d78cc22',
+          color: '#4d78cc',
+          fontSize: '12px',
+          whiteSpace: 'nowrap',
+        }}>
+          {roles.find(r => r.id === 'cli')?.emoji ?? '⚡'} {roles.find(r => r.id === 'cli')?.label ?? '命令行大神'}
+        </span>
+      </div>
 
       {/* Prompt viewer */}
       {showPrompt && selectedRoleDef?.prompt && (

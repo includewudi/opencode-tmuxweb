@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { Menu, X, PanelRightOpen } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { Menu, X, History } from 'lucide-react'
 import { MobileDrawer } from './MobileDrawer'
 import { MobileTerminal } from './MobileTerminal'
-import { PaneDetails } from '../shared/components/PaneDetails'
+import { TaskHistoryPanel } from '../shared/components/TaskHistoryPanel'
 import { LoginModal } from '../shared/components/LoginModal'
 import { checkAuth, logout } from '../utils/auth'
 import { TmuxSession, OpenTab, Profile, SessionGroup } from '../types'
@@ -68,6 +68,8 @@ export default function MobileApp() {
   const [activeTabId, setActiveTabId] = useState<string | null>(loadActiveTabId)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [rightPanelOpen, setRightPanelOpen] = useState(false)
+  const [taskHistoryPaneKey, setTaskHistoryPaneKey] = useState<string | null>(null)
+  const [statusRefreshToken, setStatusRefreshToken] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fontSize, setFontSize] = useState(() => {
@@ -192,6 +194,12 @@ export default function MobileApp() {
     setDrawerOpen(false)
   }, [])
 
+  // Open task history for a specific pane (from status icon click in drawer)
+  const handlePaneStatusClick = useCallback((paneKey: string) => {
+    setTaskHistoryPaneKey(paneKey)
+    setRightPanelOpen(true)
+  }, [])
+
   const handleCloseTab = useCallback((tabId: string) => {
     setTabs(prev => {
       const idx = prev.findIndex(t => t.id === tabId)
@@ -225,9 +233,22 @@ export default function MobileApp() {
     setDrawerOpen(prev => !prev)
   }, [])
 
+  // Right panel shows task history for current pane
+  const activeTab = tabs.find(t => t.id === activeTabId) ?? null
+  const activePaneKey = useMemo(() => {
+    return activeTab ? getPaneKey(sessions, activeTab.paneId) : null
+  }, [activeTab, sessions])
+
   const toggleRightPanel = useCallback(() => {
-    setRightPanelOpen(prev => !prev)
-  }, [])
+    setRightPanelOpen(prev => {
+      const next = !prev
+      if (next && !taskHistoryPaneKey) {
+        // Auto-select active pane when opening
+        setTaskHistoryPaneKey(activePaneKey)
+      }
+      return next
+    })
+  }, [taskHistoryPaneKey, activePaneKey])
 
   if (isAuthenticated === null) {
     return <div className="mobile-loading">Loading...</div>
@@ -245,8 +266,8 @@ export default function MobileApp() {
     return <div className="mobile-error">{error}</div>
   }
 
-  const activeTab = tabs.find(t => t.id === activeTabId) ?? null
-  const activePaneKey = activeTab ? getPaneKey(sessions, activeTab.paneId) : null
+  // Effective history pane: explicit click overrides active pane
+  const historyPaneKey = taskHistoryPaneKey ?? activePaneKey
 
   return (
     <div className="mobile-app">
@@ -277,8 +298,8 @@ export default function MobileApp() {
           <span className="mobile-title">Select a pane</span>
         )}
         {activeTab && (
-          <button className="mobile-menu-btn" onClick={toggleRightPanel} type="button">
-            <PanelRightOpen size={22} />
+          <button className="mobile-menu-btn" onClick={toggleRightPanel} type="button" title="Task history">
+            <History size={22} />
           </button>
         )}
       </header>
@@ -292,20 +313,23 @@ export default function MobileApp() {
         sessions={sessions}
         currentProfile={currentProfile}
         groups={groups}
+        statusRefreshToken={statusRefreshToken}
         onProfileChange={handleProfileChange}
         onGroupsChanged={handleGroupsChanged}
         onSelectPane={handleSelectPane}
+        onPaneStatusClick={handlePaneStatusClick}
         onClose={() => setDrawerOpen(false)}
         onRefresh={fetchTree}
         onLogout={handleLogout}
       />
 
+      {/* Right panel: task history */}
       <aside className={`mobile-right-panel ${rightPanelOpen ? 'open' : ''}`}>
-        {rightPanelOpen && activePaneKey && (
-          <PaneDetails
-            paneKey={activePaneKey}
-            profileKey={currentProfile?.profile_key || ''}
+        {rightPanelOpen && (
+          <TaskHistoryPanel
+            paneKey={historyPaneKey}
             onClose={() => setRightPanelOpen(false)}
+            onStatusChange={() => setStatusRefreshToken(prev => prev + 1)}
           />
         )}
       </aside>
@@ -323,6 +347,8 @@ export default function MobileApp() {
                   fontSize={fontSize}
                   onFontSizeChange={handleFontSizeChange}
                   voiceRef={tab.id === activeTabId ? voiceRef : undefined}
+                  taskHistoryPaneKey={tab.id === activeTabId ? historyPaneKey : null}
+                  onStatusChange={tab.id === activeTabId ? () => setStatusRefreshToken(prev => prev + 1) : undefined}
                 />
               </div>
             ))}

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef, RefObject } from 'react'
+import { useState, useCallback, useRef, RefObject } from 'react'
 import { Grid3X3, Clock, Bot } from 'lucide-react'
 import { VoiceInput, VoiceInputHandle } from '../shared/components/VoiceInput'
 import { AiCommandTab } from '../shared/components/AiCommandTab'

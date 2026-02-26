@@ -89,14 +89,6 @@ export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey,
         <span className="desktop-prefix-label">{prefix.label}</span>
       </div>
 
-      {/* Task history — above AI content so it's immediately visible */}
-      <TaskHistoryPanel
-        paneKey={taskHistoryPaneKey ?? null}
-        onClose={() => {/* no-op in embedded */ }}
-        onStatusChange={onStatusChange}
-        embedded
-      />
-
       <div className="desktop-toolbox-content">
         {activeTab === 'ai' && (
           <AiCommandTab
@@ -114,6 +106,14 @@ export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey,
           />
         )}
       </div>
+
+      {/* Task history — below AI content */}
+      <TaskHistoryPanel
+        paneKey={taskHistoryPaneKey ?? null}
+        onClose={() => {/* no-op in embedded */ }}
+        onStatusChange={onStatusChange}
+        embedded
+      />
     </div>
   )
 }

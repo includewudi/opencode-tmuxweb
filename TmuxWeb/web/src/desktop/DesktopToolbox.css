@@ -90,8 +90,8 @@
 }
 
 .desktop-toolbox-content {
-  flex: 1;
-  overflow-y: auto;
+  flex: 0 0 auto;
+  overflow-y: visible;
   padding: 12px;
 }
 

@@ -3,18 +3,19 @@ import { TmuxSession, Profile, SessionGroup } from '../types'
 import { ProfileSelector } from '../shared/components/ProfileSelector'
 import { GroupManager } from '../shared/components/GroupManager'
 import { TmuxTree } from '../shared/components/TmuxTree'
-import { GlobalTaskOverview } from '../shared/components/GlobalTaskOverview'
+import { TaskStatBadges } from '../shared/components/TaskStatBadges'
 import { useState } from 'react'
-import { TerminalSquare, CheckSquare } from 'lucide-react'
 
 interface Props {
   open: boolean
   sessions: TmuxSession[]
   currentProfile: Profile | null
   groups: SessionGroup[]
+  statusRefreshToken?: number
   onProfileChange: (profile: Profile) => void
   onGroupsChanged: () => void
   onSelectPane: (paneId: string, paneName: string) => void
+  onPaneStatusClick?: (paneKey: string) => void
   onClose: () => void
   onRefresh: () => void
   onLogout: () => void
@@ -25,59 +26,54 @@ export function MobileDrawer({
   sessions,
   currentProfile,
   groups,
+  statusRefreshToken,
   onProfileChange,
   onGroupsChanged,
   onSelectPane,
+  onPaneStatusClick,
   onClose,
   onRefresh,
   onLogout,
 }: Props) {
   const [showGroupManager, setShowGroupManager] = useState(false)
-  const [activeTab, setActiveTab] = useState<'sessions' | 'tasks'>('sessions')
 
   const handleSelectPane = (paneId: string, paneName: string) => {
     onSelectPane(paneId, paneName)
     onClose()
   }
 
+  const handlePaneStatusClick = (paneKey: string) => {
+    onPaneStatusClick?.(paneKey)
+    onClose()  // close drawer, right panel will open
+  }
+
   return (
     <aside className={`mobile-drawer ${open ? 'open' : ''}`}>
       <div className="mobile-drawer-header">
-        <div className="mobile-drawer-tabs">
-          <button
-            className={`mobile-drawer-tab ${activeTab === 'sessions' ? 'active' : ''}`}
-            onClick={() => setActiveTab('sessions')}
-          >
-            <TerminalSquare size={16} />
-            <span>Sessions</span>
-          </button>
-          <button
-            className={`mobile-drawer-tab ${activeTab === 'tasks' ? 'active' : ''}`}
-            onClick={() => setActiveTab('tasks')}
-          >
-            <CheckSquare size={16} />
-            <span>Tasks</span>
-          </button>
-        </div>
-        <div className="mobile-drawer-actions">
-          {activeTab === 'sessions' && (
-            <button
-              className="mobile-drawer-btn"
-              onClick={() => setShowGroupManager(!showGroupManager)}
-              type="button"
-              title="Manage groups"
-            >
-              <Settings size={18} />
-            </button>
-          )}
+        <div className="mobile-drawer-actions" style={{ marginLeft: 0, flex: 1 }}>
           <button
             className="mobile-drawer-btn"
-            onClick={activeTab === 'sessions' ? onRefresh : undefined} // Task Overview has its own refresh
+            onClick={() => setShowGroupManager(!showGroupManager)}
+            type="button"
+            title="Manage groups"
+          >
+            <Settings size={18} />
+          </button>
+          <button
+            className="mobile-drawer-btn"
+            onClick={onRefresh}
             type="button"
             title="Refresh"
-            style={{ opacity: activeTab === 'tasks' ? 0.3 : 1, pointerEvents: activeTab === 'tasks' ? 'none' : 'auto' }}
           >
             <RefreshCw size={18} />
+          </button>
+          <button
+            className="mobile-drawer-btn"
+            onClick={onLogout}
+            type="button"
+            title="Sign out"
+          >
+            <LogOut size={16} />
           </button>
           <button
             className="mobile-drawer-btn"
@@ -96,17 +92,12 @@ export function MobileDrawer({
             currentProfile={currentProfile}
             onProfileChange={onProfileChange}
           />
-          <button
-            className="mobile-drawer-logout"
-            onClick={onLogout}
-            type="button"
-            title="Sign out"
-          >
-            <LogOut size={16} />
-          </button>
         </div>
 
-        {activeTab === 'sessions' && showGroupManager && currentProfile && (
+        {/* Task stat badges — compact, always visible */}
+        <TaskStatBadges refreshToken={statusRefreshToken} />
+
+        {showGroupManager && currentProfile && (
           <GroupManager
             profileKey={currentProfile.profile_key}
             sessions={sessions}
@@ -114,26 +105,20 @@ export function MobileDrawer({
           />
         )}
 
-        {activeTab === 'sessions' ? (
-          <div className="mobile-drawer-scrollable">
-            <TmuxTree
-              sessions={sessions}
-              groups={groups}
-              profileId={currentProfile?.id}
-              profileKey={currentProfile?.profile_key}
-              onSelectPane={handleSelectPane}
-              onRefresh={onRefresh}
-              onOrderChange={onGroupsChanged}
-              defaultExpanded={false}
-            />
-          </div>
-        ) : (
-          <div className="mobile-drawer-scrollable">
-            <GlobalTaskOverview
-              onSelectPane={handleSelectPane}
-            />
-          </div>
-        )}
+        <div className="mobile-drawer-scrollable">
+          <TmuxTree
+            sessions={sessions}
+            groups={groups}
+            profileId={currentProfile?.id}
+            profileKey={currentProfile?.profile_key}
+            onSelectPane={handleSelectPane}
+            onRefresh={onRefresh}
+            onOrderChange={onGroupsChanged}
+            onPaneStatusClick={handlePaneStatusClick}
+            statusRefreshToken={statusRefreshToken}
+            defaultExpanded={false}
+          />
+        </div>
       </div>
     </aside>
   )

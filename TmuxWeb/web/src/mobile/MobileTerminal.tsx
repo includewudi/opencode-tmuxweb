@@ -38,9 +38,11 @@ interface Props {
   fontSize: number
   onFontSizeChange: (size: number) => void
   voiceRef?: React.RefObject<VoiceInputHandle | null>
+  taskHistoryPaneKey?: string | null
+  onStatusChange?: () => void
 }
 
-export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef }: Props) {
+export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, taskHistoryPaneKey, onStatusChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const termRef = useRef<XTerm | null>(null)
   const fitRef = useRef<FitAddon | null>(null)
@@ -142,7 +144,7 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef }:
       })
         .then(r => r.json())
         .then(data => { paneInAltScreen = !!(data.alternate_on && data.mouse_any_flag) })
-        .catch(() => {})
+        .catch(() => { })
     }
     checkPaneMode()
     const paneModeInterval = setInterval(checkPaneMode, 5000)
@@ -477,9 +479,9 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef }:
     term.onData((data) => {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         if (data === '\x1b[I' || data === '\x1b[O' ||
-            (data.startsWith('\x1b[?') && data.endsWith('c')) ||
-            (data.startsWith('\x1b[>') && data.endsWith('c')) ||
-            data.startsWith('\x1b]')) {
+          (data.startsWith('\x1b[?') && data.endsWith('c')) ||
+          (data.startsWith('\x1b[>') && data.endsWith('c')) ||
+          data.startsWith('\x1b]')) {
           return
         }
 
@@ -588,6 +590,8 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef }:
         voiceRef={voiceRef}
         keyboardMode={showKeyboard}
         onToggleKeyboard={toggleKeyboard}
+        taskHistoryPaneKey={taskHistoryPaneKey}
+        onStatusChange={onStatusChange}
       />
     </div>
   )

@@ -89,6 +89,12 @@ app.get('/api/debug/pty-status', tokenMiddleware, (req, res) => {
 
 app.use(express.static(path.join(__dirname, '../web/dist')));
 
+// SPA fallback: serve index.html for all non-API routes so client-side
+// routing (e.g. /m for mobile, / for desktop) works on direct navigation.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../web/dist/index.html'));
+});
+
 // Use noServer mode to avoid multiple WebSocketServer conflict
 // See: docs/errors/ws-multiple-websocketserver-rsv1-error.md
 const terminalWss = new WebSocketServer({ noServer: true, perMessageDeflate: false });
