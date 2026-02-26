@@ -7,6 +7,17 @@
   "sessionMaxAgeDays": 30,
   "frontendPort": 5215,
   "tmuxSocket": null,
+  "_quickDirs_说明": "新建 tmux window 的常用目录，name 为显示名，path 为绝对路径",
+  "quickDirs": [
+    {
+      "name": "Home",
+      "path": "~"
+    },
+    {
+      "name": "Code",
+      "path": "~/code"
+    }
+  ],
   "allowedOrigins": [
     "http://localhost:5215",
     "http://127.0.0.1:5215",

@@ -85,14 +85,14 @@ router.get('/config', (req, res) => {
 router.put('/windows/:sessionName/:windowIndex/rename', (req, res) => {
   const { sessionName, windowIndex } = req.params;
   const { name } = req.body;
-  
+
   if (!name || typeof name !== 'string') {
     return res.status(400).json({ error: 'bad_request', message: 'name is required' });
   }
-  
+
   const sanitizedName = name.replace(/["'\\]/g, '');
   const target = `${sessionName}:${windowIndex}`;
-  
+
   try {
     execSync(`tmux rename-window -t "${target}" "${sanitizedName}"`, { encoding: 'utf-8' });
     res.json({ success: true, name: sanitizedName });
@@ -123,6 +123,52 @@ router.get('/pane-mode', (req, res) => {
   } catch (err) {
     console.error('[tmux pane-mode]', err);
     res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+});
+
+const config = require('../config-loader');
+const os = require('os');
+
+// GET /api/tmux/quick-dirs - 返回配置的常用目录列表
+router.get('/quick-dirs', (req, res) => {
+  const dirs = (config.quickDirs || []).map(d => ({
+    name: d.name,
+    path: d.path.replace(/^~/, os.homedir()),
+  }));
+  res.json({ dirs });
+});
+
+// POST /api/tmux/new-window
+// body: { session, dir? }  — dir 为可选工作目录（绝对路径）
+router.post('/new-window', (req, res) => {
+  const { session, dir, name } = req.body;
+  if (!session || typeof session !== 'string') {
+    return res.status(400).json({ error: 'bad_request', message: 'session is required' });
+  }
+
+  const sanitizedSession = session.replace(/['"\\]/g, '');
+  let cmd = `new-window -t "${sanitizedSession}"`;
+
+  if (name && typeof name === 'string') {
+    const sanitizedName = name.replace(/['"\\]/g, '').slice(0, 60);
+    cmd += ` -n "${sanitizedName}"`;
+  }
+
+  if (dir && typeof dir === 'string') {
+    const resolvedDir = dir.replace(/^~/, os.homedir()).replace(/['"\\]/g, '');
+    cmd += ` -c "${resolvedDir}"`;
+  }
+
+  try {
+    runTmuxCommand(cmd);
+    const newWinOut = runTmuxCommand(`display-message -t "${sanitizedSession}" -p "#{window_index}:#{window_name}:#{pane_id}"`);
+    if (newWinOut) {
+      const [windowIndex, windowName, paneId] = newWinOut.split(':');
+      return res.json({ success: true, windowIndex: parseInt(windowIndex, 10), windowName, paneId });
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'tmux_error', message: err.message });
   }
 });
 

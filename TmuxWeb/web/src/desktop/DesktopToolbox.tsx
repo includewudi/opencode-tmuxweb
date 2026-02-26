@@ -4,6 +4,7 @@ import { VoiceInput, VoiceInputHandle } from '../shared/components/VoiceInput'
 import { AiCommandTab } from '../shared/components/AiCommandTab'
 import { SnippetsTab } from '../shared/components/SnippetsTab'
 import { TaskHistoryPanel } from '../shared/components/TaskHistoryPanel'
+import { NewWindowButton } from '../shared/components/NewWindowButton'
 import { useTmuxPrefix } from '../hooks/useTmuxPrefix'
 import './DesktopToolbox.css'
 
@@ -15,6 +16,8 @@ interface DesktopToolboxProps {
   voiceRef?: RefObject<VoiceInputHandle | null>
   taskHistoryPaneKey?: string | null
   onStatusChange?: () => void
+  session?: string | null
+  onTreeRefresh?: () => void
 }
 
 interface QuickKey {
@@ -23,7 +26,7 @@ interface QuickKey {
   data: string
 }
 
-export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey, onStatusChange }: DesktopToolboxProps) {
+export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey, onStatusChange, session, onTreeRefresh }: DesktopToolboxProps) {
   const [activeTab, setActiveTab] = useState<TabId>('ai')
   const [voiceText, setVoiceText] = useState<string | undefined>(undefined)
   const localVoiceRef = useRef<VoiceInputHandle | null>(null)
@@ -87,6 +90,9 @@ export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey,
           </button>
         ))}
         <span className="desktop-prefix-label">{prefix.label}</span>
+        {session && (
+          <NewWindowButton session={session} onCreated={onTreeRefresh} />
+        )}
       </div>
 
       <div className="desktop-toolbox-content">
