@@ -121,6 +121,7 @@ terminalWss.on('connection', (ws, req) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
   const token = url.searchParams.get('token');
   const paneId = url.searchParams.get('paneId');
+  const clientId = url.searchParams.get('clientId') || null;
 
   console.log(`[WS] Connection attempt: paneId=${paneId}, token=${token ? 'present' : 'missing'}, from=${req.socket.remoteAddress}`);
 
@@ -137,7 +138,7 @@ terminalWss.on('connection', (ws, req) => {
   }
 
   console.log(`[WS] Accepted: paneId=${paneId}`);
-  handleTerminalConnection(ws, paneId);
+  handleTerminalConnection(ws, paneId, clientId);
 });
 
 speechWss.on('connection', (ws, req) => {

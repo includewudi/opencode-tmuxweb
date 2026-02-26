@@ -91,11 +91,12 @@ function removeClient(ws, paneId) {
 }
 
 // ── Main handler ────────────────────────────────────────────────────
-async function handleTerminalConnection(ws, paneId) {
-  console.log(`[Terminal] handleTerminalConnection paneId=${paneId} (active: ${activePTYs.size}/${MAX_PTYS})`);
+async function handleTerminalConnection(ws, paneId, clientId) {
+  console.log(`[Terminal] handleTerminalConnection paneId=${paneId} clientId=${clientId ?? 'none'} (active: ${activePTYs.size}/${MAX_PTYS})`);
 
   // ── Heartbeat setup ──
   ws._isAlive = true;
+  ws._clientId = clientId || null;
   ws.on('pong', () => { ws._isAlive = true; });
   allConnections.add(ws);
 
@@ -111,6 +112,18 @@ async function handleTerminalConnection(ws, paneId) {
   let entry = activePTYs.get(paneId);
 
   if (entry) {
+    // 驱逐同 clientId 的旧 WS，防止双重广播（重影）
+    if (clientId) {
+      for (const oldWs of entry.clients) {
+        if (oldWs._clientId === clientId && oldWs !== ws) {
+          console.log(`[Terminal] Evicting stale WS for pane ${paneId} (clientId=${clientId})`);
+          oldWs._isAlive = false;
+          try { oldWs.terminate(); } catch { }
+          entry.clients.delete(oldWs);
+          allConnections.delete(oldWs);
+        }
+      }
+    }
     // Reuse: attach this WS to existing PTY
     console.log(`[Terminal] Reusing PTY for pane ${paneId} (existing clients: ${entry.clients.size})`);
     entry.clients.add(ws);

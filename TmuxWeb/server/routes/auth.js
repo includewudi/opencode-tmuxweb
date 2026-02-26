@@ -5,7 +5,8 @@ const config = require('../config-loader');
 const router = express.Router();
 
 const COOKIE_NAME = 'tmuxweb_session';
-const COOKIE_MAX_AGE = 2592000; // 30 days in seconds
+// 过期时间从 config 读取，默认 30 天
+const COOKIE_MAX_AGE = (config.sessionMaxAgeDays ?? 30) * 24 * 3600; // seconds
 
 /**
  * Create signed session value: token + timestamp + signature
@@ -25,19 +26,24 @@ function createSessionValue(token) {
  */
 function verifySessionValue(sessionValue) {
   if (!sessionValue) return null;
-  
+
   const parts = sessionValue.split(':');
   if (parts.length !== 3) return null;
-  
+
   const [token, timestamp, signature] = parts;
   const data = `${token}:${timestamp}`;
   const expectedSignature = crypto
     .createHmac('sha256', config.sessionSecret)
     .update(data)
     .digest('hex');
-  
+
   if (signature !== expectedSignature) return null;
-  
+
+  // 校验 timestamp 是否在有效期内
+  const issuedAt = parseInt(timestamp, 10);
+  const maxAgeMs = COOKIE_MAX_AGE * 1000;
+  if (isNaN(issuedAt) || Date.now() - issuedAt > maxAgeMs) return null;
+
   return token;
 }
 
@@ -48,17 +54,17 @@ function verifySessionValue(sessionValue) {
  */
 router.post('/login', (req, res) => {
   const { token } = req.body;
-  
+
   if (!token || token !== config.token) {
-    return res.status(401).json({ 
-      error: 'unauthorized', 
-      message: 'Invalid token' 
+    return res.status(401).json({
+      error: 'unauthorized',
+      message: 'Invalid token'
     });
   }
-  
+
   const sessionValue = createSessionValue(token);
   const isProduction = process.env.NODE_ENV === 'production';
-  
+
   res.cookie(COOKIE_NAME, sessionValue, {
     httpOnly: true,
     maxAge: COOKIE_MAX_AGE * 1000,
@@ -66,10 +72,10 @@ router.post('/login', (req, res) => {
     secure: false,
     path: '/'
   });
-  
-  res.json({ 
-    success: true, 
-    message: 'Login successful' 
+
+  res.json({
+    success: true,
+    message: 'Login successful'
   });
 });
 
@@ -83,7 +89,7 @@ router.post('/logout', (req, res) => {
     sameSite: 'lax',
     path: '/'
   });
-  
+
   res.json({ success: true });
 });
 

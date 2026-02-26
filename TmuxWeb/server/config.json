@@ -4,6 +4,7 @@
   "bind": "0.0.0.0",
   "token": "",
   "sessionSecret": "",
+  "sessionMaxAgeDays": 30,
   "frontendPort": 5215,
   "tmuxSocket": null,
   "allowedOrigins": [

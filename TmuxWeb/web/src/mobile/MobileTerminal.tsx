@@ -17,6 +17,9 @@ const SPACE_BURST_WINDOW_MS = 500
 const ENTER_BURST_COUNT = 2
 const ENTER_BURST_WINDOW_MS = 500
 const SCROLL_THRESHOLD = 20
+const MAX_RECONNECT_ATTEMPTS = 5
+// 每个页面加载唯一 ID，用于服务端驱逐旧的 WS 连接（消除重影）
+const CLIENT_ID = Math.random().toString(36).slice(2)
 
 const TERMINAL_THEME = {
   background: '#0f1115',
@@ -269,7 +272,7 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
     const buildWsUrl = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
       const token = getToken()
-      return `${protocol}//${window.location.host}/ws/terminal?paneId=${encodeURIComponent(paneId)}&token=${token}`
+      return `${protocol}//${window.location.host}/ws/terminal?paneId=${encodeURIComponent(paneId)}&token=${token}&clientId=${CLIENT_ID}`
     }
 
     const connect = () => {
@@ -285,6 +288,10 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
         reconnectAttemptRef.current = 0
         if (termRef.current) {
           ws.send(JSON.stringify({ type: 'resize', cols: termRef.current.cols, rows: termRef.current.rows }))
+        }
+        // 重连成功：清除上一行的断线提示
+        if (wasReconnect) {
+          termRef.current?.write('\r\x1b[2K\x1b[32m[已重连]\x1b[0m\r\n')
         }
 
         if (isIOS()) {
@@ -307,15 +314,17 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
         termRef.current?.write('\r\n\x1b[33m[Connection error]\x1b[0m\r\n')
       }
 
-      // WS reconnect: 2s retry once, then press-any-key-to-reload
+      // WS 断线重连：指数退避，最多 MAX_RECONNECT_ATTEMPTS 次
       ws.onclose = () => {
         if (isCleanupRef.current || intentionalCloseRef.current) return
         reconnectAttemptRef.current += 1
-        if (reconnectAttemptRef.current <= 1) {
-          termRef.current?.write('\r\n\x1b[33m[连接断开，2秒后重连...]\x1b[0m\r\n')
+        const attempt = reconnectAttemptRef.current
+        if (attempt <= MAX_RECONNECT_ATTEMPTS) {
+          const delay = Math.min(1000 * Math.pow(2, attempt - 1), 16000) // 1s,2s,4s,8s,16s
+          termRef.current?.write(`\r\n\x1b[33m[连接断开，${Math.round(delay / 1000)}s 后重连 (${attempt}/${MAX_RECONNECT_ATTEMPTS})...]\x1b[0m`)
           reconnectTimeoutRef.current = window.setTimeout(() => {
             if (!isCleanupRef.current && !intentionalCloseRef.current) connect()
-          }, 2000)
+          }, delay)
         } else {
           termRef.current?.write('\r\n\x1b[31m[重连失败]\x1b[0m \x1b[33m按任意键刷新页面\x1b[0m\r\n')
           if (termRef.current) {
@@ -336,6 +345,12 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
       if (document.visibilityState === 'visible') {
         if (isIOS()) {
           lastTransitionRef.current = { type: 'visibility', time: Date.now() }
+        }
+
+        // 先取消 pending 的重连 timer，防止和下面的立即重连形成双重连接
+        if (reconnectTimeoutRef.current) {
+          clearTimeout(reconnectTimeoutRef.current)
+          reconnectTimeoutRef.current = null
         }
 
         if (wsRef.current?.readyState !== WebSocket.OPEN && wsRef.current?.readyState !== WebSocket.CONNECTING) {
