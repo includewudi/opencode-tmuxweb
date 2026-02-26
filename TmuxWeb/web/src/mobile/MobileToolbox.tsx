@@ -52,6 +52,8 @@ interface MobileToolboxProps {
   voiceRef?: RefObject<VoiceInputHandle | null>
   keyboardMode?: boolean
   onToggleKeyboard?: () => void
+  taskHistoryPaneKey?: string | null
+  onStatusChange?: () => void
 }
 
 export function MobileToolbox({
@@ -62,12 +64,14 @@ export function MobileToolbox({
   voiceRef,
   keyboardMode,
   onToggleKeyboard,
+  taskHistoryPaneKey: _taskHistoryPaneKey,
+  onStatusChange: _onStatusChange,
 }: MobileToolboxProps) {
   const [activeTab, setActiveTab] = useState<TabId>('ai')
   const [ctrlActive, setCtrlActive] = useState(false)
   const [altActive, setAltActive] = useState(false)
   const [voiceText, setVoiceText] = useState<string | undefined>(undefined)
-  const localVoiceRef = useRef<VoiceInputHandle>(null)
+  const localVoiceRef = useRef<VoiceInputHandle | null>(null)
   const effectiveVoiceRef = voiceRef || localVoiceRef
 
   const prefix = useTmuxPrefix()

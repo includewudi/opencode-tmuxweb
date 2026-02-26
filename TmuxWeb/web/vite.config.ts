@@ -1,4 +1,3 @@
-/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import fs from 'fs'
@@ -8,17 +7,28 @@ const certFile = path.join(__dirname, '../server/cert.pem')
 const keyFile = path.join(__dirname, '../server/key.pem')
 const hasCerts = fs.existsSync(certFile) && fs.existsSync(keyFile)
 
-const backendTarget = hasCerts ? 'https://127.0.0.1:8216' : 'http://127.0.0.1:8216'
-const wsTarget = hasCerts ? 'wss://127.0.0.1:8216' : 'ws://127.0.0.1:8216'
+// 从 config.json 读取统一配置（config_private.json 可覆盖）
+function loadConfig() {
+  const base = JSON.parse(fs.readFileSync(path.join(__dirname, '../server/config.json'), 'utf-8'))
+  const privPath = path.join(__dirname, '../server/config_private.json')
+  if (fs.existsSync(privPath)) {
+    const priv = JSON.parse(fs.readFileSync(privPath, 'utf-8'))
+    Object.assign(base, priv)
+  }
+  return base
+}
+const cfg = loadConfig()
+const backendPort = cfg.port ?? 8215
+const frontendPort = cfg.frontendPort ?? 5215
+
+const backendTarget = hasCerts ? `https://127.0.0.1:${backendPort}` : `http://127.0.0.1:${backendPort}`
+const wsTarget = hasCerts ? `wss://127.0.0.1:${backendPort}` : `ws://127.0.0.1:${backendPort}`
 
 export default defineConfig({
   plugins: [react()],
-  test: {
-    environment: "jsdom",
-    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
-  },
+
   server: {
-    port: 5216,
+    port: frontendPort,
     https: hasCerts ? { cert: fs.readFileSync(certFile), key: fs.readFileSync(keyFile) } : undefined,
     proxy: {
       '/api': {
@@ -35,7 +45,7 @@ export default defineConfig({
     }
   },
   preview: {
-    port: 5216,
+    port: frontendPort,
     https: hasCerts ? { cert: fs.readFileSync(certFile), key: fs.readFileSync(keyFile) } : undefined,
     proxy: {
       '/api': {

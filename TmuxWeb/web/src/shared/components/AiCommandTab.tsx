@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Send, Copy, Play, Loader2, ChevronUp, ChevronDown, Info, X, Plus, Terminal } from 'lucide-react'
+import { Send, Copy, Play, Loader2, ChevronUp, ChevronDown, X, Terminal } from 'lucide-react'
 import { RoleManagerModal } from './RoleManagerModal'
 
 const TEMPLATE_ROLE_ID = 'research-publish'
@@ -39,7 +39,7 @@ export function AiCommandTab({ onSend, disabled, initialText, onTextConsumed }: 
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ command: string; explanation: string } | null>(null)
   const [expanded, setExpanded] = useState(false)
-  const [showPrompt, setShowPrompt] = useState(false)
+  const [showPrompt, _setShowPrompt] = useState(false)
   const [showRoleModal, setShowRoleModal] = useState(false)
 
   useEffect(() => {

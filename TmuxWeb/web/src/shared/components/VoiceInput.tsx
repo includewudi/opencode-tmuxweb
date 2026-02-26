@@ -18,7 +18,7 @@ type Status = 'idle' | 'connecting' | 'recording' | 'processing'
 
 const CONNECT_TIMEOUT_MS = 10000
 
-export const VoiceInput = forwardRef<VoiceInputHandle, Props>(function VoiceInput({ onText, onPartial, disabled }, ref) {
+export const VoiceInput = forwardRef<VoiceInputHandle | null, Props>(function VoiceInput({ onText, onPartial, disabled }, ref) {
   const [status, setStatus] = useState<Status>('idle')
   const [partialText, setPartialText] = useState('')
   const wsRef = useRef<WebSocket | null>(null)

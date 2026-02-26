@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
 
-const SCHEMA_PATH = path.join(__dirname, '../../../.sisyphus/drafts/tmuxweb-sql-schema.sql');
+const SCHEMA_PATH = path.join(__dirname, 'init.sql');
 
 async function bootstrap() {
   const config = {
@@ -28,7 +28,7 @@ async function bootstrap() {
     }
 
     let schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
-    
+
     schema = schema.replace(/CREATE TABLE `/g, 'CREATE TABLE IF NOT EXISTS `');
 
     console.log('[Bootstrap] Executing schema...');

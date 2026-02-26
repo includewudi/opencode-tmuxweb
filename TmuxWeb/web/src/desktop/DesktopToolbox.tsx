@@ -26,7 +26,7 @@ interface QuickKey {
 export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey, onStatusChange }: DesktopToolboxProps) {
   const [activeTab, setActiveTab] = useState<TabId>('ai')
   const [voiceText, setVoiceText] = useState<string | undefined>(undefined)
-  const localVoiceRef = useRef<VoiceInputHandle>(null)
+  const localVoiceRef = useRef<VoiceInputHandle | null>(null)
   const effectiveVoiceRef = voiceRef || localVoiceRef
   const prefix = useTmuxPrefix()
 

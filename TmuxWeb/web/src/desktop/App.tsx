@@ -36,7 +36,7 @@ export default function App() {
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null)
   const [groups, setGroups] = useState<SessionGroup[]>([])
   const [showGroupManager, setShowGroupManager] = useState(false)
-  const [selectedPaneKey, setSelectedPaneKey] = useState<string | null>(null)
+  const [_selectedPaneKey, setSelectedPaneKey] = useState<string | null>(null)
   const [statusRefreshToken, setStatusRefreshToken] = useState(0)
   const [sidebarOpen, setSidebarOpen] = useState(true) // Default to open on desktop
   const [showMobileHint, setShowMobileHint] = useState(() => isMobile())
@@ -50,7 +50,7 @@ export default function App() {
   }, [tabs, activeTabId])
 
   const terminalSendRefs = useRef<Record<string, (text: string) => void>>({})
-  const voiceRef = useRef<VoiceInputHandle>(null)
+  const voiceRef = useRef<VoiceInputHandle | null>(null)
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
