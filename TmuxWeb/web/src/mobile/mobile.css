@@ -132,10 +132,42 @@
   flex-shrink: 0;
 }
 
-.mobile-drawer-title {
-  font-size: 16px;
-  font-weight: 600;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+.mobile-drawer-tabs {
+  display: flex;
+  background: var(--zinc-900);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--zinc-800);
+}
+
+.mobile-drawer-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--zinc-400);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.mobile-drawer-tab:hover {
+  color: var(--zinc-200);
+}
+
+.mobile-drawer-tab.active {
+  background: var(--zinc-800);
+  color: var(--blue-400);
+}
+
+.mobile-drawer-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }
 
 .mobile-drawer-actions {
@@ -462,4 +494,3 @@
 .mobile-toolbar-paste {
   margin-left: 6px;
 }
-

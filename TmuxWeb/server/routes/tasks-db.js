@@ -4,6 +4,93 @@ const { parsePaneKey } = require('../utils');
 
 const router = express.Router();
 
+/**
+ * GET /api/tasks
+ * Get all tasks across all sessions for the user's token
+ */
+router.get('/', async (req, res) => {
+  try {
+    const { limit = 50, offset = 0 } = req.query;
+
+    const limitNum = parseInt(limit, 10) || 50;
+    const offsetNum = parseInt(offset, 10) || 0;
+
+    // Query ai_conversation which stores tasks sent by the CLI/opencode
+    const [tasks] = await pool.query(
+      `SELECT id, conversation_id, pane_key, user_message, assistant_message, conv_status, started_at, completed_at, ctime, mtime
+       FROM ai_conversation
+       WHERE is_deleted = 0
+       ORDER BY mtime DESC
+       LIMIT ? OFFSET ?`,
+      [limitNum, offsetNum]
+    );
+
+    const [[{ total }]] = await pool.query(
+      `SELECT COUNT(*) as total FROM ai_conversation WHERE is_deleted = 0`
+    );
+
+    // Map ai_conversation columns to what GlobalTaskOverview expects:
+    // task_title, task_status, session_name, window_index, pane_index, paneKey
+    const formattedTasks = tasks.map(t => {
+      // pane_key format: "session_name:window_index:pane_id" e.g. "opencode-iterm:0:%0"
+      const parts = (t.pane_key || '').split(':');
+      const paneIndex = parts.length >= 1 ? parts[parts.length - 1] : '';
+      const windowIndex = parts.length >= 2 ? parts[parts.length - 2] : '0';
+      const sessionName = parts.length >= 3 ? parts.slice(0, -2).join(':') : (t.pane_key || '');
+
+      return {
+        id: t.id,
+        conversation_id: t.conversation_id,
+        pane_key: t.pane_key,
+        paneKey: t.pane_key,
+        task_title: t.user_message || 'Untitled Task',
+        task_status: t.conv_status || 'in_progress',
+        session_name: sessionName,
+        window_index: windowIndex,
+        pane_index: paneIndex,
+        started_at: t.started_at,
+        completed_at: t.completed_at,
+        ctime: t.ctime,
+        mtime: t.mtime,
+      };
+    });
+
+    res.json({ tasks: formattedTasks, total });
+  } catch (err) {
+    console.error('[tasks-db GET /]', err);
+    res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+});
+
+/**
+ * PATCH /api/tasks/conv/:id/complete
+ * Mark an ai_conversation record as completed
+ */
+router.patch('/conv/:id/complete', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    const [result] = await pool.query(
+      `UPDATE ai_conversation
+       SET conv_status = 'completed', completed_at = ?, mtime = ?
+       WHERE id = ? AND is_deleted = 0`,
+      [timestamp, timestamp, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'not_found', message: 'Conversation not found' });
+    }
+
+    res.json({ success: true, id, conv_status: 'completed', completed_at: timestamp });
+  } catch (err) {
+    console.error('[tasks-db PATCH /conv/:id/complete]', err);
+    res.status(500).json({ error: 'internal_error', message: err.message });
+  }
+});
+
+
+
 
 /**
  * POST /api/panes/:paneKey/tasks

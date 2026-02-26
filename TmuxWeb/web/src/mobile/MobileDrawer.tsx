@@ -3,7 +3,9 @@ import { TmuxSession, Profile, SessionGroup } from '../types'
 import { ProfileSelector } from '../shared/components/ProfileSelector'
 import { GroupManager } from '../shared/components/GroupManager'
 import { TmuxTree } from '../shared/components/TmuxTree'
+import { GlobalTaskOverview } from '../shared/components/GlobalTaskOverview'
 import { useState } from 'react'
+import { TerminalSquare, CheckSquare } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -31,6 +33,7 @@ export function MobileDrawer({
   onLogout,
 }: Props) {
   const [showGroupManager, setShowGroupManager] = useState(false)
+  const [activeTab, setActiveTab] = useState<'sessions' | 'tasks'>('sessions')
 
   const handleSelectPane = (paneId: string, paneName: string) => {
     onSelectPane(paneId, paneName)
@@ -40,21 +43,39 @@ export function MobileDrawer({
   return (
     <aside className={`mobile-drawer ${open ? 'open' : ''}`}>
       <div className="mobile-drawer-header">
-        <span className="mobile-drawer-title">Sessions</span>
-        <div className="mobile-drawer-actions">
+        <div className="mobile-drawer-tabs">
           <button
-            className="mobile-drawer-btn"
-            onClick={() => setShowGroupManager(!showGroupManager)}
-            type="button"
-            title="Manage groups"
+            className={`mobile-drawer-tab ${activeTab === 'sessions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('sessions')}
           >
-            <Settings size={18} />
+            <TerminalSquare size={16} />
+            <span>Sessions</span>
           </button>
           <button
+            className={`mobile-drawer-tab ${activeTab === 'tasks' ? 'active' : ''}`}
+            onClick={() => setActiveTab('tasks')}
+          >
+            <CheckSquare size={16} />
+            <span>Tasks</span>
+          </button>
+        </div>
+        <div className="mobile-drawer-actions">
+          {activeTab === 'sessions' && (
+            <button
+              className="mobile-drawer-btn"
+              onClick={() => setShowGroupManager(!showGroupManager)}
+              type="button"
+              title="Manage groups"
+            >
+              <Settings size={18} />
+            </button>
+          )}
+          <button
             className="mobile-drawer-btn"
-            onClick={onRefresh}
+            onClick={activeTab === 'sessions' ? onRefresh : undefined} // Task Overview has its own refresh
             type="button"
             title="Refresh"
+            style={{ opacity: activeTab === 'tasks' ? 0.3 : 1, pointerEvents: activeTab === 'tasks' ? 'none' : 'auto' }}
           >
             <RefreshCw size={18} />
           </button>
@@ -85,7 +106,7 @@ export function MobileDrawer({
           </button>
         </div>
 
-        {showGroupManager && currentProfile && (
+        {activeTab === 'sessions' && showGroupManager && currentProfile && (
           <GroupManager
             profileKey={currentProfile.profile_key}
             sessions={sessions}
@@ -93,16 +114,26 @@ export function MobileDrawer({
           />
         )}
 
-        <TmuxTree
-          sessions={sessions}
-          groups={groups}
-          profileId={currentProfile?.id}
-          profileKey={currentProfile?.profile_key}
-          onSelectPane={handleSelectPane}
-          onRefresh={onRefresh}
-          onOrderChange={onGroupsChanged}
-          defaultExpanded={false}
-        />
+        {activeTab === 'sessions' ? (
+          <div className="mobile-drawer-scrollable">
+            <TmuxTree
+              sessions={sessions}
+              groups={groups}
+              profileId={currentProfile?.id}
+              profileKey={currentProfile?.profile_key}
+              onSelectPane={handleSelectPane}
+              onRefresh={onRefresh}
+              onOrderChange={onGroupsChanged}
+              defaultExpanded={false}
+            />
+          </div>
+        ) : (
+          <div className="mobile-drawer-scrollable">
+            <GlobalTaskOverview
+              onSelectPane={handleSelectPane}
+            />
+          </div>
+        )}
       </div>
     </aside>
   )

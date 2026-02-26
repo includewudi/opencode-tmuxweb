@@ -34,7 +34,7 @@ interface AiCommandTabProps {
 
 export function AiCommandTab({ onSend, disabled, initialText, onTextConsumed }: AiCommandTabProps) {
   const [input, setInput] = useState('')
-  const [selectedRole, setSelectedRole] = useState('cli')
+  const [selectedRole] = useState('cli')
   const [roles, setRoles] = useState<Role[]>(BUILTIN_ROLES_FALLBACK)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<{ command: string; explanation: string } | null>(null)
@@ -118,62 +118,7 @@ export function AiCommandTab({ onSend, disabled, initialText, onTextConsumed }: 
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '8px', gap: '8px', overflow: 'auto' }}>
-      {/* Role selector */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
-        {roles.map(r => (
-          <button
-            key={r.id}
-            onClick={() => setSelectedRole(r.id)}
-            style={{
-              padding: '4px 8px',
-              borderRadius: '12px',
-              border: selectedRole === r.id ? '1px solid #4d78cc' : '1px solid #2c313a',
-              background: selectedRole === r.id ? '#4d78cc22' : '#1a1c20',
-              color: selectedRole === r.id ? '#4d78cc' : '#9da5b4',
-              fontSize: '12px',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
-            type="button"
-          >
-            {r.emoji} {r.label}
-          </button>
-        ))}
-        <button
-          onClick={() => setShowRoleModal(true)}
-          style={{
-            padding: '4px 6px',
-            borderRadius: '12px',
-            border: '1px solid #2c313a',
-            background: '#1a1c20',
-            color: '#7a818c',
-            fontSize: '12px',
-            cursor: 'pointer',
-          }}
-          type="button"
-          title="管理角色"
-        >
-          <Plus size={12} />
-        </button>
-        {selectedRoleDef?.prompt && (
-          <button
-            onClick={() => setShowPrompt(!showPrompt)}
-            style={{
-              padding: '4px 6px',
-              borderRadius: '12px',
-              border: '1px solid #2c313a',
-              background: '#1a1c20',
-              color: '#7a818c',
-              fontSize: '12px',
-              cursor: 'pointer',
-            }}
-            type="button"
-            title="查看提示词"
-          >
-            <Info size={12} />
-          </button>
-        )}
-      </div>
+      {/* Role fixed to cli (命令行大神) — no selector shown */}
 
       {/* Prompt viewer */}
       {showPrompt && selectedRoleDef?.prompt && (

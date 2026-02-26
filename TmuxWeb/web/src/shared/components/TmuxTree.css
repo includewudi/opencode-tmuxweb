@@ -64,8 +64,13 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .refresh-btn {
@@ -102,6 +107,11 @@
   font-weight: 500;
   color: var(--zinc-300);
   font-size: 12px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
 }
 
 
@@ -147,6 +157,7 @@
   color: var(--yellow-400);
   background: rgba(234, 179, 8, 0.15);
 }
+
 .window-node {
   margin-left: 10px;
   margin-bottom: 2px;
@@ -262,6 +273,18 @@
 
 .pane-details-btn:hover {
   color: var(--blue-500);
+}
+
+.pane-status-clickable {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border-radius: 3px;
+  transition: opacity 0.15s;
+}
+
+.pane-status-clickable:hover {
+  opacity: 0.75;
 }
 
 .tree-content {

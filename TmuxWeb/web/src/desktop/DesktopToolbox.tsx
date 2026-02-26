@@ -3,6 +3,7 @@ import { Bot, FileCode2 } from 'lucide-react'
 import { VoiceInput, VoiceInputHandle } from '../shared/components/VoiceInput'
 import { AiCommandTab } from '../shared/components/AiCommandTab'
 import { SnippetsTab } from '../shared/components/SnippetsTab'
+import { TaskHistoryPanel } from '../shared/components/TaskHistoryPanel'
 import { useTmuxPrefix } from '../hooks/useTmuxPrefix'
 import './DesktopToolbox.css'
 
@@ -12,6 +13,8 @@ interface DesktopToolboxProps {
   onSend: (text: string) => void
   disabled?: boolean
   voiceRef?: RefObject<VoiceInputHandle | null>
+  taskHistoryPaneKey?: string | null
+  onStatusChange?: () => void
 }
 
 interface QuickKey {
@@ -20,7 +23,7 @@ interface QuickKey {
   data: string
 }
 
-export function DesktopToolbox({ onSend, disabled, voiceRef }: DesktopToolboxProps) {
+export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey, onStatusChange }: DesktopToolboxProps) {
   const [activeTab, setActiveTab] = useState<TabId>('ai')
   const [voiceText, setVoiceText] = useState<string | undefined>(undefined)
   const localVoiceRef = useRef<VoiceInputHandle>(null)
@@ -85,6 +88,14 @@ export function DesktopToolbox({ onSend, disabled, voiceRef }: DesktopToolboxPro
         ))}
         <span className="desktop-prefix-label">{prefix.label}</span>
       </div>
+
+      {/* Task history — above AI content so it's immediately visible */}
+      <TaskHistoryPanel
+        paneKey={taskHistoryPaneKey ?? null}
+        onClose={() => {/* no-op in embedded */ }}
+        onStatusChange={onStatusChange}
+        embedded
+      />
 
       <div className="desktop-toolbox-content">
         {activeTab === 'ai' && (

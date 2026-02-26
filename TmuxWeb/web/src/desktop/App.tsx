@@ -1,17 +1,18 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { Settings, LogOut, ChevronLeft, ChevronRight, Menu, X, Smartphone, Maximize2, Minimize2 } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare } from 'lucide-react'
 import { TmuxTree } from '../shared/components/TmuxTree'
+import { TaskStatBadges } from '../shared/components/TaskStatBadges'
 import { TerminalTabs } from './TerminalTabs'
 import { LoginModal } from '../shared/components/LoginModal'
 import { ProfileSelector } from '../shared/components/ProfileSelector'
 import { GroupManager } from '../shared/components/GroupManager'
-import { PaneDetails } from '../shared/components/PaneDetails'
 import { DesktopToolbox } from './DesktopToolbox'
 import { checkAuth, logout } from '../utils/auth'
 import { isMobile } from '../utils/platform'
 import { TmuxSession, OpenTab, Profile, SessionGroup } from '../types'
 import { VoiceInputHandle } from '../shared/components/VoiceInput'
 import '../styles/app.css'
+
 
 function loadTabs(): OpenTab[] {
   try {
@@ -31,16 +32,22 @@ export default function App() {
   const [activeTabId, setActiveTabId] = useState<string | null>(loadActiveTabId)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  
+
   const [currentProfile, setCurrentProfile] = useState<Profile | null>(null)
   const [groups, setGroups] = useState<SessionGroup[]>([])
   const [showGroupManager, setShowGroupManager] = useState(false)
   const [selectedPaneKey, setSelectedPaneKey] = useState<string | null>(null)
-  const [detailsPanelOpen, setDetailsPanelOpen] = useState(true)
   const [statusRefreshToken, setStatusRefreshToken] = useState(0)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(true) // Default to open on desktop
   const [showMobileHint, setShowMobileHint] = useState(() => isMobile())
   const [fullscreen, setFullscreen] = useState(false)
+  const [taskHistoryPaneKey, setTaskHistoryPaneKey] = useState<string | null>(null)
+
+  // Auto-derive pane key from active tab (title = session:window, paneId = %N)
+  const activePaneKey = useMemo(() => {
+    const tab = tabs.find(t => t.id === activeTabId)
+    return tab ? `${tab.title}:${tab.paneId}` : null
+  }, [tabs, activeTabId])
 
   const terminalSendRefs = useRef<Record<string, (text: string) => void>>({})
   const voiceRef = useRef<VoiceInputHandle>(null)
@@ -56,7 +63,6 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const handleStatusChanged = () => setStatusRefreshToken(prev => prev + 1)
 
   useEffect(() => {
     localStorage.setItem('openTabs', JSON.stringify(tabs))
@@ -131,7 +137,6 @@ export default function App() {
     const existing = tabs.find(t => t.paneId === paneId)
     if (existing) {
       setActiveTabId(existing.id)
-      setSidebarOpen(false)
       return
     }
     const newTab: OpenTab = {
@@ -141,7 +146,6 @@ export default function App() {
     }
     setTabs(prev => [...prev, newTab])
     setActiveTabId(newTab.id)
-    setSidebarOpen(false)
   }
 
   function closeTab(tabId: string) {
@@ -159,11 +163,7 @@ export default function App() {
 
   function handlePaneSelect(paneKey: string) {
     setSelectedPaneKey(paneKey)
-    setDetailsPanelOpen(true)
-  }
-
-  function toggleDetailsPanel() {
-    setDetailsPanelOpen(!detailsPanelOpen)
+    setTaskHistoryPaneKey(paneKey)
   }
 
   const handleSendRef = useCallback((tabId: string, sendFn: (text: string) => void) => {
@@ -192,7 +192,7 @@ export default function App() {
     return <div className="error">{error}</div>
   }
 
-  const showDetailsPanel = selectedPaneKey && currentProfile
+
 
   return (
     <div className={`app ${fullscreen ? 'app-fullscreen' : ''}`}>
@@ -210,53 +210,71 @@ export default function App() {
           {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       )}
-      
+
       {sidebarOpen && <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />}
-      
+
       {!fullscreen && (
-        <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
-          <div className="sidebar-header">
-            <ProfileSelector 
-              currentProfile={currentProfile} 
-              onProfileChange={handleProfileChange} 
-            />
-            <div className="header-actions">
-              <button 
-                className="group-btn" 
-                onClick={() => setShowGroupManager(!showGroupManager)}
-                title="Manage groups"
+        <aside className={`sidebar-container ${sidebarOpen ? 'open' : ''}`}>
+          {/* Activity Bar */}
+          <div className="activity-bar">
+            <div className="activity-bar-top">
+              <button
+                className={`activity-tab ${sidebarOpen ? 'active' : ''}`}
+                title="Explorer (Sessions)"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
               >
-                <Settings size={16} />
+                <TerminalSquare size={22} strokeWidth={sidebarOpen ? 2 : 1.5} />
               </button>
-              <button className="logout-btn" onClick={handleLogout} title="Sign out">
-                <LogOut size={16} />
+            </div>
+            <div className="activity-bar-bottom">
+              <button className="activity-tab" onClick={() => setShowGroupManager(!showGroupManager)} title="Manage groups">
+                <Settings size={22} strokeWidth={1.5} />
+              </button>
+              <button className="activity-tab" onClick={handleLogout} title="Sign out">
+                <LogOut size={22} strokeWidth={1.5} />
               </button>
             </div>
           </div>
-          
-          {showGroupManager && currentProfile && (
-            <GroupManager 
-              profileKey={currentProfile.profile_key}
-              sessions={sessions}
-              onGroupsChanged={fetchTree}
-            />
-          )}
-          
-          <TmuxTree 
-            sessions={sessions}
-            groups={groups}
-            profileId={currentProfile?.id}
-            profileKey={currentProfile?.profile_key}
-            onSelectPane={openPane} 
-            onRefresh={fetchTree}
-            onOrderChange={() => currentProfile && fetchGroups(currentProfile.profile_key)}
-            onPaneContextMenu={handlePaneSelect}
-            statusRefreshToken={statusRefreshToken}
-          />
+
+          {/* Primary Sidebar Content */}
+          <div className="primary-sidebar">
+            <div className="sidebar-header">
+              <ProfileSelector
+                currentProfile={currentProfile}
+                onProfileChange={handleProfileChange}
+              />
+            </div>
+
+            {/* Task stat badges — always visible, no tab switching */}
+            <TaskStatBadges refreshToken={statusRefreshToken} />
+
+            {showGroupManager && currentProfile && (
+              <GroupManager
+                profileKey={currentProfile.profile_key}
+                sessions={sessions}
+                onGroupsChanged={fetchTree}
+              />
+            )}
+
+            <div className="sidebar-content-area">
+              <TmuxTree
+                sessions={sessions}
+                groups={groups}
+                profileId={currentProfile?.id}
+                profileKey={currentProfile?.profile_key}
+                onSelectPane={openPane}
+                onRefresh={fetchTree}
+                onOrderChange={() => currentProfile && fetchGroups(currentProfile.profile_key)}
+                onPaneContextMenu={handlePaneSelect}
+                onPaneStatusClick={(paneKey) => setTaskHistoryPaneKey(paneKey)}
+                statusRefreshToken={statusRefreshToken}
+              />
+            </div>
+          </div>
         </aside>
       )}
-      
-      <main className={`main ${showDetailsPanel && detailsPanelOpen ? 'with-details' : ''}`}>
+
+      <main className="main">
         <TerminalTabs
           tabs={tabs}
           activeTabId={activeTabId}
@@ -292,29 +310,13 @@ export default function App() {
             onSend={sendToActiveTerminal}
             disabled={!activeTabId}
             voiceRef={voiceRef}
+            taskHistoryPaneKey={taskHistoryPaneKey ?? activePaneKey}
+            onStatusChange={() => setStatusRefreshToken(prev => prev + 1)}
           />
         </aside>
       )}
 
-      {!fullscreen && showDetailsPanel && (
-        <aside className={`details-panel ${detailsPanelOpen ? 'open' : 'collapsed'}`}>
-          <button 
-            className="details-toggle" 
-            onClick={toggleDetailsPanel}
-            title={detailsPanelOpen ? 'Collapse panel' : 'Expand panel'}
-          >
-            {detailsPanelOpen ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
-          {detailsPanelOpen && (
-            <PaneDetails
-              paneKey={selectedPaneKey}
-              profileKey={currentProfile!.profile_key}
-              onClose={() => setSelectedPaneKey(null)}
-              onStatusChanged={handleStatusChanged}
-            />
-          )}
-        </aside>
-      )}
+
     </div>
   )
 }
