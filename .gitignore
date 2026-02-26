@@ -101,3 +101,7 @@ web/custom_roles.json
 
 # Gemini folder
 .gemini/
+
+# IDE / Agent metadata
+.vscode/
+.sisyphus/
