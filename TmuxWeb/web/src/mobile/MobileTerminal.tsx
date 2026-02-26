@@ -43,11 +43,9 @@ interface Props {
   voiceRef?: React.RefObject<VoiceInputHandle | null>
   taskHistoryPaneKey?: string | null
   onStatusChange?: () => void
-  sessionName?: string | null
-  onTreeRefresh?: () => void
 }
 
-export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, taskHistoryPaneKey, onStatusChange, sessionName, onTreeRefresh }: Props) {
+export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, taskHistoryPaneKey, onStatusChange }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)
   const termRef = useRef<XTerm | null>(null)
   const fitRef = useRef<FitAddon | null>(null)
@@ -612,8 +610,6 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
         onToggleKeyboard={toggleKeyboard}
         taskHistoryPaneKey={taskHistoryPaneKey}
         onStatusChange={onStatusChange}
-        session={sessionName}
-        onTreeRefresh={onTreeRefresh}
       />
     </div>
   )

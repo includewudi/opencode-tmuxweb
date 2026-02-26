@@ -312,8 +312,6 @@ export default function App() {
             voiceRef={voiceRef}
             taskHistoryPaneKey={taskHistoryPaneKey ?? activePaneKey}
             onStatusChange={() => setStatusRefreshToken(prev => prev + 1)}
-            session={activePaneKey ? activePaneKey.split(':')[0] : null}
-            onTreeRefresh={fetchTree}
           />
         </aside>
       )}

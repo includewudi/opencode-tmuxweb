@@ -349,8 +349,6 @@ export default function MobileApp() {
                   voiceRef={tab.id === activeTabId ? voiceRef : undefined}
                   taskHistoryPaneKey={tab.id === activeTabId ? historyPaneKey : null}
                   onStatusChange={tab.id === activeTabId ? () => setStatusRefreshToken(prev => prev + 1) : undefined}
-                  sessionName={tab.id === activeTabId ? (activePaneKey ? activePaneKey.split(':')[0] : null) : null}
-                  onTreeRefresh={tab.id === activeTabId ? fetchTree : undefined}
                 />
               </div>
             ))}

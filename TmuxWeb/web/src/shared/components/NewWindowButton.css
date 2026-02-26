@@ -38,7 +38,7 @@
 /* dropdown */
 .nwb-menu {
     position: absolute;
-    bottom: calc(100% + 8px);
+    top: calc(100% + 4px);
     left: 0;
     min-width: 210px;
     background: rgba(20, 22, 30, 0.97);
