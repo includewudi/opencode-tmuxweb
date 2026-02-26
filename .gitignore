@@ -105,3 +105,22 @@ web/custom_roles.json
 # IDE / Agent metadata
 .vscode/
 .sisyphus/
+
+# Temporary / generated files
+1-tmux.html
+HANDOFF-*.md
+GEMINI.md
+login-page.png
+ios-spec.md
+tmp/
+
+# Database files
+TmuxWeb/server/tmuxweb.db
+
+# Telemetry data
+TmuxWeb/backend/data/
+
+# Test debug scripts
+TmuxWeb/web/test-*.mjs
+TmuxWeb/web/test-*.cjs
+TmuxWeb/web/test-*.js
