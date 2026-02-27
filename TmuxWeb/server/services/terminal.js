@@ -111,6 +111,13 @@ async function handleTerminalConnection(ws, paneId, clientId) {
   // ── Reuse existing PTY or spawn new one ──
   let entry = activePTYs.get(paneId);
 
+  // Dead PTY check: if the stored process has exited, remove it
+  if (entry && entry.ptyProcess.killed) {
+    console.log(`[Terminal] Dead PTY detected for pane ${paneId}, removing`);
+    activePTYs.delete(paneId);
+    entry = null;
+  }
+
   if (entry) {
     // 驱逐同 clientId 的旧 WS，防止双重广播（重影）
     if (clientId) {
@@ -141,7 +148,10 @@ async function handleTerminalConnection(ws, paneId, clientId) {
 
     let ptyProcess;
     try {
-      ptyProcess = pty.spawn('tmux', ['attach', '-t', sessionName, ';', 'select-pane', '-t', paneId], {
+      // Use shell -c so we can chain commands: attach then select the right pane
+      ptyProcess = pty.spawn('/bin/sh', ['-c',
+        `tmux attach-session -t "${sessionName}" \\; select-pane -t "${paneId}"`
+      ], {
         name: 'xterm-256color',
         cols: 80,
         rows: 24,

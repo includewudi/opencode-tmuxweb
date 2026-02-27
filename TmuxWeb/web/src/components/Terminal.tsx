@@ -19,6 +19,8 @@ const SPACE_BURST_COUNT = 3
 const SPACE_BURST_WINDOW_MS = 500
 const ENTER_BURST_COUNT = 2
 const ENTER_BURST_WINDOW_MS = 500
+// Unique per page load — used by server to evict stale connections (prevents ghost text)
+const CLIENT_ID = Math.random().toString(36).slice(2)
 
 interface Props {
   paneId: string
@@ -34,7 +36,7 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
   const reconnectTimeoutRef = useRef<number | null>(null)
   const reconnectAttemptRef = useRef(0)
   const isCleanupRef = useRef(false)
-  
+
   const lastTransitionRef = useRef<{ type: 'reconnect' | 'visibility' | 'keyboard', time: number } | null>(null)
 
   const showAccessoryBar = isMobile()
@@ -89,12 +91,12 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
     const buildWsUrl = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
       const token = getToken()
-      return `${protocol}//${window.location.host}/ws/terminal?paneId=${encodeURIComponent(paneId)}&token=${token}`
+      return `${protocol}//${window.location.host}/ws/terminal?paneId=${encodeURIComponent(paneId)}&token=${token}&clientId=${CLIENT_ID}`
     }
 
     const connect = () => {
       if (isCleanupRef.current) return
-      
+
       const ws = new WebSocket(buildWsUrl())
 
       ws.onopen = () => {
@@ -103,11 +105,11 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
         if (termRef.current) {
           ws.send(JSON.stringify({ type: 'resize', cols: termRef.current.cols, rows: termRef.current.rows }))
         }
-        
+
         if (isIOS()) {
           ws.send(DEC_1004_DISABLE)
           telemetryLog('dec1004-disable', { trigger: 'onopen' })
-          
+
           if (wasReconnect) {
             lastTransitionRef.current = { type: 'reconnect', time: Date.now() }
             telemetryLog('reconnect', { timestamp: Date.now() })
@@ -125,7 +127,7 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
 
       ws.onclose = () => {
         if (isCleanupRef.current) return
-        
+
         termRef.current?.write('\r\n\x1b[33m[Disconnected - reconnecting...]\x1b[0m\r\n')
         scheduleReconnect()
       }
@@ -138,11 +140,11 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current)
       }
-      
+
       // Exponential backoff: 1s, 2s, 4s, 8s, max 10s
       const delay = Math.min(1000 * Math.pow(2, reconnectAttemptRef.current), 10000)
       reconnectAttemptRef.current++
-      
+
       reconnectTimeoutRef.current = window.setTimeout(() => {
         if (!isCleanupRef.current) {
           connect()
@@ -153,12 +155,12 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
     // Handle page visibility for iOS PWA
     const handleVisibilityChange = () => {
       telemetryLog('visibilitychange', { state: document.visibilityState })
-      
+
       if (document.visibilityState === 'visible') {
         if (isIOS()) {
           lastTransitionRef.current = { type: 'visibility', time: Date.now() }
         }
-        
+
         if (wsRef.current?.readyState !== WebSocket.OPEN && wsRef.current?.readyState !== WebSocket.CONNECTING) {
           termRef.current?.write('\r\n\x1b[36m[Resuming connection...]\x1b[0m\r\n')
           reconnectAttemptRef.current = 0
@@ -269,30 +271,30 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
       if (isAndroid()) return shouldSuppressBurstAndroid(data, now)
       return false
     }
-    
+
     term.onData((data) => {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         if (data === '\x1b[I' || data === '\x1b[O' ||
-            (data.startsWith('\x1b[?') && data.endsWith('c')) ||
-            (data.startsWith('\x1b[>') && data.endsWith('c')) ||
-            data.startsWith('\x1b]')) {
+          (data.startsWith('\x1b[?') && data.endsWith('c')) ||
+          (data.startsWith('\x1b[>') && data.endsWith('c')) ||
+          data.startsWith('\x1b]')) {
           console.log('[Terminal] Filtered control sequence:', JSON.stringify(data))
           return
         }
-        
+
         if (shouldSuppressBurst(data)) {
           return
         }
-        
+
         const now = Date.now()
-        
+
         if (data === lastInputData && (now - lastInputTime) < 50) {
           console.log('[Terminal] Dropped duplicate input')
           return
         }
         lastInputData = data
         lastInputTime = now
-        
+
         telemetryLog('onData', { data: JSON.stringify(data), len: data.length })
         wsRef.current.send(data)
       }
@@ -300,20 +302,20 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
 
     // Initial connection
     connect()
-    
+
     const handleFocus = () => telemetryLog('focus', { timestamp: Date.now() })
     const handleBlur = () => telemetryLog('blur', { timestamp: Date.now() })
-    
+
     if (isIOS() && isDebugEnabled()) {
       term.textarea?.addEventListener('focus', handleFocus)
       term.textarea?.addEventListener('blur', handleBlur)
     }
-    
+
     let viewportCleanup: (() => void) | undefined
     if (isIOS() && window.visualViewport) {
       const handleViewportResize = () => {
         lastTransitionRef.current = { type: 'keyboard', time: Date.now() }
-        telemetryLog('viewport-resize', { 
+        telemetryLog('viewport-resize', {
           height: window.visualViewport?.height,
           width: window.visualViewport?.width,
         })
@@ -324,15 +326,15 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
 
     let lastCols = 0
     let lastRows = 0
-    
+
     const handleResize = () => {
       if (!fitRef.current || !termRef.current) return
-      
+
       fitRef.current.fit()
-      
+
       const cols = termRef.current.cols
       const rows = termRef.current.rows
-      
+
       if (cols !== lastCols || rows !== lastRows) {
         lastCols = cols
         lastRows = rows
@@ -395,14 +397,14 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
 
 
   return (
-    <div 
-      className="terminal-wrapper" 
+    <div
+      className="terminal-wrapper"
       data-keyboard-visible={showAccessoryBar ? keyboardVisible : undefined}
       data-keyboard-height={showAccessoryBar ? keyboardHeightPx : undefined}
       data-keyboard-spacer-height={showAccessoryBar ? keyboardSpacerHeightPx : undefined}
     >
-      <div 
-        ref={containerRef} 
+      <div
+        ref={containerRef}
         className="terminal-container"
         autoCapitalize="off"
         autoCorrect="off"
@@ -415,7 +417,7 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
         <AccessoryBar onSendText={sendText} onPaste={handlePaste} />
       )}
       {showAccessoryBar && (
-        <div 
+        <div
           className="keyboard-spacer"
           style={{ height: keyboardSpacerHeightPx }}
         />
