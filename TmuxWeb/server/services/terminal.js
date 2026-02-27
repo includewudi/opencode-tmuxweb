@@ -198,23 +198,20 @@ async function handleTerminalConnection(ws, paneId, clientId) {
 
   const { ptyProcess } = entry;
 
-  // ── 新连接接入后延迟触发 resize 重绘 ──
-  // 原因：gemini CLI 等工具不会主动刷新终端。发一次 resize 可以让
-  // 终端内运行的程序感知到当前窗口大小并重新绘制，填满整个屏幕。
-  // 用当前 PTY 尺寸 resize（等同无变化的 resize），效果只是触发 SIGWINCH。
-  setTimeout(() => {
-    try {
-      const cols = ptyProcess.cols || 80;
-      const rows = ptyProcess.rows || 24;
-      ptyProcess.resize(cols + 1, rows);
-      ptyProcess.resize(cols, rows);
-    } catch { /* PTY 可能已退出，忽略 */ }
-  }, 800);
-
-
   // ── WS → PTY (input) ──
-  let lastMessage = '';
-  let lastMessageTime = 0;
+  let lastMessage = ''
+  let lastMessageTime = 0
+  let firstResizeDone = false  // 首次 resize 后触发一次 SIGWINCH 重绘
+
+  // 兜底：1.5s 后如果还没收到 resize，用当前 PTY 尺寸触发一次
+  const sigwinchFallback = setTimeout(() => {
+    if (!firstResizeDone) {
+      try {
+        const c = ptyProcess.cols || 80, r = ptyProcess.rows || 24;
+        ptyProcess.resize(c + 1, r); ptyProcess.resize(c, r);
+      } catch { }
+    }
+  }, 1500);
 
   ws.on('message', (message) => {
     const content = message.toString();
@@ -223,6 +220,17 @@ async function handleTerminalConnection(ws, paneId, clientId) {
       const parsed = JSON.parse(content);
       if (parsed.type === 'resize' && parsed.cols && parsed.rows) {
         ptyProcess.resize(parsed.cols, parsed.rows);
+        // 首次 resize 后立刻再 bump 一次，让运行中的程序（如 gemini CLI）重绘
+        if (!firstResizeDone) {
+          firstResizeDone = true;
+          clearTimeout(sigwinchFallback);
+          setTimeout(() => {
+            try {
+              ptyProcess.resize(parsed.cols + 1, parsed.rows);
+              ptyProcess.resize(parsed.cols, parsed.rows);
+            } catch { }
+          }, 150);
+        }
         return;
       }
     } catch { }
