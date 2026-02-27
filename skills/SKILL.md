@@ -1,369 +1,76 @@
 ---
 name: opencode-iterm
-description: Project skill index for opencode-iterm. Auto-generated stub — refine with AI.
+description: Web-based tmux 终端客户端，支持 iPhone/iPad/桌面，带 AI 命令生成和语音输入
 ---
 
-# opencode-iterm
+# opencode-iterm (TmuxWeb)
 
-Auto-generated skill index for **opencode-iterm**.
+**TmuxWeb** 是一个 Web 端的 tmux 终端客户端，核心场景是从 iPhone/iPad 远程管理 macOS 上的 tmux 会话。支持 AI 命令生成（DeepSeek/OpenAI）和讯飞语音输入。
 
-## Discovered Documentation
+## 技术栈
 
-- `AGENTS.md`
-- `DEPLOY.md`
-- `GEMINI.md`
-- `HANDOFF-ios-terminal-black-screen.md`
-- `README.md`
-- `README_CN.md`
-- `ios-spec.md`
-- `xunfei-stt-implementation.md`
-- `TmuxMobile/.expo/README.md`
-- `TmuxMobile/ios/Pods/NMSSH/README.md`
-- `docs/plans/2025-02-09-tmux-ai-chat-task-tracking.md`
-- `docs/plans/2026-02-13-tmuxweb-migration.md`
-- `TmuxWeb/DEPLOY.md`
-- `TmuxWeb/README.md`
-- `TmuxWeb/docs/maintenance.md`
-- `TmuxWeb/docs/errors/ws-multiple-websocketserver-rsv1-error.md`
-- `TmuxWeb/docs/errors/xterm-control-sequences-causing-phantom-input.md`
-- `VoiceTmuxCore/.build/checkouts/swift-system/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/swift-system/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/swift-system/README.md`
-- `VoiceTmuxCore/.build/checkouts/BigInt/CHANGELOG.md`
-- `VoiceTmuxCore/.build/checkouts/BigInt/LICENSE.md`
-- `VoiceTmuxCore/.build/checkouts/BigInt/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio-ssh/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio-ssh/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio-ssh/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio-ssh/SECURITY.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio-ssh/Sources/NIOSSH/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Xcode/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/.github/PULL_REQUEST_TEMPLATE.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/.github/PULL_REQUEST_TEMPLATE/NEW.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/.github/ISSUE_TEMPLATE/BUG_REPORT.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/.github/ISSUE_TEMPLATE/FEATURE_REQUEST.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Atomics.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicInteger.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicIntegerStorage.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicLoadOrdering.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicOptionalReferenceStorage.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicOptionalWrappable.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicRawRepresentableStorage.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicReference.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicReferenceStorage.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicStorage.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicStoreOrdering.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicUpdateOrdering.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicValue.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/ManagedAtomic.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/ManagedAtomicLazyReference.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/UnsafeAtomic.md`
-- `VoiceTmuxCore/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/UnsafeAtomicLazyReference.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/SECURITY.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Tests/NIOFSIntegrationTests/Test Data/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/IntegrationTests/tests_04_performance/test_01_resources/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/docs/advanced-performance-analysis.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/docs/debugging-allocations.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/docs/io_uring.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/docs/migration-guide-NIO1-to-NIO2.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/docs/optimization-tips.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/docs/public-api.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/docs/public-async-nio-apis.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/docs/workarounds.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/.github/PULL_REQUEST_TEMPLATE.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/.github/ISSUE_TEMPLATE/bug-report.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOEchoClient/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOPosix/Docs.docc/GSO-GRO-Linux.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOPosix/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOUDPEchoClient/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOCore/Docs.docc/ByteBuffer-lengthPrefix.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOCore/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOCore/Docs.docc/loops-futures-concurrency.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOCore/Docs.docc/swift-concurrency.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOHTTP1Server/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOChatServer/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOWebSocketServer/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/_NIOFileSystem/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/_NIOFileSystem/Docs.docc/Extensions/DirectoryFileHandleProtocol.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/_NIOFileSystem/Docs.docc/Extensions/FileHandleProtocol.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/_NIOFileSystem/Docs.docc/Extensions/FileSystemProtocol.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/_NIOFileSystem/Docs.docc/Extensions/ReadableFileHandleProtocol.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/_NIOFileSystem/Docs.docc/Extensions/WritableFileHandleProtocol.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOTCPEchoServer/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOEchoServer/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOUDPEchoServer/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIO/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIO/Docs.docc/Articles/Debugging Allocation Regressions.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIO/Docs.docc/Articles/Running Alloction Counting Tests.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOChatClient/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOHTTP1Client/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOWebSocketClient/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-nio/Sources/NIOTCPEchoClient/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/SECURITY.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/.github/ISSUE_TEMPLATE.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/.github/PULL_REQUEST_TEMPLATE.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/DisableLogLevelsDuringCompilation.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/ImplementingALogHandler.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/LoggingBestPractices.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/UnderstandingLoggers.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/BestPractices/001-ChoosingLogLevels.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/BestPractices/002-StructuredLogging.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/BestPractices/003-AcceptingLoggers.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Reference/LogHandler.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Reference/Logger-Level.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Reference/Logger-Message.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Reference/Logger-MetadataProvider.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Reference/Logger-MetadataValue.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Reference/Logger.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Reference/LoggingSystem.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Reference/MultiplexLogHandler.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Reference/StreamLogHandler.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Reference/SwiftLogNoOpLogHandler.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Proposals/Proposals.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Proposals/SLG-0001-metadata-providers.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Proposals/SLG-0002.md`
-- `VoiceTmuxCore/.build/checkouts/swift-log/Sources/Logging/Docs.docc/Proposals/SLG-NNNN.md`
-- `VoiceTmuxCore/.build/checkouts/swift-crypto/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/swift-crypto/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/swift-crypto/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-crypto/SECURITY.md`
-- `VoiceTmuxCore/.build/checkouts/swift-crypto/.github/PULL_REQUEST_TEMPLATE.md`
-- `VoiceTmuxCore/.build/checkouts/swift-crypto/.github/ISSUE_TEMPLATE/BUG_REPORT.md`
-- `VoiceTmuxCore/.build/checkouts/swift-crypto/.github/ISSUE_TEMPLATE/FEATURE_REQUEST.md`
-- `VoiceTmuxCore/.build/checkouts/swift-crypto/.github/ISSUE_TEMPLATE/QUESTION.md`
-- `VoiceTmuxCore/.build/checkouts/swift-crypto/.github/ISSUE_TEMPLATE/REGRESSION.md`
-- `VoiceTmuxCore/.build/checkouts/swift-crypto/Sources/Crypto/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/swift-crypto/Sources/_CryptoExtras/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/swift-asn1/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/swift-asn1/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/swift-asn1/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-asn1/SECURITY.md`
-- `VoiceTmuxCore/.build/checkouts/swift-asn1/Sources/SwiftASN1/Docs.docc/DecodingASN1.md`
-- `VoiceTmuxCore/.build/checkouts/swift-asn1/Sources/SwiftASN1/Docs.docc/PEM.md`
-- `VoiceTmuxCore/.build/checkouts/swift-asn1/Sources/SwiftASN1/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Xcode/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Documentation/Deque.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Documentation/Heap.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Documentation/OrderedDictionary.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Documentation/OrderedSet.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Documentation/Internals/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Documentation/Internals/ReleaseChecklist.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Documentation/Announcement-benchmarks/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Documentation/Announcement-benchmarks/Results.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Documentation/Reviews/2022-10-31.ShareableHashedCollections/ShareableHashedCollections.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Tests/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Utils/README.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/.github/PULL_REQUEST_TEMPLATE.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/.github/PULL_REQUEST_TEMPLATE/NEW.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/.github/ISSUE_TEMPLATE/BUG_REPORT.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/.github/ISSUE_TEMPLATE/FEATURE_REQUEST.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/OrderedCollections/OrderedCollections.docc/OrderedCollections.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/OrderedCollections/OrderedCollections.docc/Extensions/OrderedDictionary.Elements.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/OrderedCollections/OrderedCollections.docc/Extensions/OrderedDictionary.Values.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/OrderedCollections/OrderedCollections.docc/Extensions/OrderedDictionary.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/OrderedCollections/OrderedCollections.docc/Extensions/OrderedSet.UnorderedView.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/OrderedCollections/OrderedCollections.docc/Extensions/OrderedSet.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/DequeModule/DequeModule.docc/DequeModule.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/DequeModule/DequeModule.docc/Extensions/Deque.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/BasicContainers/BasicContainers.docc/BasicContainers.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/BasicContainers/BasicContainers.docc/Extensions/RigidArray.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/BasicContainers/BasicContainers.docc/Extensions/UniqueArray.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/TrailingElementsModule/TrailingElementsModule.docc/TrailingElementsModule.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/BitCollections/BitCollections.docc/BitCollections.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/BitCollections/BitCollections.docc/Extensions/BitArray.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/BitCollections/BitCollections.docc/Extensions/BitSet.Counted.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/BitCollections/BitCollections.docc/Extensions/BitSet.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/ContainersPreview/ContainersPreview.docc/ContainersPreview.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/ContainersPreview/ContainersPreview.docc/Extensions/Box.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Collections.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/BitArray.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/BitSet.Counted.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/BitSet.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/Deque.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/Heap.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/OrderedDictionary.Elements.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/OrderedDictionary.Values.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/OrderedDictionary.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/OrderedSet.UnorderedView.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/OrderedSet.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/TreeDictionary.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/TreeSet.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/HashTreeCollections/HashTreeCollections.docc/HashTreeCollections.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/HashTreeCollections/HashTreeCollections.docc/Extensions/TreeDictionary.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/HashTreeCollections/HashTreeCollections.docc/Extensions/TreeSet.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/HeapModule/HeapModule.docc/HeapModule.md`
-- `VoiceTmuxCore/.build/checkouts/swift-collections/Sources/HeapModule/HeapModule.docc/Extensions/Heap.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-system/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-system/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-system/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/ColorizeSwift/CHANGELOG.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/ColorizeSwift/LICENSE.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/ColorizeSwift/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/BigInt/CHANGELOG.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/BigInt/LICENSE.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/BigInt/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio-ssh/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio-ssh/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio-ssh/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio-ssh/SECURITY.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio-ssh/Sources/NIOSSH/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Xcode/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/.github/PULL_REQUEST_TEMPLATE.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/.github/PULL_REQUEST_TEMPLATE/NEW.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/.github/ISSUE_TEMPLATE/BUG_REPORT.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/.github/ISSUE_TEMPLATE/FEATURE_REQUEST.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Atomics.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicInteger.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicIntegerStorage.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicLoadOrdering.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicOptionalReferenceStorage.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicOptionalWrappable.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicRawRepresentableStorage.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicReference.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicReferenceStorage.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicStorage.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicStoreOrdering.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicUpdateOrdering.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/AtomicValue.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/ManagedAtomic.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/ManagedAtomicLazyReference.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/UnsafeAtomic.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-atomics/Sources/Atomics/Atomics.docc/Extensions/UnsafeAtomicLazyReference.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/SECURITY.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Tests/NIOFileSystemIntegrationTests/Test Data/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/IntegrationTests/tests_04_performance/test_01_resources/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/docs/advanced-performance-analysis.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/docs/debugging-allocations.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/docs/io_uring.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/docs/migration-guide-NIO1-to-NIO2.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/docs/optimization-tips.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/docs/public-api.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/docs/public-async-nio-apis.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/docs/workarounds.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/.github/PULL_REQUEST_TEMPLATE.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/.github/ISSUE_TEMPLATE/bug-report.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOFileSystem/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOFileSystem/Docs.docc/Extensions/DirectoryFileHandleProtocol.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOFileSystem/Docs.docc/Extensions/FileHandleProtocol.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOFileSystem/Docs.docc/Extensions/FileSystemProtocol.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOFileSystem/Docs.docc/Extensions/ReadableFileHandleProtocol.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOFileSystem/Docs.docc/Extensions/WritableFileHandleProtocol.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOEchoClient/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOUDPEchoClient/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOCore/Docs.docc/ByteBuffer-lengthPrefix.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOCore/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOCore/Docs.docc/loops-futures-concurrency.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOCore/Docs.docc/swift-concurrency.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOHTTP1Server/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOChatServer/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOWebSocketServer/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOTCPEchoServer/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOEchoServer/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOUDPEchoServer/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIO/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOChatClient/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOHTTP1Client/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOWebSocketClient/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-nio/Sources/NIOTCPEchoClient/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-log/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-log/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-log/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-log/SECURITY.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-log/.github/ISSUE_TEMPLATE.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-log/.github/PULL_REQUEST_TEMPLATE.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-log/Sources/Logging/Docs.docc/LoggerLevel.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-log/Sources/Logging/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-log/proposals/0001-metadata-providers.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-crypto/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-crypto/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-crypto/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-crypto/SECURITY.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-crypto/.github/PULL_REQUEST_TEMPLATE.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-crypto/.github/ISSUE_TEMPLATE/BUG_REPORT.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-crypto/.github/ISSUE_TEMPLATE/FEATURE_REQUEST.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-crypto/.github/ISSUE_TEMPLATE/QUESTION.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-crypto/.github/ISSUE_TEMPLATE/REGRESSION.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-crypto/Sources/Crypto/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-crypto/Sources/_CryptoExtras/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-asn1/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-asn1/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-asn1/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-asn1/SECURITY.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-asn1/Sources/SwiftASN1/Docs.docc/DecodingASN1.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-asn1/Sources/SwiftASN1/Docs.docc/PEM.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-asn1/Sources/SwiftASN1/Docs.docc/index.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/CODE_OF_CONDUCT.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/CONTRIBUTING.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Xcode/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Documentation/Deque.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Documentation/Heap.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Documentation/OrderedDictionary.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Documentation/OrderedSet.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Documentation/Internals/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Documentation/Internals/ReleaseChecklist.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Documentation/Announcement-benchmarks/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Documentation/Announcement-benchmarks/Results.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Documentation/Reviews/2022-10-31.ShareableHashedCollections/ShareableHashedCollections.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Tests/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Utils/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/.github/PULL_REQUEST_TEMPLATE.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/.github/PULL_REQUEST_TEMPLATE/NEW.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/.github/ISSUE_TEMPLATE/BUG_REPORT.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/.github/ISSUE_TEMPLATE/FEATURE_REQUEST.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/OrderedCollections/OrderedCollections.docc/OrderedCollections.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/OrderedCollections/OrderedCollections.docc/Extensions/OrderedDictionary.Elements.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/OrderedCollections/OrderedCollections.docc/Extensions/OrderedDictionary.Values.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/OrderedCollections/OrderedCollections.docc/Extensions/OrderedDictionary.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/OrderedCollections/OrderedCollections.docc/Extensions/OrderedSet.UnorderedView.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/OrderedCollections/OrderedCollections.docc/Extensions/OrderedSet.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/DequeModule/DequeModule.docc/DequeModule.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/DequeModule/DequeModule.docc/Extensions/Deque.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/BitCollections/BitCollections.docc/BitCollections.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/BitCollections/BitCollections.docc/Extensions/BitArray.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/BitCollections/BitCollections.docc/Extensions/BitSet.Counted.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/BitCollections/BitCollections.docc/Extensions/BitSet.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Collections.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/BitArray.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/BitSet.Counted.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/BitSet.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/Deque.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/Heap.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/OrderedDictionary.Elements.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/OrderedDictionary.Values.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/OrderedDictionary.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/OrderedSet.UnorderedView.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/OrderedSet.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/TreeDictionary.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/Collections/Collections.docc/Extensions/TreeSet.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/HashTreeCollections/HashTreeCollections.docc/HashTreeCollections.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/HashTreeCollections/HashTreeCollections.docc/Extensions/TreeDictionary.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/HashTreeCollections/HashTreeCollections.docc/Extensions/TreeSet.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/HeapModule/HeapModule.docc/HeapModule.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.build/checkouts/swift-collections/Sources/HeapModule/HeapModule.docc/Extensions/Heap.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/Examples/RemotePortForwardExample/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/Examples/ExampleClient/README.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.github/ISSUE_TEMPLATE/bug_report.md`
-- `VoiceTmuxCore/.build/checkouts/Citadel/.github/ISSUE_TEMPLATE/feature_request.md`
+- **后端**: Node.js 18-20, Express 4, WebSocket (ws), node-pty
+- **前端**: React 18, Vite 5, TypeScript, xterm.js
+- **数据库**: MySQL 5.7+ (mysql2/promise)
+- **外部服务**: LLM API (DeepSeek/OpenAI), 讯飞语音 STT
+- **部署**: PM2
 
-_Generated: 2026-02-27 02:00 UTC_
+## 目录结构
+
+```
+opencode-iterm/
+├── TmuxWeb/                 # 主项目（Node.js + React）
+│   ├── server/              # Express 后端
+│   │   ├── index.js         # 入口：HTTP/S + WebSocket
+│   │   ├── routes/          # API 路由（18个文件）
+│   │   ├── services/        # 核心服务
+│   │   │   ├── terminal.js  # PTY 连接管理
+│   │   │   └── speech.js    # 讯飞 STT 代理
+│   │   └── db/              # MySQL 连接池 + schema
+│   ├── web/                 # React 前端
+│   │   └── src/
+│   │       ├── desktop/     # 桌面版 UI
+│   │       ├── mobile/      # 移动版 UI（/m 路由）
+│   │       └── components/  # 共享组件
+│   └── ecosystem.config.js  # PM2 配置
+├── TmuxMobile/              # React Native 移动端（实验性）
+├── VoiceTmuxCore/           # Swift 原生 iOS（实验性）
+└── docs/                    # 文档
+```
+
+## 核心能力
+
+| 能力 | 说明 | 详见 |
+|------|------|------|
+| 终端连接 | WebSocket + node-pty 连接 tmux pane | [architecture.md](architecture.md) |
+| AI 命令生成 | 7 种内置角色 + 自定义角色 | [api.md](api.md) |
+| 语音输入 | 讯飞 STT WebSocket 代理 | [architecture.md](architecture.md) |
+| 任务追踪 | AI 会话 → MySQL 任务记录 | [api.md](api.md) |
+| 双端 UI | 桌面 `/` + 移动 `/m` | [development.md](development.md) |
+
+## 子文件索引
+
+| 文件 | 内容 |
+|------|------|
+| [architecture.md](architecture.md) | 核心架构、WebSocket 数据流、PTY 管理 |
+| [api.md](api.md) | REST API 端点、WebSocket 协议 |
+| [development.md](development.md) | 开发环境、构建、部署 |
+
+## 快速开始
+
+```bash
+cd TmuxWeb
+npm run install:all          # 安装前后端依赖
+npm run build               # 构建前端
+cp server/config.json server/config_private.json  # 创建私有配置
+node server/index.js        # 启动服务
+```
+
+访问 `https://<ip>:8215`（HTTPS 需要 mkcert 证书）。
+
+## 注意事项
+
+1. **Node.js 版本**: 推荐 v20.x，v22+ 可能有兼容问题
+2. **证书**: iPhone 访问需要 HTTPS，用 mkcert 生成证书并安装 CA
+3. **token 认证**: 所有 API 需要配置 `config_private.json` 中的 token
+4. **MySQL**: 任务追踪功能依赖 MySQL，需先执行 `server/db/init.sql`
