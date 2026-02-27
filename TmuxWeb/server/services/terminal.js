@@ -198,6 +198,20 @@ async function handleTerminalConnection(ws, paneId, clientId) {
 
   const { ptyProcess } = entry;
 
+  // ── 新连接接入后延迟触发 resize 重绘 ──
+  // 原因：gemini CLI 等工具不会主动刷新终端。发一次 resize 可以让
+  // 终端内运行的程序感知到当前窗口大小并重新绘制，填满整个屏幕。
+  // 用当前 PTY 尺寸 resize（等同无变化的 resize），效果只是触发 SIGWINCH。
+  setTimeout(() => {
+    try {
+      const cols = ptyProcess.cols || 80;
+      const rows = ptyProcess.rows || 24;
+      ptyProcess.resize(cols + 1, rows);
+      ptyProcess.resize(cols, rows);
+    } catch { /* PTY 可能已退出，忽略 */ }
+  }, 800);
+
+
   // ── WS → PTY (input) ──
   let lastMessage = '';
   let lastMessageTime = 0;
