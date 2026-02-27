@@ -53,6 +53,7 @@ opencode-iterm/
 | [architecture.md](architecture.md) | 核心架构、WebSocket 数据流、PTY 管理 |
 | [api.md](api.md) | REST API 端点、WebSocket 协议 |
 | [development.md](development.md) | 开发环境、构建、部署 |
+| [data-model.md](data-model.md) | 数据库 Schema、ER 关系、常用查询 |
 | [troubleshooting.md](troubleshooting.md) | 故障排查、已知问题解决方案 |
 
 ## 快速开始
