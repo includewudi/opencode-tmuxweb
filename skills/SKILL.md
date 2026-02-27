@@ -48,13 +48,12 @@ opencode-iterm/
 | 任务追踪 | AI 会话 → MySQL 任务记录 | [api.md](api.md) |
 | 双端 UI | 桌面 `/` + 移动 `/m` | [development.md](development.md) |
 
-## 子文件索引
-
 | 文件 | 内容 |
 |------|------|
 | [architecture.md](architecture.md) | 核心架构、WebSocket 数据流、PTY 管理 |
 | [api.md](api.md) | REST API 端点、WebSocket 协议 |
 | [development.md](development.md) | 开发环境、构建、部署 |
+| [troubleshooting.md](troubleshooting.md) | 故障排查、已知问题解决方案 |
 
 ## 快速开始
 
