@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../db/pool');
 const config = require('../config-loader');
+const { syncPaneStatus } = require('../utils');
 
 const router = express.Router();
 
@@ -10,42 +11,7 @@ function normalizePaneKey(key) {
   return key.replace(/\//g, ':');
 }
 
-// Sync pane status to tmux_session_meta so TmuxTree sidebar can show it
-async function syncPaneStatus(token, profileKey, paneKey, status) {
-  try {
-    const parts = paneKey.split(':');
-    if (parts.length < 3) return;
-    const sessionName = parts.slice(0, -2).join(':');
-    const windowIndex = parts[parts.length - 2];
-    const paneIndex = parts[parts.length - 1];
-    const paneStatusKey = `${windowIndex}:${paneIndex}`;
-    const now = Math.floor(Date.now() / 1000);
-
-    const [existingRows] = await pool.query(
-      `SELECT id, extra FROM tmux_session_meta WHERE token = ? AND profile_key = ? AND session_name = ?`,
-      [token, profileKey, sessionName]
-    );
-
-    if (existingRows.length > 0) {
-      let extra = {};
-      try { extra = existingRows[0].extra ? JSON.parse(existingRows[0].extra) : {}; } catch (e) { extra = {}; }
-      if (!extra.panes) extra.panes = {};
-      extra.panes[paneStatusKey] = status;
-      await pool.query(
-        `UPDATE tmux_session_meta SET extra = ?, mtime = ? WHERE id = ?`,
-        [JSON.stringify(extra), now, existingRows[0].id]
-      );
-    } else {
-      const extra = { panes: { [paneStatusKey]: status } };
-      await pool.query(
-        `INSERT INTO tmux_session_meta (token, profile_key, session_name, extra, ctime, mtime) VALUES (?, ?, ?, ?, ?, ?)`,
-        [token, profileKey, sessionName, JSON.stringify(extra), now, now]
-      );
-    }
-  } catch (err) {
-    console.error('[task-events] syncPaneStatus error:', err.message);
-  }
-}
+// syncPaneStatus is now imported from ../utils
 
 const sseSubscribers = new Map();
 
@@ -140,7 +106,7 @@ router.post('/', async (req, res) => {
 
       // Sync pane status to sidebar
       const token = req.token || req.query.token || config.token;
-      await syncPaneStatus(token, 'default', paneKey, 'in_progress');
+        await syncPaneStatus(pool, token, 'default', paneKey, 'in_progress');
 
       broadcast(paneKey, {
         type: 'task_started',
@@ -188,7 +154,7 @@ router.post('/', async (req, res) => {
 
         // Sync pane status to sidebar
         const token = req.token || req.query.token || config.token;
-        await syncPaneStatus(token, 'default', paneKeyForBroadcast, 'done');
+        await syncPaneStatus(pool, token, 'default', paneKeyForBroadcast, 'done');
 
         broadcast(paneKeyForBroadcast, {
           type: 'task_completed',
@@ -218,7 +184,7 @@ router.post('/', async (req, res) => {
         const paneKeyForBroadcast = existing[0].pane_key;
 
         const token = req.token || req.query.token || config.token;
-        await syncPaneStatus(token, 'default', paneKeyForBroadcast, 'failed');
+        await syncPaneStatus(pool, token, 'default', paneKeyForBroadcast, 'failed');
 
         broadcast(paneKeyForBroadcast, {
           type: 'task_failed',
@@ -248,7 +214,7 @@ router.post('/', async (req, res) => {
         const paneKeyForBroadcast = existing[0].pane_key;
 
         const token = req.token || req.query.token || config.token;
-        await syncPaneStatus(token, 'default', paneKeyForBroadcast, 'waiting');
+        await syncPaneStatus(pool, token, 'default', paneKeyForBroadcast, 'waiting');
 
         broadcast(paneKeyForBroadcast, {
           type: 'task_waiting',

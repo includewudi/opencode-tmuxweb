@@ -1,6 +1,7 @@
 const express = require('express');
 const { pool } = require('../db/pool');
-const { parsePaneKey } = require('../utils');
+const { parsePaneKey, syncPaneStatus } = require('../utils');
+const config = require('../config-loader');
 
 const router = express.Router();
 
@@ -71,15 +72,36 @@ router.patch('/conv/:id/complete', async (req, res) => {
     const { id } = req.params;
     const timestamp = Math.floor(Date.now() / 1000);
 
-    const [result] = await pool.query(
+    // Get pane_key before updating
+    const [convRows] = await pool.query(
+      `SELECT pane_key FROM ai_conversation WHERE id = ? AND is_deleted = 0`,
+      [id]
+    );
+
+    if (convRows.length === 0) {
+      return res.status(404).json({ error: 'not_found', message: 'Conversation not found' });
+    }
+
+    const paneKey = convRows[0].pane_key;
+
+    await pool.query(
       `UPDATE ai_conversation
        SET conv_status = 'completed', completed_at = ?, mtime = ?
        WHERE id = ? AND is_deleted = 0`,
       [timestamp, timestamp, id]
     );
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'not_found', message: 'Conversation not found' });
+    // Check if all conversations for this pane are now completed
+    const [remaining] = await pool.query(
+      `SELECT COUNT(*) as cnt FROM ai_conversation
+       WHERE pane_key = ? AND conv_status = 'in_progress' AND is_deleted = 0`,
+      [paneKey]
+    );
+
+    if (remaining[0].cnt === 0 && paneKey) {
+      // All conversations done — sync pane status to sidebar
+      const token = req.token || config.token;
+      await syncPaneStatus(pool, token, 'default', paneKey, 'done');
     }
 
     res.json({ success: true, id, conv_status: 'completed', completed_at: timestamp });
