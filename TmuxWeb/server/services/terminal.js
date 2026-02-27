@@ -219,7 +219,10 @@ async function handleTerminalConnection(ws, paneId, clientId) {
     try {
       const parsed = JSON.parse(content);
       if (parsed.type === 'resize' && parsed.cols && parsed.rows) {
-        ptyProcess.resize(parsed.cols, parsed.rows);
+        // Only resize if dimensions actually changed—avoids unnecessary SIGWINCH/redraws
+        if (parsed.cols !== ptyProcess.cols || parsed.rows !== ptyProcess.rows) {
+          ptyProcess.resize(parsed.cols, parsed.rows);
+        }
         if (!firstResizeDone) {
           firstResizeDone = true;
           clearTimeout(sigwinchFallback);
