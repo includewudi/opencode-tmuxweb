@@ -102,9 +102,18 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
       ws.onopen = () => {
         const wasReconnect = reconnectAttemptRef.current > 0
         reconnectAttemptRef.current = 0
-        if (termRef.current) {
-          ws.send(JSON.stringify({ type: 'resize', cols: termRef.current.cols, rows: termRef.current.rows }))
+
+        // Multi-shot resize: 0/50/200/500ms to catch tools like gemini CLI
+        // that wait ~100ms for SIGWINCH before rendering their first TUI frame
+        const sendResize = () => {
+          if (termRef.current && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'resize', cols: termRef.current.cols, rows: termRef.current.rows }))
+          }
         }
+        sendResize()
+        setTimeout(sendResize, 50)
+        setTimeout(sendResize, 200)
+        setTimeout(sendResize, 500)
 
         if (isIOS()) {
           ws.send(DEC_1004_DISABLE)
