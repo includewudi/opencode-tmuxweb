@@ -103,17 +103,21 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
         const wasReconnect = reconnectAttemptRef.current > 0
         reconnectAttemptRef.current = 0
 
-        // Multi-shot resize: 0/50/200/500ms to catch tools like gemini CLI
-        // that wait ~100ms for SIGWINCH before rendering their first TUI frame
-        const sendResize = () => {
-          if (termRef.current && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'resize', cols: termRef.current.cols, rows: termRef.current.rows }))
-          }
+        // Send resize on open. Also schedule a delayed check: if dims changed
+        // since the first send (e.g., layout settled), send again. Skip if same
+        // to avoid causing tools like gemini CLI to unnecessarily redraw.
+        const getSize = () => termRef.current ? { cols: termRef.current.cols, rows: termRef.current.rows } : null
+        const firstSize = getSize()
+        if (firstSize && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'resize', ...firstSize }))
         }
-        sendResize()
-        setTimeout(sendResize, 50)
-        setTimeout(sendResize, 200)
-        setTimeout(sendResize, 500)
+        setTimeout(() => {
+          const size = getSize()
+          if (size && ws.readyState === WebSocket.OPEN &&
+            (size.cols !== firstSize?.cols || size.rows !== firstSize?.rows)) {
+            ws.send(JSON.stringify({ type: 'resize', ...size }))
+          }
+        }, 300)
 
         if (isIOS()) {
           ws.send(DEC_1004_DISABLE)

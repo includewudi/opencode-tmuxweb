@@ -225,10 +225,12 @@ async function handleTerminalConnection(ws, paneId, clientId) {
           clearTimeout(sigwinchFallback);
           setTimeout(async () => {
             try {
+              // 扩展 tmux window 到当前最大 client 尺寸（解决旧 window 保留小尺寸的问题）
               await execAsync(
                 `tmux resize-window -t "${paneId}" -A`,
                 { timeout: 1000 }
               ).catch(() => { });
+              // 查 pane 真实宽高后做一次干净的 resize（不用 cols±1 trick 避免多余重绘）
               const { stdout } = await execAsync(
                 `tmux display-message -t "${paneId}" -p "#{pane_width} #{pane_height}"`,
                 { timeout: 1000 }
@@ -236,15 +238,13 @@ async function handleTerminalConnection(ws, paneId, clientId) {
               const parts = stdout.trim().split(' ');
               const actualCols = parseInt(parts[0], 10) || ptyProcess.cols;
               const actualRows = parseInt(parts[1], 10) || ptyProcess.rows;
-              ptyProcess.resize(actualCols + 1, actualRows);
-              ptyProcess.resize(actualCols, actualRows);
+              if (actualCols !== ptyProcess.cols || actualRows !== ptyProcess.rows) {
+                ptyProcess.resize(actualCols, actualRows);
+              }
             } catch {
-              try {
-                const c = ptyProcess.cols, r = ptyProcess.rows;
-                ptyProcess.resize(c + 1, r); ptyProcess.resize(c, r);
-              } catch { }
+              // no-op, PTY already at correct size
             }
-          }, 150);
+          }, 200);
         }
         return;
       }
