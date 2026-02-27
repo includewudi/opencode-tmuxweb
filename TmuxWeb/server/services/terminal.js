@@ -220,15 +220,30 @@ async function handleTerminalConnection(ws, paneId, clientId) {
       const parsed = JSON.parse(content);
       if (parsed.type === 'resize' && parsed.cols && parsed.rows) {
         ptyProcess.resize(parsed.cols, parsed.rows);
-        // 首次 resize 后立刻再 bump 一次，让运行中的程序（如 gemini CLI）重绘
         if (!firstResizeDone) {
           firstResizeDone = true;
           clearTimeout(sigwinchFallback);
-          setTimeout(() => {
+          setTimeout(async () => {
             try {
-              ptyProcess.resize(parsed.cols + 1, parsed.rows);
-              ptyProcess.resize(parsed.cols, parsed.rows);
-            } catch { }
+              await execAsync(
+                `tmux resize-window -t "${paneId}" -A`,
+                { timeout: 1000 }
+              ).catch(() => { });
+              const { stdout } = await execAsync(
+                `tmux display-message -t "${paneId}" -p "#{pane_width} #{pane_height}"`,
+                { timeout: 1000 }
+              );
+              const parts = stdout.trim().split(' ');
+              const actualCols = parseInt(parts[0], 10) || ptyProcess.cols;
+              const actualRows = parseInt(parts[1], 10) || ptyProcess.rows;
+              ptyProcess.resize(actualCols + 1, actualRows);
+              ptyProcess.resize(actualCols, actualRows);
+            } catch {
+              try {
+                const c = ptyProcess.cols, r = ptyProcess.rows;
+                ptyProcess.resize(c + 1, r); ptyProcess.resize(c, r);
+              } catch { }
+            }
           }, 150);
         }
         return;
