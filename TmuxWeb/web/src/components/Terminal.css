@@ -31,8 +31,36 @@
   bottom: calc(24px + env(safe-area-inset-bottom, 0px));
   right: 24px;
   z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
 
+
+.terminal-toolbar .fit-window-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  margin-bottom: 8px;
+}
+
+.terminal-toolbar .fit-window-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.terminal-toolbar .fit-window-btn:active {
+  background: rgba(77, 120, 204, 0.4);
+}
 .keyboard-spacer {
   flex-shrink: 0;
   background: #0d0d0d;

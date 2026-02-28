@@ -7,6 +7,7 @@ import { log as telemetryLog, isDebugEnabled } from '../utils/telemetry'
 import { useKeyboardAvoider } from '../hooks/useKeyboardAvoider'
 import { VoiceInput } from '../shared/components/VoiceInput'
 import { AccessoryBar } from './AccessoryBar'
+import { Maximize2 } from 'lucide-react'
 import 'xterm/css/xterm.css'
 import './Terminal.css'
 
@@ -394,6 +395,14 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
     }
   }, [sendText])
 
+  const handleFitWindow = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN && termRef.current && fitRef.current) {
+      fitRef.current.fit()
+      const cols = termRef.current.cols
+      const rows = termRef.current.rows
+      wsRef.current.send(JSON.stringify({ type: "fit-window", cols, rows }))
+    }
+  }, [])
 
 
   return (
@@ -411,6 +420,13 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
         spellCheck={false}
       />
       <div className="terminal-toolbar">
+        <button
+          className="fit-window-btn"
+          onClick={handleFitWindow}
+          title="撑满当前终端"
+        >
+          <Maximize2 size={18} />
+        </button>
         <VoiceInput onText={sendText} />
       </div>
       {showAccessoryBar && (

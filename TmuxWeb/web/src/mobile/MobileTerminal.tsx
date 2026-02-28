@@ -7,6 +7,7 @@ import { log as telemetryLog } from '../utils/telemetry'
 import { createTelemetryEmitter, type TelemetryEmitter } from '../utils/telemetryEmitter'
 import { MobileToolbox } from './MobileToolbox'
 import { VoiceInputHandle } from '../shared/components/VoiceInput'
+import { Maximize2 } from 'lucide-react'
 import 'xterm/css/xterm.css'
 
 const DEC_1004_DISABLE = '\x1b[?1004l'
@@ -597,9 +598,27 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
     }
   }, [paneId])
 
+  const handleFitWindow = useCallback(() => {
+    if (wsRef.current?.readyState === WebSocket.OPEN && termRef.current && fitRef.current) {
+      fitRef.current.fit()
+      const cols = termRef.current.cols
+      const rows = termRef.current.rows
+      wsRef.current.send(JSON.stringify({ type: "fit-window", cols, rows }))
+    }
+  }, [])
+
   return (
     <div className="mobile-terminal-wrapper">
-      <div ref={containerRef} className="mobile-terminal-container" />
+      <div className="mobile-terminal-area">
+        <div ref={containerRef} className="mobile-terminal-container" />
+        <button
+          className="mobile-fit-window-btn"
+          onClick={handleFitWindow}
+          title="撑满当前终端"
+        >
+          <Maximize2 size={16} />
+        </button>
+      </div>
       <MobileToolbox
         onSend={sendText}
         disabled={false}

@@ -150,7 +150,7 @@ async function handleTerminalConnection(ws, paneId, clientId) {
     try {
       // Use shell -c so we can chain commands: attach then select the right pane
       ptyProcess = pty.spawn('/bin/sh', ['-c',
-        `tmux attach-session -t "${sessionName}" \\; select-pane -t "${paneId}"`
+        `tmux set-option -t "${sessionName}" window-size latest \\; attach-session -t "${sessionName}" \\; select-pane -t "${paneId}"`
       ], {
         name: 'xterm-256color',
         cols: 80,
@@ -169,6 +169,7 @@ async function handleTerminalConnection(ws, paneId, clientId) {
       ptyProcess,
       clients: new Set([ws]),
       createdAt: Date.now(),
+      sessionName,
     };
     activePTYs.set(paneId, entry);
     console.log(`[Terminal] PTY spawned. Active: ${activePTYs.size}/${MAX_PTYS}`);
@@ -209,6 +210,16 @@ async function handleTerminalConnection(ws, paneId, clientId) {
       const parsed = JSON.parse(content);
       if (parsed.type === 'resize' && parsed.cols && parsed.rows) {
         ptyProcess.resize(parsed.cols, parsed.rows);
+        return;
+      }
+      if (parsed.type === 'fit-window' && parsed.cols && parsed.rows) {
+        const sess = entry.sessionName;
+        if (sess) {
+          ptyProcess.resize(parsed.cols, parsed.rows);
+          execAsync(`tmux resize-window -t "${sess}" -x ${parsed.cols} -y ${parsed.rows}`, { timeout: 3000 })
+            .then(() => console.log(`[Terminal] fit-window: resized ${sess} to ${parsed.cols}x${parsed.rows}`))
+            .catch(err => console.log(`[Terminal] fit-window error: ${err.message}`));
+        }
         return;
       }
     } catch { }
