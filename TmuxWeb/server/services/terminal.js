@@ -254,4 +254,64 @@ async function handleTerminalConnection(ws, paneId, clientId) {
   });
 }
 
+// ── Graceful Shutdown: kill all PTYs on process exit ─────────────────
+function shutdownAllPTYs(signal) {
+  console.log(`[Terminal] ${signal} received. Cleaning up ${activePTYs.size} PTYs...`);
+  for (const [paneId, entry] of activePTYs) {
+    try {
+      entry.ptyProcess.kill();
+      console.log(`[Terminal] Killed PTY for pane ${paneId}`);
+    } catch (err) {
+      console.log(`[Terminal] Failed to kill PTY ${paneId}: ${err.message}`);
+    }
+    // Close all WS clients
+    for (const client of entry.clients) {
+      try { client.terminate(); } catch {}
+    }
+  }
+  activePTYs.clear();
+  allConnections.clear();
+  clearInterval(heartbeatTimer);
+  console.log('[Terminal] All PTYs cleaned up');
+}
+
+process.on('SIGTERM', () => { shutdownAllPTYs('SIGTERM'); process.exit(0); });
+process.on('SIGINT', () => { shutdownAllPTYs('SIGINT'); process.exit(0); });
+process.on('exit', () => { shutdownAllPTYs('exit'); });
+
+// ── Startup: kill orphaned tmux attach-session processes ─────────────
+async function cleanupOrphanedPTYs() {
+  try {
+    // Find tmux attach-session processes spawned by previous server instances
+    // that are now orphaned (parent PID = 1 on Linux, or parent is launchd/init)
+    const { stdout } = await execAsync(
+      'pgrep -f "tmux attach-session" | xargs -r ps -o pid,ppid,command -p 2>/dev/null || true',
+      { timeout: 5000 }
+    );
+    if (stdout.trim()) {
+      console.log('[Terminal] Found potential orphaned tmux attach processes:');
+      console.log(stdout.trim());
+    }
+
+    // Kill orphaned attach-session processes whose parent is NOT a running node server
+    // Use a safer approach: kill only those with PPID=1 (truly orphaned)
+    const { stdout: orphans } = await execAsync(
+      'pgrep -f "tmux attach-session" | while read pid; do ppid=$(ps -o ppid= -p $pid 2>/dev/null | tr -d " "); if [ "$ppid" = "1" ]; then echo $pid; fi; done',
+      { timeout: 5000 }
+    );
+    const orphanPids = orphans.trim().split('\n').filter(Boolean);
+    if (orphanPids.length > 0) {
+      console.log(`[Terminal] Killing ${orphanPids.length} orphaned tmux attach-session processes: ${orphanPids.join(', ')}`);
+      await execAsync(`kill ${orphanPids.join(' ')}`, { timeout: 5000 }).catch(() => {});
+    } else {
+      console.log('[Terminal] No orphaned tmux attach-session processes found');
+    }
+  } catch (err) {
+    console.log(`[Terminal] Orphan cleanup check failed (non-fatal): ${err.message}`);
+  }
+}
+
+// Run cleanup on module load
+cleanupOrphanedPTYs();
+
 module.exports = { handleTerminalConnection, getStats };
