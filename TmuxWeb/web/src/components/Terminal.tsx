@@ -425,7 +425,8 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
           onClick={handleFitWindow}
           title="撑满当前终端"
         >
-          <Maximize2 size={18} />
+          <Maximize2 size={14} />
+          <span>撑满</span>
         </button>
         <VoiceInput onText={sendText} />
       </div>

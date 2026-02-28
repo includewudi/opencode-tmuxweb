@@ -42,15 +42,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 16px;
   border: none;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
   margin-bottom: 8px;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .terminal-toolbar .fit-window-btn:hover {

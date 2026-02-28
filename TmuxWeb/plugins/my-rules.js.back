@@ -26,6 +26,7 @@ const BASE_URL = `https://localhost:${PORT}`;
 const MY_RULES = `<MY_RULES>
 PHASE-0 GATE: Before selecting ANY tool, check these rules FIRST.
 If the task involves file operations (edit/create/write/save), jump to [FAST-EDIT] below.
+If the task involves memory/recall, jump to [MEMORY] below.
 
 [FAST-EDIT]
 When you need to edit, create, write, or save files — including saving user-pasted content — you MUST:
@@ -35,71 +36,100 @@ When you need to edit, create, write, or save files — including saving user-pa
 4. For user-pasted content, prefer save-pasted (zero token, zero escaping).
 Fast-edit is 100x faster than built-in tools. NEVER use Edit/Write when fast-edit can do the job.
 Trigger: any intent to create, modify, save, or write a file.
+
+[MEMORY]
+When the user mentions remembering something, recalling past context, personal preferences,
+or when the task clearly benefits from knowing user history/preferences/prior decisions,
+load the memory skill first: skill("simplemem-pro"), then query as needed.
+Trigger phrases: "记住", "还记得吗", "之前说过", "我的偏好", "remember", "recall", "what do you know about me".
+Do NOT query memory on every conversation — only when relevant.
+When you help the user debug/fix an error and the user CONFIRMS it is resolved,
+ask: "要记住这个解决方案吗？" If user agrees, use simplemem-pro to store the problem + solution.
+Do NOT store automatically — always wait for user confirmation that the fix actually works.
+
+[BUTLER]
+When the user wants to orchestrate tasks, research GitHub projects, generate WeChat articles,
+publish drafts, dispatch dev tasks, manage task queues, discover skills, or check task progress,
+load the butler skill first: skill("butler"), then use Butler API.
+Trigger phrases: "butler", "管家", "研究项目", "写文章", "发布草稿", "publish", "wechat", "公众号",
+"schedule task", "run task", "find skill", "安排任务", "执行任务", "任务进度", "查找技能".
+Always use /api/orchestrate as the primary entry point.
+
+[LEARN]
+When the user confirms a debug fix works AND agrees to save it as a skill,
+or explicitly asks to "save as skill" / "turn this into a skill" / "记住这个解决方案":
+1. Load the extractor skill first: skill("openception")
+2. Follow the extraction pipeline in the openception skill to evaluate, deduplicate, and write.
+3. Also load skill("simplemem-pro") and dual-write a synopsis to long-term memory.
+Trigger phrases: "save as skill", "turn this into a skill", "extract a skill",
+"记住这个解决方案", "保存为技能", "学到了什么", "what did we learn", "/learn".
+Do NOT auto-extract — only when user explicitly requests or confirms.
+Max 50 learned skills in ~/.config/opencode/skills/learned/.
 </MY_RULES>`;
 
 export const MyPlugin = async ({ client, directory }) => {
-    // Task tracking state (shared between chat.message and event hooks)
-    let lastConversationId = null;
-    let lastPaneKey = null;
+  // Task tracking state (shared between chat.message and event hooks)
+  let lastConversationId = null;
+  let lastPaneKey = null;
 
-    return {
-        'experimental.chat.system.transform': async (_input, output) => {
-            (output.system ||= []).push(MY_RULES);
-        },
+  return {
+    'experimental.chat.system.transform': async (_input, output) => {
+      (output.system ||= []).push(MY_RULES);
+    },
 
-        'chat.message': async (input, output) => {
-            try {
-                const textParts = (output.parts || []).filter(p => p.type === 'text');
-                const userMsg = textParts.map(p => p.text).join(' ').slice(0, 200);
-                const escaped = JSON.stringify(userMsg).slice(1, -1);
+    'chat.message': async (input, output) => {
+      try {
+        const textParts = (output.parts || []).filter(p => p.type === 'text');
+        const userMsg = textParts.map(p => p.text).join(' ').slice(0, 200);
+        const escaped = JSON.stringify(userMsg).slice(1, -1);
 
-                const paneKey = execSync(
-                    "tmux display-message -p '#{session_name}/#{window_index}/#{pane_id}'",
-                    { encoding: 'utf8', timeout: 3000 }
-                ).trim();
+        const paneKey = execSync(
+          "tmux display-message -p '#{session_name}/#{window_index}/#{pane_id}'",
+          { encoding: 'utf8', timeout: 3000 }
+        ).trim();
 
-                const convId = crypto.randomUUID();
+        const convId = crypto.randomUUID();
 
-                const body = JSON.stringify({
-                    event: 'task_started',
-                    pane_key: paneKey,
-                    conversation_id: convId,
-                    user_message: escaped,
-                    timestamp: Math.floor(Date.now() / 1000)
-                });
+        const body = JSON.stringify({
+          event: 'task_started',
+          pane_key: paneKey,
+          conversation_id: convId,
+          user_message: escaped,
+          timestamp: Math.floor(Date.now() / 1000)
+        });
 
-                execSync(
-                    `curl -sk --noproxy '*' -X POST ${BASE_URL}/api/tasks/events -H "Content-Type: application/json" -d '${body.replace(/'/g, "'\\''")}'`,
-                    { timeout: 5000, stdio: 'ignore' }
-                );
+        execSync(
+          `curl -sk --noproxy '*' -X POST ${BASE_URL}/api/tasks/events -H "Content-Type: application/json" -d '${body.replace(/'/g, "'\\''")}'`,
+          { timeout: 5000, stdio: 'ignore' }
+        );
 
-                lastConversationId = convId;
-                lastPaneKey = paneKey;
-            } catch (_) {
-            }
-        },
+        lastConversationId = convId;
+        lastPaneKey = paneKey;
+      } catch (_) {
+      }
+    },
 
-        'event': async ({ event }) => {
-            if (event.type !== 'session.idle' || !lastConversationId) return;
-            try {
-                const convId = lastConversationId;
-                const paneKey = lastPaneKey;
-                lastConversationId = null;
-                lastPaneKey = null;
+    'event': async ({ event }) => {
+      if (event.type !== 'session.idle' || !lastConversationId) return;
+      try {
+        const convId = lastConversationId;
+        const paneKey = lastPaneKey;
+        lastConversationId = null;
+        lastPaneKey = null;
 
-                const body = JSON.stringify({
-                    event: 'task_completed',
-                    pane_key: paneKey,
-                    conversation_id: convId,
-                    timestamp: Math.floor(Date.now() / 1000)
-                });
+        const body = JSON.stringify({
+          event: 'task_completed',
+          pane_key: paneKey,
+          conversation_id: convId,
+          timestamp: Math.floor(Date.now() / 1000)
+        });
 
-                execSync(
-                    `curl -sk --noproxy '*' -X POST ${BASE_URL}/api/tasks/events -H "Content-Type: application/json" -d '${body.replace(/'/g, "'\\''")}'`,
-                    { timeout: 5000, stdio: 'ignore' }
-                );
-            } catch (_) {
-            }
-        }
-    };
+        execSync(
+          `curl -sk --noproxy '*' -X POST ${BASE_URL}/api/tasks/events -H "Content-Type: application/json" -d '${body.replace(/'/g, "'\\''")}'`,
+          { timeout: 5000, stdio: 'ignore' }
+        );
+      } catch (_) {
+      }
+    }
+  };
 };

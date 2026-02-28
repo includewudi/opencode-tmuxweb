@@ -616,7 +616,8 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
           onClick={handleFitWindow}
           title="撑满当前终端"
         >
-          <Maximize2 size={16} />
+          <Maximize2 size={12} />
+          <span>撑满</span>
         </button>
       </div>
       <MobileToolbox
