@@ -103,9 +103,22 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
       ws.onopen = () => {
         const wasReconnect = reconnectAttemptRef.current > 0
         reconnectAttemptRef.current = 0
-        if (termRef.current) {
-          ws.send(JSON.stringify({ type: 'resize', cols: termRef.current.cols, rows: termRef.current.rows }))
+
+        // Send resize on open. Also schedule a delayed check: if dims changed
+        // since the first send (e.g., layout settled), send again. Skip if same
+        // to avoid causing tools like gemini CLI to unnecessarily redraw.
+        const getSize = () => termRef.current ? { cols: termRef.current.cols, rows: termRef.current.rows } : null
+        const firstSize = getSize()
+        if (firstSize && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'resize', ...firstSize }))
         }
+        setTimeout(() => {
+          const size = getSize()
+          if (size && ws.readyState === WebSocket.OPEN &&
+            (size.cols !== firstSize?.cols || size.rows !== firstSize?.rows)) {
+            ws.send(JSON.stringify({ type: 'resize', ...size }))
+          }
+        }, 300)
 
         if (isIOS()) {
           ws.send(DEC_1004_DISABLE)

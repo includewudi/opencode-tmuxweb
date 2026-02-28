@@ -200,8 +200,19 @@ async function handleTerminalConnection(ws, paneId, clientId) {
   const { ptyProcess } = entry;
 
   // ── WS → PTY (input) ──
-  let lastMessage = '';
-  let lastMessageTime = 0;
+  let lastMessage = ''
+  let lastMessageTime = 0
+  let firstResizeDone = false  // 首次 resize 后触发一次 SIGWINCH 重绘
+
+  // 兜底：1.5s 后如果还没收到 resize，用当前 PTY 尺寸触发一次
+  const sigwinchFallback = setTimeout(() => {
+    if (!firstResizeDone) {
+      try {
+        const c = ptyProcess.cols || 80, r = ptyProcess.rows || 24;
+        ptyProcess.resize(c + 1, r); ptyProcess.resize(c, r);
+      } catch { }
+    }
+  }, 1500);
 
   ws.on('message', (message) => {
     const content = message.toString();
@@ -209,7 +220,36 @@ async function handleTerminalConnection(ws, paneId, clientId) {
     try {
       const parsed = JSON.parse(content);
       if (parsed.type === 'resize' && parsed.cols && parsed.rows) {
-        ptyProcess.resize(parsed.cols, parsed.rows);
+        // Only resize if dimensions actually changed—avoids unnecessary SIGWINCH/redraws
+        if (parsed.cols !== ptyProcess.cols || parsed.rows !== ptyProcess.rows) {
+          ptyProcess.resize(parsed.cols, parsed.rows);
+        }
+        if (!firstResizeDone) {
+          firstResizeDone = true;
+          clearTimeout(sigwinchFallback);
+          setTimeout(async () => {
+            try {
+              // 扩展 tmux window 到当前最大 client 尺寸（解决旧 window 保留小尺寸的问题）
+              await execAsync(
+                `tmux resize-window -t "${paneId}" -A`,
+                { timeout: 1000 }
+              ).catch(() => { });
+              // 查 pane 真实宽高后做一次干净的 resize（不用 cols±1 trick 避免多余重绘）
+              const { stdout } = await execAsync(
+                `tmux display-message -t "${paneId}" -p "#{pane_width} #{pane_height}"`,
+                { timeout: 1000 }
+              );
+              const parts = stdout.trim().split(' ');
+              const actualCols = parseInt(parts[0], 10) || ptyProcess.cols;
+              const actualRows = parseInt(parts[1], 10) || ptyProcess.rows;
+              if (actualCols !== ptyProcess.cols || actualRows !== ptyProcess.rows) {
+                ptyProcess.resize(actualCols, actualRows);
+              }
+            } catch {
+              // no-op, PTY already at correct size
+            }
+          }, 200);
+        }
         return;
       }
       if (parsed.type === 'fit-window' && parsed.cols && parsed.rows) {
