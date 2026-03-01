@@ -51,7 +51,9 @@
     "git status",
     "git add",
     "git cherry-pick",
-    "git tag"
+    "git tag",
+    "github copilot",
+    "copilot"
   ],
   "replacements": {
     "open code": "opencode",
@@ -100,6 +102,10 @@
     "给添加": "git add",
     "给标签": "git tag",
     "cherry pick": "cherry-pick",
-    "Cherry Pick": "cherry-pick"
+    "Cherry Pick": "cherry-pick",
+    "copy lot": "copilot",
+    "co pilot": "copilot",
+    "github copy lot": "github copilot",
+    "GitHub Copy Lot": "GitHub Copilot"
   }
 }
