@@ -167,7 +167,7 @@ server.listen(config.port, config.bind, () => {
 
 if (hasCerts) {
   const CA_ROOT = path.join(require('os').homedir(), 'Library/Application Support/mkcert/rootCA.pem');
-  const CERT_PORT = 8280;
+  const CERT_PORT = config.certPort || (config.port + 65);
   http.createServer((req, res) => {
     if (req.url === '/rootCA.pem' && fs.existsSync(CA_ROOT)) {
       res.writeHead(200, {
