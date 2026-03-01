@@ -1,7 +1,23 @@
+const path = require('path');
+const fs = require('fs');
+
+// Load config: config_private.json overrides config.json
+const baseConfig = JSON.parse(fs.readFileSync(path.join(__dirname, 'server/config.json'), 'utf8'));
+let config = { ...baseConfig };
+try {
+  const privateConfig = JSON.parse(fs.readFileSync(path.join(__dirname, 'server/config_private.json'), 'utf8'));
+  config = { ...baseConfig, ...privateConfig };
+} catch (e) {
+  // config_private.json is optional
+}
+
+const frontendPort = config.frontendPort || 5215;
+const envName = config.envName || 'prod';
+
 module.exports = {
   apps: [
     {
-      name: 'tmuxweb-dev-backend',
+      name: `tmuxweb-${envName}-backend`,
       script: 'server/index.js',
       cwd: __dirname,
       instances: 1,
@@ -16,9 +32,9 @@ module.exports = {
       }
     },
     {
-      name: 'tmuxweb-dev-frontend',
+      name: `tmuxweb-${envName}-frontend`,
       script: 'node_modules/.bin/vite',
-      args: 'preview --port 5216 --host',
+      args: `preview --port ${frontendPort} --host`,
       cwd: __dirname + '/web',
       instances: 1,
       exec_mode: 'fork',

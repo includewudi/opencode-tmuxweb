@@ -90,7 +90,7 @@ cd TmuxWeb/web
 npm run build
 
 # 2. 重启前端服务
-pm2 restart tmuxweb-dev-frontend
+pm2 restart tmuxweb-${envName}-frontend  # envName 来自 config，默认 prod
 ```
 
 ### 验证
@@ -107,22 +107,26 @@ ls -la TmuxWeb/web/dist/
 
 ## PM2 服务管理
 
-### Dev 实例
+### 实例命名
 
-| 服务 | PM2 名称 | 端口 | 说明 |
-|------|----------|------|------|
-| 后端 | tmuxweb-dev-backend | 8216 | Express + WebSocket + node-pty |
-| 前端 | tmuxweb-dev-frontend | 5216 | Vite preview (静态文件) |
+PM2 进程名由 `config.json`（或 `config_private.json`）中的 `envName` 字段决定，格式为 `tmuxweb-{envName}-backend` / `tmuxweb-{envName}-frontend`。
+
+| envName | 后端名称 | 前端名称 | 说明 |
+|---------|----------|----------|------|
+| `prod`（默认） | tmuxweb-prod-backend | tmuxweb-prod-frontend | 生产环境 |
+| `dev` | tmuxweb-dev-backend | tmuxweb-dev-frontend | 开发环境 |
+
+端口同样从 config 读取：`port`（后端）、`frontendPort`（前端 vite preview）。
 
 ### 常用命令
 
 ```bash
 # 重启
-pm2 restart tmuxweb-dev-backend tmuxweb-dev-frontend
+pm2 restart tmuxweb-prod-backend tmuxweb-prod-frontend  # 按实际 envName 替换
 
 # 查看日志
-pm2 logs tmuxweb-dev-backend --lines 30 --nostream
-pm2 logs tmuxweb-dev-frontend --lines 30 --nostream
+pm2 logs tmuxweb-prod-backend --lines 30 --nostream
+pm2 logs tmuxweb-prod-frontend --lines 30 --nostream
 
 # 查看状态
 pm2 status
