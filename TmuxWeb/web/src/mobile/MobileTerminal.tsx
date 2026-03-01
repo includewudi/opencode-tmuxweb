@@ -11,6 +11,8 @@ import { Maximize2 } from 'lucide-react'
 import 'xterm/css/xterm.css'
 
 const DEC_1004_DISABLE = '\x1b[?1004l'
+const LONG_PRESS_MS = 650
+const LONG_PRESS_MOVE_TOLERANCE = 10
 const BURST_SUPPRESSION_WINDOW_MS = 200
 const SUPPRESSED_INPUTS = new Set([' ', '\r', '\n'])
 const SPACE_BURST_COUNT = 3
@@ -59,6 +61,7 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
   const intentionalCloseRef = useRef(false)
   const manualReconnectDisposable = useRef<{ dispose: () => void } | null>(null)
   const [showKeyboard, setShowKeyboard] = useState(false)
+  const selectOverlayRef = useRef<HTMLDivElement | null>(null)
 
   const sendText = useCallback((text: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -174,17 +177,118 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
     let twoFingerStartY = 0
     let twoFingerAccum = 0
     let clickBlockedUntil = 0
+    let longPressTimer: number | null = null
+    let longPressStartX = 0
+    let longPressStartY = 0
 
+    const cancelLongPress = () => {
+      if (longPressTimer !== null) {
+        clearTimeout(longPressTimer)
+        longPressTimer = null
+      }
+    }
+
+    const showSelectionOverlay = () => {
+      const container = containerRef.current
+      const term = termRef.current
+      if (!container || !term) return
+
+      // Read visible buffer as plain text
+      const buf = term.buffer.active
+      const lines: string[] = []
+      const start = Math.max(0, buf.viewportY)
+      const end = start + term.rows
+      for (let i = start; i < end; i++) {
+        const line = buf.getLine(i)
+        if (line) lines.push(line.translateToString(true))
+      }
+      // Trim trailing empty lines
+      while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop()
+      const text = lines.join('\n')
+      if (!text) return
+
+      // Create opaque overlay with plain text
+      const overlay = document.createElement('div')
+      overlay.className = 'select-mode-overlay'
+
+      // Toolbar at top
+      const toolbar = document.createElement('div')
+      toolbar.className = 'select-mode-toolbar'
+      const copyBtn = document.createElement('button')
+      copyBtn.className = 'select-mode-btn select-mode-copy-btn'
+      copyBtn.textContent = '\u590D\u5236\u5E76\u9000\u51FA'
+      const exitBtn = document.createElement('button')
+      exitBtn.className = 'select-mode-btn select-mode-exit-btn'
+      exitBtn.textContent = '\u9000\u51FA'
+      toolbar.appendChild(copyBtn)
+      toolbar.appendChild(exitBtn)
+      overlay.appendChild(toolbar)
+
+      // Plain text content area
+      const textArea = document.createElement('pre')
+      textArea.className = 'select-mode-text'
+      textArea.textContent = text
+      overlay.appendChild(textArea)
+
+      // Copy handler
+      copyBtn.addEventListener('touchend', async (ev) => {
+        ev.preventDefault()
+        ev.stopPropagation()
+        const sel = window.getSelection()?.toString()
+        if (sel) {
+          try {
+            await navigator.clipboard.writeText(sel)
+          } catch {
+            const ta = document.createElement('textarea')
+            ta.value = sel
+            ta.style.cssText = 'position:fixed;left:-9999px'
+            document.body.appendChild(ta)
+            ta.select()
+            document.execCommand('copy')
+            document.body.removeChild(ta)
+          }
+        }
+        hideSelectionOverlay()
+      })
+
+      // Exit handler
+      exitBtn.addEventListener('touchend', (ev) => {
+        ev.preventDefault()
+        ev.stopPropagation()
+        hideSelectionOverlay()
+      })
+
+      container.style.position = 'relative'
+      container.appendChild(overlay)
+      selectOverlayRef.current = overlay
+    }
+
+    const hideSelectionOverlay = () => {
+      const overlay = selectOverlayRef.current
+      if (overlay && overlay.parentNode) {
+        overlay.parentNode.removeChild(overlay)
+      }
+      selectOverlayRef.current = null
+      window.getSelection()?.removeAllRanges()
+    }
     const onTouchStart = (e: TouchEvent) => {
       const prevGesture = gesture
       if (e.touches.length === 2) {
         gesture = 'twoFingerScroll'
+        cancelLongPress()
         e.preventDefault()
         e.stopPropagation()
         twoFingerStartY = (e.touches[0].clientY + e.touches[1].clientY) / 2
         twoFingerAccum = 0
       } else if (e.touches.length === 1 && gesture === 'idle') {
         gesture = 'oneFinger'
+        // Start long-press timer
+        longPressStartX = e.touches[0].clientX
+        longPressStartY = e.touches[0].clientY
+        longPressTimer = window.setTimeout(() => {
+          longPressTimer = null
+          showSelectionOverlay()
+        }, LONG_PRESS_MS)
       }
       emitter.emit('touch-start', {
         touches: e.touches.length,
@@ -197,8 +301,17 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
     }
 
     const onTouchMove = (e: TouchEvent) => {
+      // Cancel long-press if finger moved too far
+      if (longPressTimer !== null && e.touches.length === 1) {
+        const dx = e.touches[0].clientX - longPressStartX
+        const dy = e.touches[0].clientY - longPressStartY
+        if (Math.sqrt(dx * dx + dy * dy) > LONG_PRESS_MOVE_TOLERANCE) {
+          cancelLongPress()
+        }
+      }
       if (gesture === 'oneFinger' && e.touches.length === 2) {
         gesture = 'twoFingerScroll'
+        cancelLongPress()
         e.preventDefault()
         e.stopPropagation()
         twoFingerStartY = (e.touches[0].clientY + e.touches[1].clientY) / 2
@@ -228,6 +341,7 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
     }
 
     const onTouchEnd = (e: TouchEvent) => {
+      cancelLongPress()
       const prevGesture = gesture
       if (gesture === 'twoFingerScroll') {
         e.preventDefault()
@@ -586,6 +700,8 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
       touchTarget.removeEventListener('touchend', onTouchEnd, true)
       touchTarget.removeEventListener('touchcancel', onTouchEnd, true)
       touchTarget.removeEventListener('click', onClickBlock, true)
+      cancelLongPress()
+      hideSelectionOverlay()
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current)
       }
@@ -606,6 +722,7 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
       wsRef.current.send(JSON.stringify({ type: "fit-window", cols, rows }))
     }
   }, [])
+
 
   return (
     <div className="mobile-terminal-wrapper">

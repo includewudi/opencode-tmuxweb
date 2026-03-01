@@ -87,11 +87,20 @@ app.get('/api/debug/pty-status', tokenMiddleware, (req, res) => {
   res.json(getStats());
 });
 
-app.use(express.static(path.join(__dirname, '../web/dist')));
+// Hashed assets get long-lived cache; index.html must not be cached
+// to ensure browsers always fetch fresh HTML after each build.
+app.use(express.static(path.join(__dirname, '../web/dist'), {
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  }
+}));
 
 // SPA fallback: serve index.html for all non-API routes so client-side
 // routing (e.g. /m for mobile, / for desktop) works on direct navigation.
 app.get('*', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.sendFile(path.join(__dirname, '../web/dist/index.html'));
 });
 

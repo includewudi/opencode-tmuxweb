@@ -525,3 +525,74 @@
 .mobile-toolbar-paste {
   margin-left: 6px;
 }
+/* Select mode overlay — long-press to show plain text panel */
+.select-mode-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  background: #1a1c20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.select-mode-toolbar {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px;
+  background: #13151a;
+  border-bottom: 1px solid #2c313a;
+  flex-shrink: 0;
+}
+
+.select-mode-btn {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.select-mode-copy-btn {
+  background: #4d78cc;
+  color: #fff;
+}
+
+.select-mode-copy-btn:active {
+  background: #3d68bc;
+}
+
+.select-mode-exit-btn {
+  background: #2c313a;
+  color: #abb2bf;
+}
+
+.select-mode-exit-btn:active {
+  background: #3c414a;
+}
+
+.select-mode-text {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 8px;
+  margin: 0;
+  font-family: Menlo, Monaco, monospace;
+  font-size: 11px;
+  line-height: 1.3;
+  color: #abb2bf;
+  background: #0f1115;
+  white-space: pre;
+  word-break: break-all;
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+  touch-action: auto;
+}

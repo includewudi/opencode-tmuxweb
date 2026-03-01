@@ -46,10 +46,12 @@ html, body, #root {
   overflow-y: hidden !important;
 }
 
-/* Prevent touch gestures from scrolling the page inside terminal */
-.xterm-container .xterm-screen,
-.mobile-terminal-container .xterm-screen {
-  touch-action: none;
+/* Prevent touch gestures from scrolling the page inside terminal (touch-only devices) */
+@media (hover: none) and (pointer: coarse) {
+  .xterm-container .xterm-screen,
+  .mobile-terminal-container .xterm-screen {
+    touch-action: none;
+  }
 }
 
 body {

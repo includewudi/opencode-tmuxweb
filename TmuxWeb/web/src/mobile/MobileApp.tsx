@@ -85,6 +85,9 @@ export default function MobileApp() {
   // Persist tabs & activeTabId
   useEffect(() => { saveTabs(tabs) }, [tabs])
   useEffect(() => { saveActiveTabId(activeTabId) }, [activeTabId])
+  // Reset explicit task-history pane override when switching tabs,
+  // so the history panel follows the active terminal tab
+  useEffect(() => { setTaskHistoryPaneKey(null) }, [activeTabId])
 
   // Visual viewport CSS vars (--vvh, --vv-offset)
   useVisualViewport()
