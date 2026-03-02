@@ -1,13 +1,14 @@
 import { useState, useCallback, useRef, RefObject } from 'react'
-import { Bot, FileCode2 } from 'lucide-react'
+import { Bot, FileCode2, Settings } from 'lucide-react'
 import { VoiceInput, VoiceInputHandle } from '../shared/components/VoiceInput'
 import { AiCommandTab } from '../shared/components/AiCommandTab'
 import { SnippetsTab } from '../shared/components/SnippetsTab'
+import { ConfigViewer } from '../shared/components/ConfigViewer'
 import { TaskHistoryPanel } from '../shared/components/TaskHistoryPanel'
 import { useTmuxPrefix } from '../hooks/useTmuxPrefix'
 import './DesktopToolbox.css'
 
-type TabId = 'ai' | 'snippets'
+type TabId = 'ai' | 'snippets' | 'config'
 
 interface DesktopToolboxProps {
   onSend: (text: string) => void
@@ -50,6 +51,7 @@ export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey,
   const tabs: { id: TabId; icon: typeof Bot; label: string }[] = [
     { id: 'ai', icon: Bot, label: 'AI' },
     { id: 'snippets', icon: FileCode2, label: '片段' },
+    { id: 'config', icon: Settings, label: '配置' },
   ]
 
   return (
@@ -104,6 +106,10 @@ export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey,
             onSend={onSend}
             disabled={disabled}
           />
+        )}
+
+        {activeTab === 'config' && (
+          <ConfigViewer paneKey={taskHistoryPaneKey} />
         )}
       </div>
 

@@ -25,6 +25,7 @@ const aiRouter = require('./routes/ai');
 const { router: rolesRouter } = require('./routes/roles');
 const snippetsRouter = require('./routes/snippets');
 const hotwordsRouter = require('./routes/hotwords');
+const opencodeConfigRouter = require('./routes/opencode-config');
 const { handleTerminalConnection, getStats } = require('./services/terminal');
 const { handleSpeechConnection } = require('./services/speech');
 const { pool, testConnection } = require('./db/pool');
@@ -77,6 +78,7 @@ app.use('/api/ai', tokenMiddleware, aiRouter);
 app.use('/api/roles', tokenMiddleware, rolesRouter);
 app.use('/api/snippets', tokenMiddleware, snippetsRouter);
 app.use('/api/hotwords', tokenMiddleware, hotwordsRouter);
+app.use('/api/opencode-config', tokenMiddleware, opencodeConfigRouter);
 
 // Task routes: task CRUD (tasks-db.js), summaries
 app.use('/api/tasks', tokenMiddleware, tasksDbRouter);       // /:id, /:id/complete, /:id/detail

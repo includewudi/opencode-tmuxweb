@@ -1,9 +1,10 @@
 import { useState, useCallback, useRef, RefObject } from 'react'
-import { Grid3X3, Clock, Bot } from 'lucide-react'
+import { Grid3X3, Clock, Bot, Settings } from 'lucide-react'
 import { VoiceInput, VoiceInputHandle } from '../shared/components/VoiceInput'
 import { AiCommandTab } from '../shared/components/AiCommandTab'
 import { SnippetsTab } from '../shared/components/SnippetsTab'
 import { useTmuxPrefix } from '../hooks/useTmuxPrefix'
+import { ConfigViewer } from '../shared/components/ConfigViewer'
 import './MobileToolbox.css'
 
 const preventFocus = (e: React.MouseEvent | React.TouchEvent) => {
@@ -42,7 +43,7 @@ function createKeyRows(prefixCode: string): [KeyDef[], KeyDef[]] {
   return [row1, row2]
 }
 
-type TabId = 'snippets' | 'ai'
+type TabId = 'snippets' | 'ai' | 'config'
 
 interface MobileToolboxProps {
   onSend: (text: string) => void
@@ -229,6 +230,9 @@ export function MobileToolbox({
             onTextConsumed={handleTextConsumed}
           />
         )}
+        {activeTab === 'config' && (
+          <ConfigViewer />
+        )}
       </div>
 
       {/* Tab bar */}
@@ -263,6 +267,16 @@ export function MobileToolbox({
             disabled={disabled}
           />
         </div>
+        <button
+          className={`toolbox-tab ${activeTab === 'config' ? 'active' : ''}`}
+          onMouseDown={preventFocus}
+          onTouchStart={preventFocus}
+          onTouchEnd={(e) => { e.preventDefault(); setActiveTab('config') }}
+          type="button"
+        >
+          <Settings size={14} />
+          <span>配置</span>
+        </button>
         <button
           className={`toolbox-tab ${activeTab === 'ai' ? 'active' : ''}`}
           onMouseDown={preventFocus}
