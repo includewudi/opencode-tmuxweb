@@ -1,15 +1,13 @@
 const express = require('express');
 const { pool } = require('../db/pool');
 const config = require('../config-loader');
-const geminiService = require('../services/gemini');
 const { execSync } = require('child_process');
 
 const taskSummariesRouter = express.Router();
 const paneSummariesRouter = express.Router();
 
 function isSummaryServiceConfigured() {
-  return (config.summaryServiceUrl && config.summaryServiceUrl.trim() !== '') ||
-    (config.gemini && config.gemini.apiKey && config.gemini.apiKey.trim() !== '');
+  return config.summaryServiceUrl && config.summaryServiceUrl.trim() !== '';
 }
 
 function parsePaneKey(paneKey) {
@@ -95,15 +93,12 @@ taskSummariesRouter.post('/:taskId/summarize', async (req, res) => {
     (async () => {
       try {
         console.log(`[Summarize] Generating summary for task ${taskId}...`);
-        const summary = await geminiService.generateTaskSummary(capturedContent);
-
+        // TODO: call summaryServiceUrl if configured
+        console.log(`[Summarize] No summary service configured for task ${taskId}`);
         await pool.query(
-          `UPDATE tmux_task_summary 
-                 SET command_summary = ?, output_summary = ?, summary_status = 'done', generated_at = ?
-                 WHERE id = ?`,
-          [summary.command_summary, summary.output_summary, Math.floor(Date.now() / 1000), summaryId]
+          `UPDATE tmux_task_summary SET summary_status = 'error', summary_error = 'No summary service configured' WHERE id = ?`,
+          [summaryId]
         );
-        console.log(`[Summarize] Summary generated for task ${taskId}`);
       } catch (err) {
         console.error(`[Summarize] Async generation failed for task ${taskId}:`, err);
         await pool.query(

@@ -63,10 +63,5 @@
         "model": "gpt-4o"
       }
     }
-  },
-  "_gemini_说明": "Gemini API（可选）",
-  "gemini": {
-    "apiKey": "YOUR_GEMINI_API_KEY",
-    "modelName": "gemini-1.5-pro"
   }
 }
