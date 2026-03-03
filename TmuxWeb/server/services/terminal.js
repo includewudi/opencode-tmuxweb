@@ -13,6 +13,12 @@ const HEARTBEAT_TIMEOUT = 10000;  // 10s pong timeout
 // Map<paneId, { ptyProcess, clients: Set<ws>, createdAt }>
 const activePTYs = new Map();
 
+// ── Spawn Circuit Breaker ────────────────────────────────────────────
+// Map<paneId, { failures: number, circuitOpenUntil: number }>
+const spawnCircuitBreaker = new Map();
+const CIRCUIT_MAX_FAILURES = 5;
+const CIRCUIT_OPEN_DURATION = 60000; // 60s cooldown after 5 consecutive failures
+
 // Track all WS connections for heartbeat
 const allConnections = new Set();
 
@@ -135,6 +141,20 @@ async function handleTerminalConnection(ws, paneId, clientId) {
     console.log(`[Terminal] Reusing PTY for pane ${paneId} (existing clients: ${entry.clients.size})`);
     entry.clients.add(ws);
   } else {
+    // ── Circuit breaker check ──
+    const breaker = spawnCircuitBreaker.get(paneId);
+    if (breaker && Date.now() < breaker.circuitOpenUntil) {
+      const remainSec = Math.ceil((breaker.circuitOpenUntil - Date.now()) / 1000);
+      console.log(`[Terminal] Circuit OPEN for pane ${paneId} (${breaker.failures} failures). Retry in ${remainSec}s`);
+      allConnections.delete(ws);
+      ws.close(4006, `Spawn circuit open, retry in ${remainSec}s`);
+      return;
+    }
+    // Reset if cooldown expired
+    if (breaker && Date.now() >= breaker.circuitOpenUntil) {
+      spawnCircuitBreaker.delete(paneId);
+    }
+
     // Spawn new PTY
     const sessionName = await getSessionForPane(paneId);
     if (!sessionName) {
@@ -160,10 +180,20 @@ async function handleTerminalConnection(ws, paneId, clientId) {
       });
     } catch (err) {
       console.error(`[Terminal] pty.spawn FAILED for pane ${paneId}: ${err.message}`);
+      // ── Circuit breaker: record failure ──
+      const cb = spawnCircuitBreaker.get(paneId) || { failures: 0, circuitOpenUntil: 0 };
+      cb.failures++;
+      if (cb.failures >= CIRCUIT_MAX_FAILURES) {
+        cb.circuitOpenUntil = Date.now() + CIRCUIT_OPEN_DURATION;
+        console.error(`[Terminal] Circuit OPEN for pane ${paneId}: ${cb.failures} consecutive failures. Blocking for 60s.`);
+      }
+      spawnCircuitBreaker.set(paneId, cb);
       allConnections.delete(ws);
       ws.close(4005, 'PTY spawn failed');
       return;
     }
+    // Spawn succeeded — reset circuit breaker
+    spawnCircuitBreaker.delete(paneId);
 
     entry = {
       ptyProcess,
