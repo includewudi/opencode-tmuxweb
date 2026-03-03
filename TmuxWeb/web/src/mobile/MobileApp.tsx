@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Menu, X, History } from 'lucide-react'
+import { Menu, X, History, ScrollText } from 'lucide-react'
 import { MobileDrawer } from './MobileDrawer'
 import { MobileTerminal } from './MobileTerminal'
 import { TaskHistoryPanel } from '../shared/components/TaskHistoryPanel'
+import { ImperialStudyPanel } from '../shared/components/imperial-study/components/ImperialStudyPanel'
 import { LoginModal } from '../shared/components/LoginModal'
 import { checkAuth, logout } from '../utils/auth'
 import { TmuxSession, OpenTab, Profile, SessionGroup } from '../types'
@@ -70,6 +71,7 @@ export default function MobileApp() {
   const [rightPanelOpen, setRightPanelOpen] = useState(false)
   const [taskHistoryPaneKey, setTaskHistoryPaneKey] = useState<string | null>(null)
   const [statusRefreshToken, setStatusRefreshToken] = useState(0)
+  const [imperialOpen, setImperialOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fontSize, setFontSize] = useState(() => {
@@ -301,14 +303,32 @@ export default function MobileApp() {
           <span className="mobile-title">Select a pane</span>
         )}
         {activeTab && (
-          <button className="mobile-menu-btn" onClick={toggleRightPanel} type="button" title="Task history">
-            <History size={22} />
-          </button>
+          <>
+            <button className="mobile-menu-btn" onClick={() => setImperialOpen(true)} type="button" title="\u5fa1\u66f8\u623f">
+              <ScrollText size={22} />
+            </button>
+            <button className="mobile-menu-btn" onClick={toggleRightPanel} type="button" title="Task history">
+              <History size={22} />
+            </button>
+          </>
         )}
       </header>
 
-      {(drawerOpen || rightPanelOpen) && (
-        <div className="mobile-overlay" onClick={() => { setDrawerOpen(false); setRightPanelOpen(false) }} />
+      {(drawerOpen || rightPanelOpen || imperialOpen) && (
+        <div className="mobile-overlay" onClick={() => { setDrawerOpen(false); setRightPanelOpen(false); setImperialOpen(false) }} />
+      )}
+
+      {/* Full-screen \u5fa1\u66f8\u623f panel */}
+      {imperialOpen && (
+        <div className="mobile-imperial-panel">
+          <header className="mobile-imperial-header">
+            <span>\u5fa1\u66f8\u623f</span>
+            <button className="mobile-menu-btn" onClick={() => setImperialOpen(false)} type="button">
+              <X size={22} />
+            </button>
+          </header>
+          <ImperialStudyPanel />
+        </div>
       )}
 
       <MobileDrawer

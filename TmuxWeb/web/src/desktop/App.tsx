@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare } from 'lucide-react'
+import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare, ScrollText } from 'lucide-react'
 import { TmuxTree } from '../shared/components/TmuxTree'
 import { TaskStatBadges } from '../shared/components/TaskStatBadges'
 import { TerminalTabs } from './TerminalTabs'
@@ -7,6 +7,7 @@ import { LoginModal } from '../shared/components/LoginModal'
 import { ProfileSelector } from '../shared/components/ProfileSelector'
 import { GroupManager } from '../shared/components/GroupManager'
 import { DesktopToolbox } from './DesktopToolbox'
+import { ImperialStudyPanel } from '../shared/components/imperial-study/components/ImperialStudyPanel'
 import { checkAuth, logout } from '../utils/auth'
 import { isMobile } from '../utils/platform'
 import { TmuxSession, OpenTab, Profile, SessionGroup } from '../types'
@@ -42,6 +43,7 @@ export default function App() {
   const [showMobileHint, setShowMobileHint] = useState(() => isMobile())
   const [fullscreen, setFullscreen] = useState(false)
   const [taskHistoryPaneKey, setTaskHistoryPaneKey] = useState<string | null>(null)
+  const [sidebarMode, setSidebarMode] = useState<'explorer' | 'imperial'>('explorer')
 
   // Auto-derive pane key from active tab (title = session:window, paneId = %N)
   const activePaneKey = useMemo(() => {
@@ -219,11 +221,24 @@ export default function App() {
           <div className="activity-bar">
             <div className="activity-bar-top">
               <button
-                className={`activity-tab ${sidebarOpen ? 'active' : ''}`}
+                className={`activity-tab ${sidebarMode === 'explorer' && sidebarOpen ? 'active' : ''}`}
                 title="Explorer (Sessions)"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
+                onClick={() => {
+                  if (sidebarMode === 'explorer') { setSidebarOpen(!sidebarOpen) }
+                  else { setSidebarMode('explorer'); setSidebarOpen(true) }
+                }}
               >
-                <TerminalSquare size={22} strokeWidth={sidebarOpen ? 2 : 1.5} />
+                <TerminalSquare size={22} strokeWidth={sidebarMode === 'explorer' && sidebarOpen ? 2 : 1.5} />
+              </button>
+              <button
+                className={`activity-tab ${sidebarMode === 'imperial' && sidebarOpen ? 'active' : ''}`}
+                title="\u5fa1\u66f8\u623f (Butler)"
+                onClick={() => {
+                  if (sidebarMode === 'imperial') { setSidebarOpen(!sidebarOpen) }
+                  else { setSidebarMode('imperial'); setSidebarOpen(true) }
+                }}
+              >
+                <ScrollText size={22} strokeWidth={sidebarMode === 'imperial' && sidebarOpen ? 2 : 1.5} />
               </button>
             </div>
             <div className="activity-bar-bottom">
@@ -238,38 +253,44 @@ export default function App() {
 
           {/* Primary Sidebar Content */}
           <div className="primary-sidebar">
-            <div className="sidebar-header">
-              <ProfileSelector
-                currentProfile={currentProfile}
-                onProfileChange={handleProfileChange}
-              />
-            </div>
+            {sidebarMode === 'imperial' ? (
+              <ImperialStudyPanel />
+            ) : (
+              <>
+                <div className="sidebar-header">
+                  <ProfileSelector
+                    currentProfile={currentProfile}
+                    onProfileChange={handleProfileChange}
+                  />
+                </div>
 
-            {/* Task stat badges — always visible, no tab switching */}
-            <TaskStatBadges refreshToken={statusRefreshToken} />
+                {/* Task stat badges — always visible, no tab switching */}
+                <TaskStatBadges refreshToken={statusRefreshToken} />
 
-            {showGroupManager && currentProfile && (
-              <GroupManager
-                profileKey={currentProfile.profile_key}
-                sessions={sessions}
-                onGroupsChanged={fetchTree}
-              />
+                {showGroupManager && currentProfile && (
+                  <GroupManager
+                    profileKey={currentProfile.profile_key}
+                    sessions={sessions}
+                    onGroupsChanged={fetchTree}
+                  />
+                )}
+
+                <div className="sidebar-content-area">
+                  <TmuxTree
+                    sessions={sessions}
+                    groups={groups}
+                    profileId={currentProfile?.id}
+                    profileKey={currentProfile?.profile_key}
+                    onSelectPane={openPane}
+                    onRefresh={fetchTree}
+                    onOrderChange={() => currentProfile && fetchGroups(currentProfile.profile_key)}
+                    onPaneContextMenu={handlePaneSelect}
+                    onPaneStatusClick={(paneKey) => setTaskHistoryPaneKey(paneKey)}
+                    statusRefreshToken={statusRefreshToken}
+                  />
+                </div>
+              </>
             )}
-
-            <div className="sidebar-content-area">
-              <TmuxTree
-                sessions={sessions}
-                groups={groups}
-                profileId={currentProfile?.id}
-                profileKey={currentProfile?.profile_key}
-                onSelectPane={openPane}
-                onRefresh={fetchTree}
-                onOrderChange={() => currentProfile && fetchGroups(currentProfile.profile_key)}
-                onPaneContextMenu={handlePaneSelect}
-                onPaneStatusClick={(paneKey) => setTaskHistoryPaneKey(paneKey)}
-                statusRefreshToken={statusRefreshToken}
-              />
-            </div>
           </div>
         </aside>
       )}
