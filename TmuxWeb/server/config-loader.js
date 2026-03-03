@@ -33,4 +33,23 @@ if (fs.existsSync(privatePath)) {
   console.warn('[Config] No config_private.json found — using defaults from config.json');
 }
 
+// Auto-generate allowedOrigins from port/frontendPort + hosts
+// If config explicitly sets allowedOrigins (non-empty array), use it as-is.
+// Otherwise, build from: hosts list × [backendPort, frontendPort] × [http, https]
+if (!config.allowedOrigins || config.allowedOrigins.length === 0) {
+  const backendPort = config.port || 8215;
+  const frontendPort = config.frontendPort || 5215;
+  const hosts = config.hosts || ['localhost', '127.0.0.1'];
+  const ports = [...new Set([backendPort, frontendPort])];
+  const origins = [];
+  for (const host of hosts) {
+    for (const port of ports) {
+      origins.push(`http://${host}:${port}`);
+      origins.push(`https://${host}:${port}`);
+    }
+  }
+  config.allowedOrigins = origins;
+  console.log(`[Config] Auto-generated ${origins.length} allowedOrigins from hosts × ports`);
+}
+
 module.exports = config;
