@@ -247,6 +247,11 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
             document.execCommand('copy')
             document.body.removeChild(ta)
           }
+          // Show '已复制' feedback for 2 seconds
+          copyBtn.textContent = '已复制 ✓'
+          copyBtn.classList.add('select-mode-copied')
+          setTimeout(() => hideSelectionOverlay(), 2000)
+          return
         }
         hideSelectionOverlay()
       })

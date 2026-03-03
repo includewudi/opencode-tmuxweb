@@ -569,6 +569,12 @@
   background: #3d68bc;
 }
 
+.select-mode-copied {
+  background: #22c55e !important;
+  color: #fff !important;
+  pointer-events: none;
+}
+
 .select-mode-exit-btn {
   background: #2c313a;
   color: #abb2bf;
