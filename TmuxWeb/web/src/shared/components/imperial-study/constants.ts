@@ -1,5 +1,5 @@
 // constants.ts — Color maps, polling intervals, icon maps
-import type { WorkerState, InboxKind, InboxStatus } from './types';
+import type { WorkerState, InboxKind } from './types';
 
 // ── Worker State Colors ──────────────────────────────────────────────────────
 export const WORKER_STATE_DOT_COLOR: Record<WorkerState, string> = {

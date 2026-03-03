@@ -567,3 +567,84 @@
 .is-ctx-menu__item.danger {
     color: var(--is-error);
 }
+/* ── Command Input (下指令) ─────────────────────────────────────────────────── */
+.is-command {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--is-border);
+    flex-shrink: 0;
+}
+
+.is-command__box {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+}
+
+.is-command__input {
+    flex: 1;
+    min-height: 36px;
+    max-height: 120px;
+    resize: vertical;
+    background: var(--zinc-950, #09090b);
+    border: 1px solid var(--is-border);
+    border-radius: 6px;
+    color: var(--is-text);
+    font-size: 13px;
+    font-family: var(--is-font-sans);
+    padding: 6px 10px;
+    box-sizing: border-box;
+    outline: none;
+    transition: border-color 150ms;
+    line-height: 1.4;
+}
+
+.is-command__input:focus {
+    border-color: var(--is-accent);
+}
+
+.is-command__input::placeholder {
+    color: var(--is-text-muted);
+}
+
+.is-command__send {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: var(--is-accent);
+    color: white;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: filter 150ms, opacity 150ms;
+}
+
+.is-command__send:hover:not(:disabled) {
+    filter: brightness(1.15);
+}
+
+.is-command__send:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.is-command__send.loading svg {
+    animation: is-spin 700ms linear infinite;
+}
+
+.is-command__feedback {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    padding: 3px 0;
+    line-height: 1.3;
+}
+
+.is-command__feedback.ok {
+    color: var(--is-success);
+}
+
+.is-command__feedback.err {
+    color: var(--is-error);
+}

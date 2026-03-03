@@ -5,6 +5,7 @@ import { WorkerSection } from './WorkerSection';
 import { InboxSection } from './InboxSection';
 import { ActivitySection } from './ActivitySection';
 import { InboxDetailModal } from './InboxDetailModal';
+import { CommandInput } from './CommandInput';
 import { useWorkerSessions } from '../hooks/useWorkerSessions';
 import { useInboxItems } from '../hooks/useInboxItems';
 import { useActivityEvents } from '../hooks/useActivityEvents';
@@ -43,6 +44,9 @@ export function ImperialStudyPanel() {
                     {workers.length} workers · {unreadCount} inbox
                 </span>
             </div>
+
+            {/* ── Command Input (下指令) ── */}
+            <CommandInput onDispatched={() => { refetchWorkers(); refetchActivity(); }} />
 
             {/* ── Scrollable Content ── */}
             <div className="is-scroll-area">

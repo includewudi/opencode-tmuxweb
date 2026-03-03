@@ -53,12 +53,17 @@ export function WorkerContextMenu({
                 navigator.clipboard.writeText(paneTarget).catch(console.error);
                 break;
             case 'pause':
-                // TODO: POST /api/butler/worker_sessions/{workerId}/pause
-                console.log('[imperial] pause worker', workerId);
+                fetch(`/api/butler/worker_sessions/${workerId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ state: 'paused' }),
+                }).catch(err => console.error('[imperial] pause failed', err));
                 break;
             case 'kill':
-                // TODO: DELETE /api/butler/worker_sessions/{workerId}
-                console.log('[imperial] kill worker', workerId);
+                if (!confirm('确定要终止该 worker 吗？')) return;
+                fetch(`/api/butler/worker_sessions/${workerId}`, {
+                    method: 'DELETE',
+                }).catch(err => console.error('[imperial] kill failed', err));
                 break;
         }
         onClose();

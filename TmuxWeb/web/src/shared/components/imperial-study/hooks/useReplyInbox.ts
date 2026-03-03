@@ -8,6 +8,7 @@ export function useReplyInbox() {
 
     const submitReply = async (
         inboxItemId: string,
+        studyId: string,
         decision: ReplyDecision,
         message: string
     ) => {
@@ -18,7 +19,7 @@ export function useReplyInbox() {
             const replyRes = await fetch(`${BUTLER_API_BASE}/approval_replies`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ inbox_item_id: inboxItemId, decision, message }),
+                body: JSON.stringify({ inbox_item_id: inboxItemId, study_id: studyId, decision, message }),
             });
             if (!replyRes.ok) throw new Error(`Reply POST failed: HTTP ${replyRes.status}`);
 

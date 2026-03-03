@@ -37,7 +37,7 @@ export function InboxDetailModal({ item, onClose, onReplied }: InboxDetailModalP
 
     const handleAction = async (decision: ReplyDecision) => {
         try {
-            await submitReply(item.id, decision, replyText);
+            await submitReply(item.id, item.study_id, decision, replyText);
             onReplied();
         } catch {
             // error surfaced by hook; keep modal open
