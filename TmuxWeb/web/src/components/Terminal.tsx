@@ -99,7 +99,7 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
       if (isCleanupRef.current) return
 
       const ws = new WebSocket(buildWsUrl())
-
+      ws.binaryType = 'arraybuffer'
       ws.onopen = () => {
         const wasReconnect = reconnectAttemptRef.current > 0
         reconnectAttemptRef.current = 0
@@ -132,7 +132,11 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
       }
 
       ws.onmessage = (event) => {
-        termRef.current?.write(event.data)
+        if (event.data instanceof ArrayBuffer) {
+          termRef.current?.write(new Uint8Array(event.data))
+        } else {
+          termRef.current?.write(event.data)
+        }
       }
 
       ws.onerror = () => {

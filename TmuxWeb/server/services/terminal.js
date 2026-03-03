@@ -177,6 +177,7 @@ async function handleTerminalConnection(ws, paneId, clientId) {
         rows: 24,
         cwd: process.env.HOME || '/tmp',
         env: process.env,
+        encoding: null,
       });
     } catch (err) {
       console.error(`[Terminal] pty.spawn FAILED for pane ${paneId}: ${err.message}`);
@@ -208,7 +209,7 @@ async function handleTerminalConnection(ws, paneId, clientId) {
     ptyProcess.onData((data) => {
       for (const client of entry.clients) {
         if (client.readyState === client.OPEN) {
-          client.send(data, { binary: false, compress: false });
+          client.send(data, { binary: true, compress: false });
         }
       }
     });

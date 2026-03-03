@@ -402,7 +402,7 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
       manualReconnectDisposable.current = null
 
       const ws = new WebSocket(buildWsUrl())
-
+      ws.binaryType = 'arraybuffer'
       ws.onopen = () => {
         const wasReconnect = reconnectAttemptRef.current > 0
         reconnectAttemptRef.current = 0
@@ -427,7 +427,11 @@ export function MobileTerminal({ paneId, fontSize, onFontSizeChange, voiceRef, t
       }
 
       ws.onmessage = (event) => {
-        termRef.current?.write(event.data)
+        if (event.data instanceof ArrayBuffer) {
+          termRef.current?.write(new Uint8Array(event.data))
+        } else {
+          termRef.current?.write(event.data)
+        }
       }
 
       ws.onerror = () => {
