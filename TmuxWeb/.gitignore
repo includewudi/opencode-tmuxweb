@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+web/node_modules/
+
+# Build output
+web/dist/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment / secrets
+.env
+.env.local
+config_private.json
+
+# OpenCode plugin — local copy only, do NOT commit
+# Use plugins/my-rules.js.back as the template
+plugins/my-rules.js

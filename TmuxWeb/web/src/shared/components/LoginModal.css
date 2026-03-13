@@ -1,0 +1,120 @@
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--zinc-950);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-modal {
+  width: 100%;
+  max-width: 360px;
+  padding: 48px 40px;
+  background: var(--zinc-900);
+  border: 1px solid var(--zinc-800);
+  border-radius: 16px;
+  box-shadow: 
+    0 0 0 1px rgba(255,255,255,0.03),
+    0 24px 64px rgba(0,0,0,0.5),
+    0 8px 24px rgba(0,0,0,0.3);
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.login-icon {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--blue-500);
+}
+
+.login-header h1 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--zinc-200);
+  letter-spacing: -0.02em;
+}
+
+.login-field {
+  margin-bottom: 24px;
+}
+
+.login-field label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--zinc-500);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.login-field input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--zinc-200);
+  background: var(--zinc-950);
+  border: 1px solid var(--zinc-700);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.login-field input::placeholder {
+  color: var(--zinc-600);
+}
+
+.login-field input:focus {
+  border-color: var(--blue-500);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.login-field input:disabled {
+  opacity: 0.5;
+}
+
+.login-error {
+  padding: 12px 14px;
+  margin-bottom: 20px;
+  font-size: 0.875rem;
+  color: var(--red-400);
+  background: rgba(248, 113, 113, 0.08);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 8px;
+}
+
+.login-submit {
+  width: 100%;
+  padding: 14px 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  background: var(--blue-600);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.15s, opacity 0.15s, background 0.15s;
+}
+
+.login-submit:hover:not(:disabled) {
+  background: var(--blue-700);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.35);
+}
+
+.login-submit:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

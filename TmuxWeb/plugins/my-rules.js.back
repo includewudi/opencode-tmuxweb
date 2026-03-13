@@ -1,0 +1,114 @@
+/**
+ * OpenCode plugin template: TmuxWeb task tracking + custom rules.
+ *
+ * ⚠️  THIS IS A TEMPLATE FILE (committed to git).
+ *     my-rules.js is .gitignored — it's your local copy to customise freely.
+ *
+ * Quick setup:
+ *   cd TmuxWeb/plugins
+ *   cp my-rules.js.back my-rules.js        # create your local copy
+ *   ln -sf "$(pwd)/my-rules.js" ~/.config/opencode/plugins/my-rules.js
+ *
+ * Then edit my-rules.js locally (e.g. change PORT, add extra rules).
+ * The symlink means OpenCode always picks up the latest version automatically.
+ *
+ * Port config: Update the PORT constant below to match your TmuxWeb server port.
+ */
+
+import { execSync } from 'child_process';
+import crypto from 'crypto';
+
+// ── Config ────────────────────────────────────────────────────────────────────
+const PORT = 8215;            // TmuxWeb HTTPS port (update if you change server/config.json)
+const BASE_URL = `https://localhost:${PORT}`;
+// ─────────────────────────────────────────────────────────────────────────────
+
+const MY_RULES = `<MY_RULES>
+PHASE-0 GATE: Before selecting ANY tool, check these rules FIRST.
+If the task involves file operations (edit/create/write/save), jump to [FAST-EDIT] below.
+
+[FAST-EDIT]
+When you need to edit, create, write, or save files — including saving user-pasted content — you MUST:
+1. Load the fast-edit skill first: skill("fast-edit")
+2. Use fast-edit commands (show/replace/insert/delete/batch/paste/write/save-pasted) instead of the built-in Edit/Write tools.
+3. For batch edits or multi-file writes, prefer fast-batch and fast-write.
+4. For user-pasted content, prefer save-pasted (zero token, zero escaping).
+Fast-edit is 100x faster than built-in tools. NEVER use Edit/Write when fast-edit can do the job.
+Trigger: any intent to create, modify, save, or write a file.
+
+// ── Add your own rules below ──────────────────────────────────────────────
+// Example: memory, butler, custom skills, etc.
+//
+// [MY-CUSTOM-RULE]
+// When the user asks to do X, load skill("your-skill") first, then ...
+// Trigger phrases: "keyword1", "keyword2".
+//
+// ──────────────────────────────────────────────────────────────────────────
+</MY_RULES>`;
+
+export const MyPlugin = async ({ client, directory }) => {
+  // Task tracking state (shared between chat.message and event hooks)
+  let lastConversationId = null;
+  let lastPaneKey = null;
+
+  return {
+    'experimental.chat.system.transform': async (_input, output) => {
+      (output.system ||= []).push(MY_RULES);
+    },
+
+    'chat.message': async (input, output) => {
+      try {
+        const textParts = (output.parts || []).filter(p => p.type === 'text');
+        const userMsg = textParts.map(p => p.text).join(' ').slice(0, 200);
+        const escaped = JSON.stringify(userMsg).slice(1, -1);
+
+        const paneKey = execSync(
+          "tmux display-message -p '#{session_name}/#{window_index}/#{pane_id}'",
+          { encoding: 'utf8', timeout: 3000 }
+        ).trim();
+
+        const convId = crypto.randomUUID();
+
+        const body = JSON.stringify({
+          event: 'task_started',
+          pane_key: paneKey,
+          conversation_id: convId,
+          user_message: escaped,
+          timestamp: Math.floor(Date.now() / 1000)
+        });
+
+        execSync(
+          `curl -sk --noproxy '*' -X POST ${BASE_URL}/api/tasks/events -H "Content-Type: application/json" -d '${body.replace(/'/g, "'\\''")}'`,
+          { timeout: 5000, stdio: 'ignore' }
+        );
+
+        lastConversationId = convId;
+        lastPaneKey = paneKey;
+      } catch (_) {
+      }
+    },
+
+    'event': async ({ event }) => {
+      if (event.type !== 'session.idle' || !lastConversationId) return;
+      try {
+        const convId = lastConversationId;
+        const paneKey = lastPaneKey;
+        lastConversationId = null;
+        lastPaneKey = null;
+
+        const body = JSON.stringify({
+          event: 'task_completed',
+          pane_key: paneKey,
+          conversation_id: convId,
+          timestamp: Math.floor(Date.now() / 1000)
+        });
+
+        execSync(
+          `curl -sk --noproxy '*' -X POST ${BASE_URL}/api/tasks/events -H "Content-Type: application/json" -d '${body.replace(/'/g, "'\\''")}'`,
+          { timeout: 5000, stdio: 'ignore' }
+        );
+      } catch (_) {
+      }
+    }
+  };
+};

@@ -1,0 +1,136 @@
+.nwb-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.nwb-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 7px;
+    color: rgba(255, 255, 255, 0.55);
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.nwb-trigger:hover {
+    background: rgba(74, 222, 128, 0.12);
+    border-color: rgba(74, 222, 128, 0.4);
+    color: #4ade80;
+}
+
+.nwb-trigger:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.nwb-wrap.compact .nwb-trigger {
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
+}
+
+/* dropdown */
+.nwb-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 210px;
+    background: rgba(20, 22, 30, 0.97);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 4px;
+    z-index: 9999;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.nwb-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 10px 6px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    user-select: none;
+}
+
+.nwb-name-row {
+    padding: 4px 6px 6px;
+}
+
+.nwb-name-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    color: #fff;
+    font-size: 12px;
+    padding: 5px 8px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.nwb-name-input::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+.nwb-name-input:focus {
+    border-color: rgba(74, 222, 128, 0.5);
+}
+
+.nwb-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    font-size: 13px;
+    text-align: left;
+    transition: background 0.12s, color 0.12s;
+}
+
+.nwb-item:hover {
+    background: rgba(74, 222, 128, 0.1);
+    color: #4ade80;
+}
+
+.nwb-item-name {
+    font-weight: 600;
+    flex: 0 0 auto;
+}
+
+.nwb-item-path {
+    flex: 1;
+    font-size: 11px;
+    font-family: monospace;
+    color: rgba(255, 255, 255, 0.3);
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nwb-item:hover .nwb-item-path {
+    color: rgba(74, 222, 128, 0.5);
+}
+
+.nwb-sep {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.07);
+    margin: 3px 2px;
+}

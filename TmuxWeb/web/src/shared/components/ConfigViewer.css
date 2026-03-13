@@ -1,0 +1,117 @@
+.config-viewer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.config-viewer-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 4px;
+  flex-shrink: 0;
+  background: var(--zinc-900);
+  border-bottom: 1px solid var(--zinc-800);
+}
+
+.config-viewer-tab {
+  flex: 1;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--zinc-500);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.config-viewer-tab:hover {
+  color: var(--zinc-300);
+}
+
+.config-viewer-tab.active {
+  color: var(--blue-500);
+  border-bottom-color: var(--blue-500);
+}
+
+.config-viewer-source {
+  padding: 4px 8px;
+  font-size: 10px;
+  color: var(--zinc-600);
+  background: var(--zinc-900);
+  border-bottom: 1px solid var(--zinc-800);
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.config-viewer-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px;
+}
+
+.config-viewer-body pre {
+  margin: 0;
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--zinc-300);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.config-viewer-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--zinc-600);
+  font-size: 12px;
+}
+
+.config-viewer-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  color: var(--zinc-500);
+  font-size: 12px;
+}
+
+.config-viewer-error {
+  padding: 12px;
+  color: var(--red-400, #f87171);
+  font-size: 12px;
+}
+
+/* Scrollbar styles matching task history */
+.config-viewer-body::-webkit-scrollbar {
+  width: 6px;
+}
+.config-viewer-body::-webkit-scrollbar-track {
+  background: var(--zinc-900);
+}
+.config-viewer-body::-webkit-scrollbar-thumb {
+  background: var(--zinc-600);
+  border-radius: 3px;
+}
+.config-viewer-body::-webkit-scrollbar-thumb:hover {
+  background: var(--zinc-500);
+}
+
+.config-viewer .spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

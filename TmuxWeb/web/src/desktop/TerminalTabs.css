@@ -1,0 +1,99 @@
+.terminal-tabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tabs-bar {
+  display: flex;
+  background: var(--zinc-900);
+  border-bottom: 1px solid var(--zinc-800);
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--zinc-800);
+  border-right: 1px solid var(--zinc-700);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.tab.active {
+  background: var(--zinc-700);
+  border-bottom: 2px solid var(--blue-500);
+}
+
+.tab:hover {
+  background: var(--zinc-700);
+}
+
+.tab-title {
+  font-size: 13px;
+  color: var(--zinc-300);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: var(--zinc-500);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.close-btn:hover {
+  background: var(--zinc-600);
+  color: var(--zinc-200);
+}
+
+.tabs-content {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--zinc-950);
+}
+
+.tab-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.tab-panel.hidden {
+  visibility: hidden;
+}
+
+.tab-panel.visible {
+  visibility: visible;
+}
+
+.no-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--zinc-600);
+  font-size: 1.1em;
+}
+
+.no-tabs-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tabs-bar-spacer {
+  flex: 1;
+}

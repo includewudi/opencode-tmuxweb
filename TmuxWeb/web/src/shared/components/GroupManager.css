@@ -1,0 +1,254 @@
+.group-manager {
+  padding: 12px;
+  border-bottom: 1px solid var(--zinc-800);
+  background: var(--zinc-900);
+}
+
+.group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.group-title {
+  font-weight: 600;
+  color: var(--zinc-300);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.group-add-btn {
+  width: 24px;
+  height: 24px;
+  background: var(--zinc-800);
+  border: none;
+  border-radius: 4px;
+  color: var(--zinc-400);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.group-add-btn:hover {
+  background: var(--blue-600);
+  color: #fff;
+}
+
+.group-create-row,
+.group-edit-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.group-input {
+  flex: 1;
+  padding: 6px 10px;
+  background: var(--zinc-950);
+  border: 1px solid var(--zinc-700);
+  border-radius: 4px;
+  color: var(--zinc-200);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.group-input:focus {
+  border-color: var(--blue-500);
+}
+
+.group-input::placeholder {
+  color: var(--zinc-600);
+}
+
+.btn-sm {
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.15s;
+}
+
+.btn-sm.btn-confirm {
+  background: var(--blue-600);
+  color: #fff;
+}
+
+.btn-sm.btn-confirm:hover:not(:disabled) {
+  background: var(--blue-700);
+}
+
+.btn-sm.btn-confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-sm.btn-cancel {
+  background: var(--zinc-800);
+  color: var(--zinc-400);
+}
+
+.btn-sm.btn-cancel:hover {
+  background: var(--zinc-700);
+}
+
+.group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.group-empty {
+  color: var(--zinc-600);
+  font-size: 12px;
+  text-align: center;
+  padding: 12px;
+}
+
+.group-item {
+  background: var(--zinc-800);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.group-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  gap: 8px;
+}
+
+.group-name {
+  flex: 1;
+  color: var(--blue-500);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.group-count {
+  background: var(--zinc-700);
+  color: var(--zinc-400);
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+
+.group-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.group-row:hover .group-actions {
+  opacity: 1;
+}
+
+.btn-icon {
+  width: 22px;
+  height: 22px;
+  background: var(--zinc-700);
+  border: none;
+  border-radius: 4px;
+  color: var(--zinc-400);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.btn-icon:hover {
+  background: var(--zinc-600);
+  color: var(--zinc-200);
+}
+
+.btn-icon.btn-danger:hover {
+  background: rgba(248, 113, 113, 0.2);
+  color: var(--red-400);
+}
+
+.session-assign-section {
+  border-top: 1px solid var(--zinc-800);
+  padding-top: 12px;
+}
+
+.section-label {
+  font-size: 11px;
+  color: var(--zinc-500);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+}
+
+.session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.session-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: var(--zinc-950);
+  border-radius: 4px;
+}
+
+.session-name {
+  color: var(--blue-500);
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+}
+
+.btn-assign {
+  background: transparent;
+  border: 1px solid var(--zinc-700);
+  color: var(--zinc-500);
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+
+.btn-assign:hover {
+  border-color: var(--blue-500);
+  color: var(--blue-500);
+}
+
+.group-select {
+  background: var(--zinc-950);
+  border: 1px solid var(--blue-500);
+  color: var(--zinc-200);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+.group-select option {
+  background: var(--zinc-900);
+  color: var(--zinc-200);
+}
+
+.session-empty {
+  color: var(--zinc-600);
+  font-size: 12px;
+  text-align: center;
+  padding: 8px;
+}

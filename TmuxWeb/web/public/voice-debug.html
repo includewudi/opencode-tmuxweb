@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voice Debug</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 24px;
+      background: #0f1115;
+      color: #e6e6e6;
+    }
+    h1 { font-size: 20px; margin-bottom: 8px; }
+    .row { margin: 10px 0; }
+    .label { color: #9da5b4; font-size: 13px; }
+    input, button, textarea {
+      font-size: 14px;
+    }
+    input {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid #2b2d31;
+      background: #181a1f;
+      color: #e6e6e6;
+    }
+    button {
+      margin-right: 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid #2b2d31;
+      background: #21252b;
+      color: #e6e6e6;
+    }
+    button:disabled { opacity: 0.6; }
+    #meter {
+      height: 10px;
+      background: #2b2d31;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    #meter > div {
+      height: 100%;
+      width: 0%;
+      background: #4d78cc;
+      transition: width 0.05s linear;
+    }
+    #log {
+      width: 100%;
+      height: 260px;
+      margin-top: 8px;
+      background: #0b0d10;
+      color: #c8c8c8;
+      border: 1px solid #2b2d31;
+      border-radius: 8px;
+      padding: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .badge { padding: 2px 6px; border-radius: 6px; background: #2b2d31; }
+  </style>
+</head>
+<body>
+  <h1>Voice Debug (iOS mic)</h1>
+  <div class="row label">Secure context: <span id="secure" class="badge"></span> | Protocol: <span id="protocol" class="badge"></span></div>
+  <div class="row label">User Agent: <span id="ua" class="badge"></span></div>
+
+  <div class="row">
+    <div class="label">Token (for /ws/speech). Uses localStorage tmuxweb_token by default.</div>
+    <input id="token" placeholder="tmuxweb_token" />
+  </div>
+
+  <div class="row">
+    <button id="btn-mic">A. Mic Permission Test</button>
+    <button id="btn-audio">B. Audio Level Test</button>
+    <button id="btn-stop" disabled>Stop Audio</button>
+    <button id="btn-ws">C. WS Connect Test</button>
+    <button id="btn-full">D. Full Flow (5s record)</button>
+    <button id="btn-full-stop" disabled>Stop Full</button>
+    <button id="btn-clear">Clear Log</button>
+  </div>
+
+  <div class="row">
+    <div class="label">Audio level</div>
+    <div id="meter"><div></div></div>
+  </div>
+
+  <textarea id="log" readonly></textarea>
+
+  <script>
+    const logEl = document.getElementById('log');
+    const meterFill = document.querySelector('#meter > div');
+    const tokenInput = document.getElementById('token');
+    const btnMic = document.getElementById('btn-mic');
+    const btnAudio = document.getElementById('btn-audio');
+    const btnStop = document.getElementById('btn-stop');
+    const btnWs = document.getElementById('btn-ws');
+    const btnFull = document.getElementById('btn-full');
+    const btnFullStop = document.getElementById('btn-full-stop');
+    const btnClear = document.getElementById('btn-clear');
+
+    document.getElementById('secure').textContent = String(window.isSecureContext);
+    document.getElementById('protocol').textContent = window.location.protocol;
+    document.getElementById('ua').textContent = navigator.userAgent;
+
+    tokenInput.value = localStorage.getItem('tmuxweb_token') || '';
+
+    let stream = null;
+    let audioContext = null;
+    let analyser = null;
+    let rafId = null;
+
+    function log(msg, obj) {
+      const time = new Date().toISOString().slice(11, 19);
+      const line = obj ? `${time} ${msg} ${JSON.stringify(obj)}` : `${time} ${msg}`;
+      logEl.value += line + '\n';
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(line);
+    }
+
+    function stopAudio() {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+      if (analyser) analyser.disconnect();
+      analyser = null;
+      if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+      }
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+      meterFill.style.width = '0%';
+      btnStop.disabled = true;
+    }
+
+    btnClear.onclick = () => { logEl.value = ''; };
+
+    btnMic.onclick = async () => {
+      try {
+        log('Mic test: requesting getUserMedia...');
+        const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const track = s.getAudioTracks()[0];
+        log('Mic test: success', {
+          readyState: track?.readyState,
+          muted: track?.muted,
+          enabled: track?.enabled,
+          settings: track?.getSettings ? track.getSettings() : null,
+        });
+        s.getTracks().forEach(t => t.stop());
+      } catch (err) {
+        log('Mic test: failed', { name: err.name, message: err.message });
+      }
+    };
+
+    btnAudio.onclick = async () => {
+      try {
+        log('Audio test: requesting getUserMedia...');
+        stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        audioContext = new AudioCtx();
+        await audioContext.resume();
+        log('AudioContext state', { state: audioContext.state, sampleRate: audioContext.sampleRate });
+
+        const source = audioContext.createMediaStreamSource(stream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 2048;
+        source.connect(analyser);
+
+        const data = new Uint8Array(analyser.fftSize);
+        const tick = () => {
+          analyser.getByteTimeDomainData(data);
+          let sum = 0;
+          for (let i = 0; i < data.length; i++) {
+            const v = (data[i] - 128) / 128;
+            sum += v * v;
+          }
+          const rms = Math.sqrt(sum / data.length);
+          const percent = Math.min(100, Math.round(rms * 180));
+          meterFill.style.width = percent + '%';
+          rafId = requestAnimationFrame(tick);
+        };
+        tick();
+        btnStop.disabled = false;
+      } catch (err) {
+        log('Audio test: failed', { name: err.name, message: err.message });
+        stopAudio();
+      }
+    };
+
+    btnStop.onclick = () => {
+      log('Audio test: stopped');
+      stopAudio();
+    };
+
+    btnWs.onclick = () => {
+      try {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const token = tokenInput.value.trim();
+        const wsUrl = `${protocol}//${window.location.host}/ws/speech?token=${encodeURIComponent(token)}`;
+        log('WS test: connecting', { wsUrl });
+        const ws = new WebSocket(wsUrl);
+        ws.onopen = () => {
+          log('WS test: open');
+          setTimeout(() => ws.close(), 1000);
+        };
+        ws.onerror = (e) => log('WS test: error', { message: 'check console', event: e.type });
+        ws.onclose = (e) => log('WS test: close', { code: e.code, reason: e.reason });
+      } catch (err) {
+        log('WS test: failed', { name: err.name, message: err.message });
+      }
+    };
+
+    // D. Full Flow Test — mic → AudioContext → resample → WS → XFYun → result
+    let fullWs = null;
+    let fullStream = null;
+    let fullAudioCtx = null;
+    let fullProcessor = null;
+    let fullTimer = null;
+
+    function cleanupFull() {
+      if (fullTimer) { clearTimeout(fullTimer); fullTimer = null; }
+      if (fullProcessor) { fullProcessor.disconnect(); fullProcessor = null; }
+      if (fullAudioCtx) { fullAudioCtx.close(); fullAudioCtx = null; }
+      if (fullStream) { fullStream.getTracks().forEach(t => t.stop()); fullStream = null; }
+      if (fullWs) { fullWs.close(); fullWs = null; }
+      btnFullStop.disabled = true;
+      btnFull.disabled = false;
+    }
+
+    btnFullStop.onclick = () => {
+      log('[Full] Manual stop');
+      if (fullWs && fullWs.readyState === WebSocket.OPEN) {
+        fullWs.send(JSON.stringify({ type: 'stop' }));
+      }
+      // don't cleanup yet — wait for 'end' from server
+    };
+
+    btnFull.onclick = async () => {
+      try {
+        btnFull.disabled = true;
+        log('[Full] Starting full flow test (speak for 5 seconds)...');
+
+        // 1. Get mic
+        fullStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        log('[Full] Mic acquired');
+
+        // 2. Connect WS
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const token = tokenInput.value.trim();
+        const wsUrl = `${protocol}//${window.location.host}/ws/speech?token=${encodeURIComponent(token)}`;
+        log('[Full] WS connecting...', { wsUrl });
+        fullWs = new WebSocket(wsUrl);
+
+        fullWs.onopen = () => {
+          log('[Full] WS open, sending start...');
+          fullWs.send(JSON.stringify({ type: 'start' }));
+        };
+
+        fullWs.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+          if (data.type === 'ready') {
+            log('[Full] XFYun ready — START SPEAKING NOW');
+            startFullCapture();
+            btnFullStop.disabled = false;
+            // Auto-stop after 5 seconds
+            fullTimer = setTimeout(() => {
+              log('[Full] 5s elapsed, sending stop...');
+              if (fullWs && fullWs.readyState === WebSocket.OPEN) {
+                fullWs.send(JSON.stringify({ type: 'stop' }));
+              }
+            }, 5000);
+          } else if (data.type === 'partial') {
+            log('[Full] Partial result (sn=' + data.sn + '): ' + data.text);
+          } else if (data.type === 'end') {
+            log('[Full] === Recognition complete ===');
+            cleanupFull();
+          } else if (data.type === 'error') {
+            log('[Full] ERROR from server: ' + data.message);
+            cleanupFull();
+          } else {
+            log('[Full] Unknown msg', data);
+          }
+        };
+
+        fullWs.onerror = (e) => {
+          log('[Full] WS error', { event: e.type });
+          cleanupFull();
+        };
+
+        fullWs.onclose = (e) => {
+          log('[Full] WS closed', { code: e.code, reason: e.reason });
+          cleanupFull();
+        };
+
+      } catch (err) {
+        log('[Full] Failed', { name: err.name, message: err.message });
+        cleanupFull();
+      }
+    };
+
+    function startFullCapture() {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      fullAudioCtx = new AudioCtx();
+      const nativeSR = fullAudioCtx.sampleRate;
+      const targetSR = 16000;
+      log('[Full] AudioContext sampleRate=' + nativeSR + ', resampling to ' + targetSR);
+
+      const source = fullAudioCtx.createMediaStreamSource(fullStream);
+      fullProcessor = fullAudioCtx.createScriptProcessor(4096, 1, 1);
+
+      let frameCount = 0;
+      fullProcessor.onaudioprocess = (e) => {
+        if (!fullWs || fullWs.readyState !== WebSocket.OPEN) return;
+
+        const inputData = e.inputBuffer.getChannelData(0);
+
+        // Resample
+        let outputData;
+        if (nativeSR !== targetSR) {
+          const ratio = nativeSR / targetSR;
+          const newLength = Math.round(inputData.length / ratio);
+          outputData = new Float32Array(newLength);
+          for (let i = 0; i < newLength; i++) {
+            outputData[i] = inputData[Math.round(i * ratio)];
+          }
+        } else {
+          outputData = inputData;
+        }
+
+        // Float32 → Int16 PCM
+        const pcmData = new Int16Array(outputData.length);
+        for (let i = 0; i < outputData.length; i++) {
+          const s = Math.max(-1, Math.min(1, outputData[i]));
+          pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+        }
+
+        // Int16 → base64
+        const bytes = new Uint8Array(pcmData.buffer);
+        let binary = '';
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i]);
+        }
+        const base64 = btoa(binary);
+
+        fullWs.send(JSON.stringify({ type: 'audio', audio: base64 }));
+        frameCount++;
+        if (frameCount % 10 === 0) {
+          log('[Full] Sent ' + frameCount + ' audio frames');
+        }
+      };
+
+      source.connect(fullProcessor);
+      fullProcessor.connect(fullAudioCtx.destination);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+{
+  "_说明": "公共配置文件，敏感信息请放在 server/config_private.json（不提交 git）",
+  "port": 8215,
+  "bind": "0.0.0.0",
+  "token": "",
+  "sessionSecret": "",
+  "sessionMaxAgeDays": 30,
+  "frontendPort": 5215,
+  "envName": "prod",
+  "tmuxSocket": null,
+  "_terminalMode_说明": "终端连接模式: 'pty'(默认，每个pane一个PTY) 或 'controlmode'(单PTY tmux control mode，节省PTY资源)",
+  "terminalMode": "pty",
+  "_quickDirs_说明": "新建 tmux window 的常用目录，name 为显示名，path 为绝对路径",
+  "quickDirs": [
+    {
+      "name": "Home",
+      "path": "~"
+    },
+    {
+      "name": "Code",
+      "path": "~/code"
+    }
+  ],
+  "_allowedOrigins_说明": "添加你的局域网 IP（如 https://192.168.x.x:5215）到 config_private.json",
+  "allowedOrigins": [
+    "http://localhost:5215",
+    "http://127.0.0.1:5215",
+    "https://localhost:5215",
+    "https://127.0.0.1:5215"
+  ],
+  "_butler_说明": "编排服务代理（可选） - 配置外部编排后端的 host/port，用于御书房面板",
+  "butler": {
+    "host": "",
+    "port": 0
+  },
+  "_summaryService_说明": "摘要服务（可选）",
+  "summaryServiceUrl": "",
+  "summaryServiceToken": "",
+  "_xfyun_说明": "讯飞语音识别 - 在 config_private.json 中填写真实密钥",
+  "xfyun": {
+    "appId": "YOUR_XFYUN_APP_ID",
+    "apiKey": "YOUR_XFYUN_API_KEY",
+    "apiSecret": "YOUR_XFYUN_API_SECRET"
+  },
+  "_llm_说明": [
+    "AI 命令生成 - 支持 OpenAI 兼容 API（DeerAPI / DeepSeek / OpenAI / Moonshot 等）",
+    "默认配置对所有角色生效；可在 roles 中为特定角色配置不同模型",
+    "角色 ID: cli(命令行大神), ops(运维专家), prompt(提示词优化),",
+    "         frontend(前端优化), backend(后端优化), ui(UI优化)",
+    "每个 role 可覆盖: apiKey, apiUrl, model"
+  ],
+  "llm": {
+    "_default_说明": "所有角色的默认配置",
+    "apiKey": "",
+    "apiUrl": "https://api.deerapi.com/v1/chat/completions",
+    "model": "deepseek-v3.2",
+    "_roles_说明": "为特定角色指定不同模型（可选，不配则用默认）",
+    "roles": {
+      "_示例_cli": {
+        "_说明": "命令行大神 - 可用更擅长代码的模型",
+        "model": "deepseek-v3.2"
+      },
+      "_示例_prompt": {
+        "_说明": "提示词优化 - 可用更擅长文字的模型",
+        "apiUrl": "https://api.openai.com/v1/chat/completions",
+        "apiKey": "sk-xxx",
+        "model": "gpt-4o"
+      }
+    }
+  }
+}

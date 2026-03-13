@@ -1,0 +1,115 @@
+.desktop-toolbox {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--zinc-950);
+}
+
+.desktop-toolbox-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--zinc-800);
+  background: var(--zinc-900);
+  flex-shrink: 0;
+}
+
+.desktop-toolbox-tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 4px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--zinc-500);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.desktop-toolbox-tab:hover {
+  color: var(--zinc-300);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.desktop-toolbox-tab.active {
+  color: var(--blue-500);
+  border-bottom-color: var(--blue-500);
+}
+
+.desktop-toolbox-voice-btn {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-bottom: none;
+  cursor: default;
+}
+
+.desktop-toolbox-voice-btn:hover {
+  background: none;
+  color: inherit;
+}
+
+.desktop-quick-keys {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--zinc-800);
+  background: var(--zinc-900);
+  flex-shrink: 0;
+}
+
+.desktop-quick-key {
+  padding: 3px 8px;
+  background: var(--zinc-800);
+  border: 1px solid var(--zinc-700);
+  border-radius: 4px;
+  color: var(--zinc-400);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.desktop-quick-key:hover:not(:disabled) {
+  background: var(--zinc-700);
+  color: var(--zinc-200);
+  border-color: var(--zinc-600);
+}
+
+.desktop-quick-key:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.desktop-prefix-label {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--zinc-600);
+}
+
+.desktop-toolbox-content {
+  flex: 0 0 auto;
+  overflow-y: visible;
+  padding: 12px;
+}
+
+.fullscreen-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: none;
+  border: none;
+  color: var(--zinc-500);
+  cursor: pointer;
+  transition: all 0.15s;
+  height: 100%;
+  border-left: 1px solid var(--zinc-800);
+}
+
+.fullscreen-toggle:hover {
+  color: var(--zinc-200);
+  background: rgba(255, 255, 255, 0.05);
+}

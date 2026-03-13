@@ -1,0 +1,96 @@
+.task-stat-badges {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--zinc-800);
+    background: var(--zinc-900);
+}
+
+.task-stat-badges-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.task-stat-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    flex-shrink: 0;
+}
+
+.task-stat-badge--progress {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.25);
+    color: var(--blue-400);
+}
+
+.task-stat-badge--done {
+    background: rgba(34, 197, 94, 0.08);
+    border-color: rgba(34, 197, 94, 0.2);
+    color: var(--green-400);
+}
+
+.task-stat-badge--failed {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: var(--red-400);
+}
+
+.task-stat-badge--waiting {
+    background: rgba(234, 179, 8, 0.08);
+    border-color: rgba(234, 179, 8, 0.2);
+    color: var(--yellow-400);
+}
+
+.task-stat-label {
+    font-size: 10px;
+    opacity: 0.85;
+}
+
+.task-stat-count {
+    font-weight: 700;
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.task-stat-refresh {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: var(--zinc-600);
+    cursor: pointer;
+    padding: 3px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    transition: all 0.15s;
+}
+
+.task-stat-refresh:hover:not(:disabled) {
+    color: var(--zinc-300);
+    background: var(--zinc-800);
+}
+
+.task-stat-refresh:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+@keyframes task-stat-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.task-stat-spin {
+    animation: task-stat-spin 1s linear infinite;
+}

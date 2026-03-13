@@ -1,0 +1,87 @@
+.voice-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.voice-btn {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: var(--zinc-800);
+  color: var(--zinc-400);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.voice-btn:hover:not(:disabled) {
+  background: var(--zinc-700);
+  color: var(--zinc-200);
+}
+
+.voice-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.voice-btn.recording {
+  background: var(--red-500);
+  color: white;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.voice-btn.connecting,
+.voice-btn.processing {
+  background: var(--blue-600);
+  color: white;
+}
+
+.voice-preview {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: var(--zinc-900);
+  border: 1px solid var(--zinc-700);
+  border-radius: 8px;
+  color: var(--zinc-300);
+  font-size: 13px;
+  max-height: 100px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
