@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare, ScrollText } from 'lucide-react'
+import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare, ScrollText, FolderSearch } from 'lucide-react'
 import { TmuxTree } from '../shared/components/TmuxTree'
 import { TaskStatBadges } from '../shared/components/TaskStatBadges'
 import { TerminalTabs } from './TerminalTabs'
@@ -8,6 +8,8 @@ import { ProfileSelector } from '../shared/components/ProfileSelector'
 import { GroupManager } from '../shared/components/GroupManager'
 import { DesktopToolbox } from './DesktopToolbox'
 import { ImperialStudyPanel } from '../shared/components/imperial-study/components/ImperialStudyPanel'
+import { FloatingImperialStudy } from '../shared/components/imperial-study/components/FloatingImperialStudy'
+import { FloatingYazi } from '../shared/components/floating-yazi/FloatingYazi'
 import { checkAuth, logout } from '../utils/auth'
 import { isMobile } from '../utils/platform'
 import { TmuxSession, OpenTab, Profile, SessionGroup } from '../types'
@@ -44,12 +46,45 @@ export default function App() {
   const [fullscreen, setFullscreen] = useState(false)
   const [taskHistoryPaneKey, setTaskHistoryPaneKey] = useState<string | null>(null)
   const [sidebarMode, setSidebarMode] = useState<'explorer' | 'imperial'>('explorer')
+  const [imperialFloat, setImperialFloat] = useState(() => {
+    try { return localStorage.getItem('imperial-float-mode') === 'true' } catch { return false }
+  })
+  const [yaziFloat, setYaziFloat] = useState(false)
 
-  // Auto-derive pane key from active tab (title = session:window, paneId = %N)
   const activePaneKey = useMemo(() => {
     const tab = tabs.find(t => t.id === activeTabId)
-    return tab ? `${tab.title}:${tab.paneId}` : null
+    if (!tab) return null
+    return tab.title
   }, [tabs, activeTabId])
+
+  const activePaneCwd = useMemo(() => {
+    if (!activePaneKey) return null
+    const [sessionName, windowIndex] = activePaneKey.split(':')
+    const session = sessions.find(s => s.sessionName === sessionName)
+    if (!session) return null
+    const window = session.windows.find(w => String(w.windowIndex) === windowIndex)
+    if (!window) return null
+    const activeTab = tabs.find(t => t.id === activeTabId)
+    const pane = activeTab
+      ? window.panes.find(p => p.paneId === activeTab.paneId)
+      : window.panes[0]
+    return pane?.currentPath || window.panes[0]?.currentPath || null
+  }, [activePaneKey, sessions, tabs, activeTabId])
+
+  // Persist floating mode preference
+  useEffect(() => {
+    localStorage.setItem('imperial-float-mode', String(imperialFloat))
+  }, [imperialFloat])
+
+  const toggleImperialFloat = useCallback(() => {
+    setImperialFloat(prev => {
+      if (!prev) {
+        // Switching to float: if sidebar was on imperial, go back to explorer
+        if (sidebarMode === 'imperial') setSidebarMode('explorer')
+      }
+      return !prev
+    })
+  }, [sidebarMode])
 
   const terminalSendRefs = useRef<Record<string, (text: string) => void>>({})
   const voiceRef = useRef<VoiceInputHandle | null>(null)
@@ -141,10 +176,14 @@ export default function App() {
       setActiveTabId(existing.id)
       return
     }
+    // paneName format: "sessionName:windowIndex" — extract sessionName by stripping trailing :number
+    const lastColon = paneName.lastIndexOf(':')
+    const sessionName = lastColon > 0 ? paneName.substring(0, lastColon) : paneName
     const newTab: OpenTab = {
       id: `tab-${Date.now()}`,
       paneId,
-      title: paneName
+      title: paneName,
+      sessionName
     }
     setTabs(prev => [...prev, newTab])
     setActiveTabId(newTab.id)
@@ -231,14 +270,38 @@ export default function App() {
                 <TerminalSquare size={22} strokeWidth={sidebarMode === 'explorer' && sidebarOpen ? 2 : 1.5} />
               </button>
               <button
-                className={`activity-tab ${sidebarMode === 'imperial' && sidebarOpen ? 'active' : ''}`}
-                title="\u5fa1\u66f8\u623f (Butler)"
+                className={`activity-tab ${sidebarMode === 'imperial' && sidebarOpen && !imperialFloat ? 'active' : ''}`}
+                title={imperialFloat ? '御書房 (浮窗模式)' : '御書房 (Butler)'}
                 onClick={() => {
-                  if (sidebarMode === 'imperial') { setSidebarOpen(!sidebarOpen) }
-                  else { setSidebarMode('imperial'); setSidebarOpen(true) }
+                  if (imperialFloat) {
+                    // Already floating — toggle float off, open in sidebar
+                    setImperialFloat(false)
+                    setSidebarMode('imperial')
+                    setSidebarOpen(true)
+                  } else {
+                    if (sidebarMode === 'imperial') { setSidebarOpen(!sidebarOpen) }
+                    else { setSidebarMode('imperial'); setSidebarOpen(true) }
+                  }
+                }}
+                onContextMenu={(e) => {
+                  e.preventDefault()
+                  toggleImperialFloat()
                 }}
               >
-                <ScrollText size={22} strokeWidth={sidebarMode === 'imperial' && sidebarOpen ? 2 : 1.5} />
+                <span className={imperialFloat ? 'is-float-pin' : ''}>
+                  <ScrollText size={22} strokeWidth={sidebarMode === 'imperial' && sidebarOpen && !imperialFloat ? 2 : 1.5} />
+                  {imperialFloat && <span className="is-float-pin__indicator" />}
+                </span>
+              </button>
+              <button
+                className={`activity-tab ${yaziFloat ? 'active' : ''}`}
+                title="文件管理器 (yazi)"
+                onClick={() => setYaziFloat(!yaziFloat)}
+              >
+                <span className={yaziFloat ? 'yz-float-pin' : ''}>
+                  <FolderSearch size={22} strokeWidth={yaziFloat ? 2 : 1.5} />
+                  {yaziFloat && <span className="yz-float-pin__indicator" />}
+                </span>
               </button>
             </div>
             <div className="activity-bar-bottom">
@@ -253,8 +316,8 @@ export default function App() {
 
           {/* Primary Sidebar Content */}
           <div className="primary-sidebar">
-            {sidebarMode === 'imperial' ? (
-              <ImperialStudyPanel />
+            {sidebarMode === 'imperial' && !imperialFloat ? (
+              <ImperialStudyPanel activePaneKey={activePaneKey} />
             ) : (
               <>
                 <div className="sidebar-header">
@@ -337,6 +400,20 @@ export default function App() {
         </aside>
       )}
 
+      {imperialFloat && (
+        <FloatingImperialStudy
+          activePaneKey={activePaneKey}
+          onClose={() => setImperialFloat(false)}
+        />
+      )}
+
+      {yaziFloat && (
+        <FloatingYazi
+          dir={activePaneCwd || undefined}
+          onSendPath={sendToActiveTerminal}
+          onClose={() => setYaziFloat(false)}
+        />
+      )}
 
     </div>
   )

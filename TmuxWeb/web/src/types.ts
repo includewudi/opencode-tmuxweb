@@ -2,6 +2,7 @@ export interface TmuxPane {
   paneId: string
   paneTitle: string
   paneCommand: string
+  currentPath?: string
 }
 
 export interface TmuxWindow {
@@ -21,6 +22,7 @@ export interface OpenTab {
   id: string
   paneId: string
   title: string
+  sessionName?: string
 }
 
 export interface Profile {

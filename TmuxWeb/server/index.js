@@ -9,6 +9,7 @@ const path = require('path');
 
 const config = require('./config-loader');
 const { tokenMiddleware, validateToken } = require('./middleware/auth');
+const { requireDb } = require('./middleware/db');
 const { router: authRouter } = require('./routes/auth');
 const tmuxRouter = require('./routes/tmux');
 const tasksRouter = require('./routes/tasks');
@@ -27,9 +28,19 @@ const snippetsRouter = require('./routes/snippets');
 const hotwordsRouter = require('./routes/hotwords');
 const opencodeConfigRouter = require('./routes/opencode-config');
 const butlerProxyRouter = require('./routes/butler-proxy');
-const { handleTerminalConnection, getStats } = require('./services/terminal');
+const capabilitiesRouter = require('./routes/capabilities');
+const uploadRouter = require('./routes/upload');
+const filesRouter = require('./routes/files');
+// Terminal mode: 'pty' (default, one PTY per pane) or 'controlmode' (single PTY via tmux -C)
+const terminalMode = config.terminalMode || 'pty';
+const terminalModule = terminalMode === 'controlmode'
+  ? require('./services/terminal-controlmode')
+  : require('./services/terminal');
+const { handleTerminalConnection, getStats } = terminalModule;
+console.log(`[Server] Terminal mode: ${terminalMode}`);
 const { handleSpeechConnection } = require('./services/speech');
-const { pool, testConnection } = require('./db/pool');
+const { pool, dbEnabled, testConnection } = require('./db/pool');
+const { bootstrap } = require('./db/bootstrap');
 
 const app = express();
 
@@ -55,6 +66,9 @@ app.get('/health', (req, res) => {
 
 app.get('/healthz', async (req, res) => {
   const timestamp = new Date().toISOString();
+  if (!pool) {
+    return res.json({ status: 'ok', db: 'not configured', timestamp });
+  }
   try {
     const [rows] = await pool.query('SELECT 1');
     res.json({ status: 'ok', db: 'ok', timestamp });
@@ -63,33 +77,39 @@ app.get('/healthz', async (req, res) => {
   }
 });
 
+app.use('/api/capabilities', capabilitiesRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/tasks/events', taskEventsRouter);
 app.use('/api/telemetry', telemetryRouter);
 app.use('/api/tmux', tokenMiddleware, tmuxRouter);
-app.use('/api/groups', tokenMiddleware, groupsRouter);
-app.use('/api/sessions', tokenMiddleware, sessionsRouter);
+app.use('/api/groups', tokenMiddleware, requireDb, groupsRouter);
+app.use('/api/sessions', tokenMiddleware, requireDb, sessionsRouter);
 // Pane routes: status (panes.js), task CRUD (tasks-db.js)
-app.use('/api/panes', tokenMiddleware, panesRouter);        // GET/PUT /status
-app.use('/api/panes', tokenMiddleware, tasksDbRouter);      // /:paneKey/tasks
-app.use('/api/panes', tokenMiddleware, paneSummariesRouter); // /:paneKey/summary
-app.use('/api/profiles', tokenMiddleware, profilesRouter);
-app.use('/api/segments', tokenMiddleware, segmentsRouter);
+app.use('/api/panes', tokenMiddleware, requireDb, panesRouter);        // GET/PUT /status
+app.use('/api/panes', tokenMiddleware, requireDb, tasksDbRouter);      // /:paneKey/tasks
+app.use('/api/panes', tokenMiddleware, requireDb, paneSummariesRouter); // /:paneKey/summary
+app.use('/api/profiles', tokenMiddleware, requireDb, profilesRouter);
+app.use('/api/segments', tokenMiddleware, requireDb, segmentsRouter);
 app.use('/api/ai', tokenMiddleware, aiRouter);
 app.use('/api/roles', tokenMiddleware, rolesRouter);
 app.use('/api/snippets', tokenMiddleware, snippetsRouter);
 app.use('/api/hotwords', tokenMiddleware, hotwordsRouter);
 app.use('/api/opencode-config', tokenMiddleware, opencodeConfigRouter);
 app.use('/api/butler', tokenMiddleware, butlerProxyRouter);
+app.use('/api/files', tokenMiddleware, filesRouter);
+app.use('/api/upload', tokenMiddleware, uploadRouter);
 
 // Task routes: task CRUD (tasks-db.js), summaries
-app.use('/api/tasks', tokenMiddleware, tasksDbRouter);       // /:id, /:id/complete, /:id/detail
-app.use('/api/tasks', tokenMiddleware, taskSummariesRouter); // /summaries
+app.use('/api/tasks', tokenMiddleware, requireDb, tasksDbRouter);       // /:id, /:id/complete, /:id/detail
+app.use('/api/tasks', tokenMiddleware, requireDb, taskSummariesRouter); // /summaries
 
 // PTY debug endpoint
 app.get('/api/debug/pty-status', tokenMiddleware, (req, res) => {
   res.json(getStats());
 });
+
+// Serve uploaded files (auth not required for direct URL access)
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Hashed assets get long-lived cache; index.html must not be cached
 // to ensure browsers always fetch fresh HTML after each build.
@@ -169,13 +189,20 @@ speechWss.on('connection', (ws, req) => {
 server.listen(config.port, config.bind, () => {
   console.log(`TmuxWeb backend listening on ${PROTOCOL}://${config.bind}:${config.port}`);
 
-  testConnection().then(ok => {
-    if (ok) {
-      console.log('[DB] Database connection verified');
-    } else {
-      console.warn('[DB] Database connection failed - server running in degraded mode');
-    }
-  });
+  if (dbEnabled) {
+    // Auto-create tables, then verify connection
+    bootstrap().then(() => {
+      return testConnection();
+    }).then(ok => {
+      if (ok) {
+        console.log('[DB] Database connection verified');
+      } else {
+        console.warn('[DB] Database connection failed — server running in degraded mode');
+      }
+    });
+  } else {
+    console.log('[DB] No database configured — task tracking, profiles, groups stored in-memory only');
+  }
 });
 
 if (hasCerts) {
