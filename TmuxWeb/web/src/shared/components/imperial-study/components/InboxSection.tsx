@@ -43,6 +43,9 @@ function InboxCard({ item, onClick }: InboxCardProps) {
                 <span className="is-inbox-card__worker">{item.worker_id}</span>
             </div>
             <div className="is-inbox-card__title">{item.title}</div>
+            {item.body && (
+                <div className="is-inbox-body-preview">{item.body}</div>
+            )}
             <div className="is-inbox-card__ts">
                 {item.updated_at ? new Date(item.updated_at).toLocaleTimeString() : ''}
             </div>

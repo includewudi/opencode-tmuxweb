@@ -91,6 +91,7 @@ dist/
 web/config_private.json
 TmuxWeb/server/config_private.json
 **/config_private.json
+**/snippets_private.json
 
 # SSL certificates
 web/*.pem

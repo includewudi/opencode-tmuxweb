@@ -14,7 +14,8 @@ export function useActivityEvents(studyId?: string, limit = 20) {
             if (studyId) params.set('study_id', studyId);
             const res = await fetch(`${BUTLER_API_BASE}/activity_events?${params}`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data: ActivityEvent[] = await res.json();
+            const json = await res.json();
+            const data: ActivityEvent[] = json?.data?.activity_events ?? [];
             setEvents(data);
             setError(null);
         } catch (e: any) {

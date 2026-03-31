@@ -1,6 +1,6 @@
 # API 文档
 
-> 所属项目: opencode-iterm (TmuxWeb) | 更新: 2026-02-27
+> 所属项目: opencode-tmuxweb (TmuxWeb) | 更新: 2026-02-27
 
 ## 认证
 

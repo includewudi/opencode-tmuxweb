@@ -12,7 +12,8 @@ export function useImperialStudies() {
         try {
             const res = await fetch(`${BUTLER_API_BASE}/imperial_studies?status=active`);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data: ImperialStudy[] = await res.json();
+            const json = await res.json();
+            const data: ImperialStudy[] = json?.data?.imperial_studies ?? [];
             setStudies(data);
             setError(null);
         } catch (e: any) {

@@ -1,14 +1,14 @@
 const express = require('express');
-const { pool } = require('../db/pool');
+const { pool, dbEnabled } = require('../db/pool');
 const config = require('../config-loader');
-const { syncPaneStatus } = require('../utils');
+const { syncPaneStatus, getSessionName } = require('../utils');
 
 const router = express.Router();
 
-// CLI sends slash-separated pane_key ("session/window/pane"), frontend uses colon-separated
 function normalizePaneKey(key) {
   if (!key) return key;
-  return key.replace(/\//g, ':');
+  const colonized = key.replace(/\//g, ':');
+  return getSessionName(colonized);
 }
 
 // syncPaneStatus is now imported from ../utils
@@ -66,6 +66,10 @@ router.get('/stream/:pane_key(*)', (req, res) => {
 });
 
 router.post('/', async (req, res) => {
+  if (!dbEnabled) {
+    return res.status(503).json({ error: 'database_not_configured', message: 'Task events require MySQL.' });
+  }
+
   const { event, conversation_id, user_message, content, assistant_message, timestamp } = req.body;
   const rawPaneKey = req.body.pane_key;
 
@@ -245,8 +249,15 @@ router.post('/', async (req, res) => {
 });
 
 router.get('/:pane_key(*)', async (req, res) => {
-  const paneKey = normalizePaneKey(req.params.pane_key);
+  const rawKey = req.params.pane_key;
+  if (!dbEnabled) {
+    console.log(`[task-events GET] dbEnabled=false, rawKey=${rawKey}`);
+    return res.json({ conversations: [] });
+  }
+
+  const paneKey = normalizePaneKey(rawKey);
   const limit = parseInt(req.query.limit, 10) || 20;
+  console.log(`[task-events GET] rawKey=${rawKey} → paneKey=${paneKey}, limit=${limit}`);
 
   try {
     const [conversations] = await pool.query(

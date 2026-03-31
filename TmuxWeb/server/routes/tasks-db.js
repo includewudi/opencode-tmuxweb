@@ -1,6 +1,6 @@
 const express = require('express');
 const { pool } = require('../db/pool');
-const { parsePaneKey, syncPaneStatus } = require('../utils');
+const { parsePaneKey, getSessionName, syncPaneStatus } = require('../utils');
 const config = require('../config-loader');
 
 const router = express.Router();
@@ -33,11 +33,7 @@ router.get('/', async (req, res) => {
     // Map ai_conversation columns to what GlobalTaskOverview expects:
     // task_title, task_status, session_name, window_index, pane_index, paneKey
     const formattedTasks = tasks.map(t => {
-      // pane_key format: "session_name:window_index:pane_id" e.g. "opencode-iterm:0:%0"
-      const parts = (t.pane_key || '').split(':');
-      const paneIndex = parts.length >= 1 ? parts[parts.length - 1] : '';
-      const windowIndex = parts.length >= 2 ? parts[parts.length - 2] : '0';
-      const sessionName = parts.length >= 3 ? parts.slice(0, -2).join(':') : (t.pane_key || '');
+      const sessionName = getSessionName(t.pane_key || '');
 
       return {
         id: t.id,
@@ -47,8 +43,8 @@ router.get('/', async (req, res) => {
         task_title: t.user_message || 'Untitled Task',
         task_status: t.conv_status || 'in_progress',
         session_name: sessionName,
-        window_index: windowIndex,
-        pane_index: paneIndex,
+        window_index: '0',
+        pane_index: '0',
         started_at: t.started_at,
         completed_at: t.completed_at,
         ctime: t.ctime,
@@ -135,10 +131,10 @@ router.post('/:paneKey/tasks', async (req, res) => {
     const timestamp = Math.floor(now.getTime() / 1000);
 
     const [result] = await pool.query(
-      `INSERT INTO tmux_task_segment 
+      `INSERT INTO tmux_task_segment
        (year, mon, token, session_name, window_index, pane_index, task_title, task_status, started_at, ctime, mtime, status, is_deleted)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'in_progress', ?, ?, ?, 1, 0)`,
-      [year, mon, token, parsed.sessionName, parsed.windowIndex, parsed.paneIndex, title || '', timestamp, timestamp, timestamp]
+       VALUES (?, ?, ?, ?, 0, '0', ?, 'in_progress', ?, ?, ?, 1, 0)`,
+      [year, mon, token, parsed.sessionName, title || '', timestamp, timestamp, timestamp]
     );
 
     res.json({
@@ -175,17 +171,17 @@ router.get('/:paneKey/tasks', async (req, res) => {
     const [tasks] = await pool.query(
       `SELECT id, task_title, task_status, started_at, completed_at, ctime, mtime
        FROM tmux_task_segment
-       WHERE token = ? AND session_name = ? AND window_index = ? AND pane_index = ? AND is_deleted = 0
+       WHERE token = ? AND session_name = ? AND is_deleted = 0
        ORDER BY id DESC
        LIMIT ? OFFSET ?`,
-      [token, parsed.sessionName, parsed.windowIndex, parsed.paneIndex, limitNum, offsetNum]
+      [token, parsed.sessionName, limitNum, offsetNum]
     );
 
     const [[{ total }]] = await pool.query(
       `SELECT COUNT(*) as total
        FROM tmux_task_segment
-       WHERE token = ? AND session_name = ? AND window_index = ? AND pane_index = ? AND is_deleted = 0`,
-      [token, parsed.sessionName, parsed.windowIndex, parsed.paneIndex]
+       WHERE token = ? AND session_name = ? AND is_deleted = 0`,
+      [token, parsed.sessionName]
     );
 
     res.json({ tasks, total });

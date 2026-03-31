@@ -1,0 +1,442 @@
+- generic [ref=e1]:
+  - generic [ref=e14]:
+    - complementary [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - button "Explorer (Sessions)" [ref=e18] [cursor=pointer]:
+            - img [ref=e19]
+          - button "御書房 (Butler)" [ref=e22] [cursor=pointer]:
+            - img [ref=e24]
+          - button "文件管理器 (yazi)" [ref=e27] [cursor=pointer]:
+            - img [ref=e29]
+        - generic [ref=e33]:
+          - button "Manage groups" [ref=e34] [cursor=pointer]:
+            - img [ref=e35]
+          - button "Sign out" [ref=e38] [cursor=pointer]:
+            - img [ref=e39]
+      - generic [ref=e42]:
+        - generic [ref=e45] [cursor=pointer]:
+          - generic [ref=e46]: Select Profile
+          - img [ref=e48]
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - img [ref=e53]
+            - generic [ref=e55]: 进行中
+            - generic [ref=e56]: "0"
+          - generic [ref=e57]:
+            - img [ref=e58]
+            - generic [ref=e61]: 已完成
+            - generic [ref=e62]: "0"
+          - button "Refresh" [ref=e63] [cursor=pointer]:
+            - img [ref=e64]
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - generic [ref=e72]: Sessions
+            - button "Refresh" [ref=e73] [cursor=pointer]:
+              - img [ref=e74]
+            - button "New session / window" [ref=e80] [cursor=pointer]:
+              - img [ref=e81]
+          - generic [ref=e82]:
+            - generic [ref=e83]:
+              - generic [ref=e84]:
+                - button "Drag to reorder" [ref=e85]:
+                  - generic "Drag to reorder" [ref=e86]:
+                    - img [ref=e87]
+                - button [ref=e94] [cursor=pointer]:
+                  - img [ref=e95]
+                - img [ref=e97]
+                - generic [ref=e99]: "4090"
+                - button "Rebuild session" [ref=e100] [cursor=pointer]:
+                  - img [ref=e101]
+              - generic [ref=e104]:
+                - generic [ref=e105]:
+                  - generic [ref=e106]: "1: opencode"
+                  - button "Rename window" [ref=e107] [cursor=pointer]:
+                    - img [ref=e108]
+                - generic [ref=e111] [cursor=pointer]:
+                  - generic [ref=e112]: "%1"
+                  - generic "View task history" [ref=e113]:
+                    - img [ref=e115]
+                  - generic [ref=e117]: opencode
+                  - button "View details" [ref=e118]:
+                    - img [ref=e119]
+            - generic [ref=e124]:
+              - button "Drag to reorder" [ref=e125]:
+                - generic "Drag to reorder" [ref=e126]:
+                  - img [ref=e127]
+              - button [ref=e134] [cursor=pointer]:
+                - img [ref=e135]
+              - img [ref=e137]
+              - generic [ref=e139]: butler-backend
+              - button "Rebuild session" [ref=e140] [cursor=pointer]:
+                - img [ref=e141]
+            - generic [ref=e145]:
+              - button "Drag to reorder" [ref=e146]:
+                - generic "Drag to reorder" [ref=e147]:
+                  - img [ref=e148]
+              - button [ref=e155] [cursor=pointer]:
+                - img [ref=e156]
+              - img [ref=e158]
+              - generic [ref=e160]: butler-monitor
+              - button "Rebuild session" [ref=e161] [cursor=pointer]:
+                - img [ref=e162]
+            - generic [ref=e166]:
+              - button "Drag to reorder" [ref=e167]:
+                - generic "Drag to reorder" [ref=e168]:
+                  - img [ref=e169]
+              - button [ref=e176] [cursor=pointer]:
+                - img [ref=e177]
+              - img [ref=e179]
+              - generic [ref=e181]: code-intel
+              - button "Rebuild session" [ref=e182] [cursor=pointer]:
+                - img [ref=e183]
+            - generic [ref=e187]:
+              - button "Drag to reorder" [ref=e188]:
+                - generic "Drag to reorder" [ref=e189]:
+                  - img [ref=e190]
+              - button [ref=e197] [cursor=pointer]:
+                - img [ref=e198]
+              - img [ref=e200]
+              - generic [ref=e202]: ex-backend
+              - button "Rebuild session" [ref=e203] [cursor=pointer]:
+                - img [ref=e204]
+            - generic [ref=e208]:
+              - button "Drag to reorder" [ref=e209]:
+                - generic "Drag to reorder" [ref=e210]:
+                  - img [ref=e211]
+              - button [ref=e218] [cursor=pointer]:
+                - img [ref=e219]
+              - img [ref=e221]
+              - generic [ref=e223]: fast-edit
+              - button "Rebuild session" [ref=e224] [cursor=pointer]:
+                - img [ref=e225]
+            - generic [ref=e229]:
+              - button "Drag to reorder" [ref=e230]:
+                - generic "Drag to reorder" [ref=e231]:
+                  - img [ref=e232]
+              - button [ref=e239] [cursor=pointer]:
+                - img [ref=e240]
+              - img [ref=e242]
+              - generic [ref=e244]: firewall
+              - button "Rebuild session" [ref=e245] [cursor=pointer]:
+                - img [ref=e246]
+            - generic [ref=e250]:
+              - button "Drag to reorder" [ref=e251]:
+                - generic "Drag to reorder" [ref=e252]:
+                  - img [ref=e253]
+              - button [ref=e260] [cursor=pointer]:
+                - img [ref=e261]
+              - img [ref=e263]
+              - generic [ref=e265]: graph-svc
+              - button "Rebuild session" [ref=e266] [cursor=pointer]:
+                - img [ref=e267]
+            - generic [ref=e271]:
+              - button "Drag to reorder" [ref=e272]:
+                - generic "Drag to reorder" [ref=e273]:
+                  - img [ref=e274]
+              - button [ref=e281] [cursor=pointer]:
+                - img [ref=e282]
+              - img [ref=e284]
+              - generic [ref=e286]: i m
+              - button "Rebuild session" [ref=e287] [cursor=pointer]:
+                - img [ref=e288]
+            - generic [ref=e292]:
+              - button "Drag to reorder" [ref=e293]:
+                - generic "Drag to reorder" [ref=e294]:
+                  - img [ref=e295]
+              - button [ref=e302] [cursor=pointer]:
+                - img [ref=e303]
+              - img [ref=e305]
+              - generic [ref=e307]: im-bot-server
+              - button "Rebuild session" [ref=e308] [cursor=pointer]:
+                - img [ref=e309]
+            - generic [ref=e313]:
+              - button "Drag to reorder" [ref=e314]:
+                - generic "Drag to reorder" [ref=e315]:
+                  - img [ref=e316]
+              - button [ref=e323] [cursor=pointer]:
+                - img [ref=e324]
+              - img [ref=e326]
+              - generic [ref=e328]: live2d
+              - button "Rebuild session" [ref=e329] [cursor=pointer]:
+                - img [ref=e330]
+            - generic [ref=e334]:
+              - button "Drag to reorder" [ref=e335]:
+                - generic "Drag to reorder" [ref=e336]:
+                  - img [ref=e337]
+              - button [ref=e344] [cursor=pointer]:
+                - img [ref=e345]
+              - img [ref=e347]
+              - generic [ref=e349]: llm-router
+              - button "Rebuild session" [ref=e350] [cursor=pointer]:
+                - img [ref=e351]
+            - generic [ref=e355]:
+              - button "Drag to reorder" [ref=e356]:
+                - generic "Drag to reorder" [ref=e357]:
+                  - img [ref=e358]
+              - button [ref=e365] [cursor=pointer]:
+                - img [ref=e366]
+              - img [ref=e368]
+              - generic [ref=e370]: main
+              - button "Rebuild session" [ref=e371] [cursor=pointer]:
+                - img [ref=e372]
+            - generic [ref=e376]:
+              - button "Drag to reorder" [ref=e377]:
+                - generic "Drag to reorder" [ref=e378]:
+                  - img [ref=e379]
+              - button [ref=e386] [cursor=pointer]:
+                - img [ref=e387]
+              - img [ref=e389]
+              - generic [ref=e391]: monitor-dev
+              - button "Rebuild session" [ref=e392] [cursor=pointer]:
+                - img [ref=e393]
+            - generic [ref=e397]:
+              - button "Drag to reorder" [ref=e398]:
+                - generic "Drag to reorder" [ref=e399]:
+                  - img [ref=e400]
+              - button [ref=e407] [cursor=pointer]:
+                - img [ref=e408]
+              - img [ref=e410]
+              - generic [ref=e412]: oc-monitor
+              - button "Rebuild session" [ref=e413] [cursor=pointer]:
+                - img [ref=e414]
+            - generic [ref=e418]:
+              - button "Drag to reorder" [ref=e419]:
+                - generic "Drag to reorder" [ref=e420]:
+                  - img [ref=e421]
+              - button [ref=e428] [cursor=pointer]:
+                - img [ref=e429]
+              - img [ref=e431]
+              - generic [ref=e433]: opencode-iterm
+              - button "Rebuild session" [ref=e434] [cursor=pointer]:
+                - img [ref=e435]
+            - generic [ref=e438]:
+              - generic [ref=e439]:
+                - button "Drag to reorder" [ref=e440]:
+                  - generic "Drag to reorder" [ref=e441]:
+                    - img [ref=e442]
+                - button [ref=e449] [cursor=pointer]:
+                  - img [ref=e450]
+                - img [ref=e452]
+                - generic [ref=e454]: opencode-iterm-dev
+                - button "Rebuild session" [ref=e455] [cursor=pointer]:
+                  - img [ref=e456]
+              - generic [ref=e459]:
+                - generic [ref=e460]:
+                  - generic [ref=e461]: "1: opencode"
+                  - button "Rename window" [ref=e462] [cursor=pointer]:
+                    - img [ref=e463]
+                - generic [ref=e466] [cursor=pointer]:
+                  - generic [ref=e467]: "%21"
+                  - generic "View task history" [ref=e468]:
+                    - img [ref=e470]
+                  - generic [ref=e472]: opencode
+                  - button "View details" [ref=e473]:
+                    - img [ref=e474]
+            - generic [ref=e479]:
+              - button "Drag to reorder" [ref=e480]:
+                - generic "Drag to reorder" [ref=e481]:
+                  - img [ref=e482]
+              - button [ref=e489] [cursor=pointer]:
+                - img [ref=e490]
+              - img [ref=e492]
+              - generic [ref=e494]: peak-seeker-menu
+              - button "Rebuild session" [ref=e495] [cursor=pointer]:
+                - img [ref=e496]
+            - generic [ref=e500]:
+              - button "Drag to reorder" [ref=e501]:
+                - generic "Drag to reorder" [ref=e502]:
+                  - img [ref=e503]
+              - button [ref=e510] [cursor=pointer]:
+                - img [ref=e511]
+              - img [ref=e513]
+              - generic [ref=e515]: peak-seeker-pro
+              - button "Rebuild session" [ref=e516] [cursor=pointer]:
+                - img [ref=e517]
+            - generic [ref=e521]:
+              - button "Drag to reorder" [ref=e522]:
+                - generic "Drag to reorder" [ref=e523]:
+                  - img [ref=e524]
+              - button [ref=e531] [cursor=pointer]:
+                - img [ref=e532]
+              - img [ref=e534]
+              - generic [ref=e536]: php-svc
+              - button "Rebuild session" [ref=e537] [cursor=pointer]:
+                - img [ref=e538]
+            - generic [ref=e542]:
+              - button "Drag to reorder" [ref=e543]:
+                - generic "Drag to reorder" [ref=e544]:
+                  - img [ref=e545]
+              - button [ref=e552] [cursor=pointer]:
+                - img [ref=e553]
+              - img [ref=e555]
+              - generic [ref=e557]: prompt-pocket
+              - button "Rebuild session" [ref=e558] [cursor=pointer]:
+                - img [ref=e559]
+            - generic [ref=e563]:
+              - button "Drag to reorder" [ref=e564]:
+                - generic "Drag to reorder" [ref=e565]:
+                  - img [ref=e566]
+              - button [ref=e573] [cursor=pointer]:
+                - img [ref=e574]
+              - img [ref=e576]
+              - generic [ref=e578]: server-logs
+              - button "Rebuild session" [ref=e579] [cursor=pointer]:
+                - img [ref=e580]
+            - generic [ref=e584]:
+              - button "Drag to reorder" [ref=e585]:
+                - generic "Drag to reorder" [ref=e586]:
+                  - img [ref=e587]
+              - button [ref=e594] [cursor=pointer]:
+                - img [ref=e595]
+              - img [ref=e597]
+              - generic [ref=e599]: ssh-4090
+              - button "Rebuild session" [ref=e600] [cursor=pointer]:
+                - img [ref=e601]
+            - generic [ref=e605]:
+              - button "Drag to reorder" [ref=e606]:
+                - generic "Drag to reorder" [ref=e607]:
+                  - img [ref=e608]
+              - button [ref=e615] [cursor=pointer]:
+                - img [ref=e616]
+              - img [ref=e618]
+              - generic [ref=e620]: task-opencode-frontend
+              - button "Rebuild session" [ref=e621] [cursor=pointer]:
+                - img [ref=e622]
+            - generic [ref=e626]:
+              - button "Drag to reorder" [ref=e627]:
+                - generic "Drag to reorder" [ref=e628]:
+                  - img [ref=e629]
+              - button [ref=e636] [cursor=pointer]:
+                - img [ref=e637]
+              - img [ref=e639]
+              - generic [ref=e641]: vrm-desktop-pet
+              - button "Rebuild session" [ref=e642] [cursor=pointer]:
+                - img [ref=e643]
+            - generic [ref=e647]:
+              - button "Drag to reorder" [ref=e648]:
+                - generic "Drag to reorder" [ref=e649]:
+                  - img [ref=e650]
+              - button [ref=e657] [cursor=pointer]:
+                - img [ref=e658]
+              - img [ref=e660]
+              - generic [ref=e662]: vrm-pet-dev
+              - button "Rebuild session" [ref=e663] [cursor=pointer]:
+                - img [ref=e664]
+          - status [ref=e667]
+    - main [ref=e668]:
+      - generic [ref=e669]:
+        - generic [ref=e670]:
+          - generic [ref=e671] [cursor=pointer]:
+            - generic [ref=e672]: 4090:1
+            - button [ref=e673]:
+              - img [ref=e674]
+          - generic [ref=e677] [cursor=pointer]:
+            - generic [ref=e678]: opencode-iterm-dev:1
+            - button [ref=e679]:
+              - img [ref=e680]
+          - button "全屏模式" [ref=e684] [cursor=pointer]:
+            - img [ref=e685]
+        - generic [ref=e692]:
+          - generic [ref=e696]:
+            - textbox "Terminal input" [active] [ref=e697]
+            - generic [ref=e698]:
+              - generic [ref=e709]: ┃
+              - generic [ref=e728]: "⚙ skill_mcp [arguments={\"url\": \"https://172.29.15"
+              - generic [ref=e730]: ".223:8216/\"}, mcp_name=playwright,"
+              - generic [ref=e737]: tool_name=brow
+              - generic [ref=e739]: ser_navigate]
+              - generic [ref=e755]: Page loaded. Le
+              - generic [ref=e757]: "t me take a screenshot to see the actual layout:"
+              - generic [ref=e773]: ⚙ skill_mcp [arg
+              - generic [ref=e775]: "uments={\"filename\": \"tmuxweb-desktop.png\", \"type\": \"png\"}, mcp_name=pla"
+              - generic [ref=e777]: ywright,
+              - generic [ref=e784]: tool_name=browser_take_screenshot]
+              - generic [ref=e802]: "Login page. Let me log in first:"
+              - generic [ref=e815]: █
+              - generic [ref=e817]:
+                - generic [ref=e820]: ▣
+                - generic [ref=e822]: Sisyphus (Ultraworker)
+                - generic [ref=e823]: · zhipuai-2/glm-5-turbo
+              - generic [ref=e827]: █
+              - generic [ref=e834]: ┃
+              - generic [ref=e844]: ┃
+              - generic [ref=e852]: ┃
+              - generic [ref=e859]:
+                - generic [ref=e862]: ┃
+                - generic [ref=e864]: Sisyphus (Ultraworker)
+                - generic [ref=e866]: GLM-5 Turbo (
+                - generic [ref=e867]: 智谱
+                - generic [ref=e868]: "-2)"
+                - generic [ref=e870]: LLM Router
+              - generic [ref=e875]:
+                - generic [ref=e878]: ╹
+                - generic [ref=e879]: ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+              - generic [ref=e881]: ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+              - generic [ref=e883]: ▀▀▀▀▀▀▀▀▀
+              - generic [ref=e885]:
+                - generic [ref=e888]: ■
+                - generic [ref=e889]: ■
+                - generic [ref=e890]: ■
+                - generic [ref=e891]: ⬝⬝⬝⬝⬝
+                - generic [ref=e893]: esc
+                - generic [ref=e894]: interrupt
+              - generic [ref=e896]:
+                - generic [ref=e898]: 61.6K
+                - generic [ref=e900]: ctrl+p
+                - generic [ref=e901]: commands
+          - generic [ref=e909]:
+            - button "撑满" [ref=e910] [cursor=pointer]:
+              - img [ref=e911]
+              - generic [ref=e916]: 撑满
+            - button "语音输入" [ref=e918] [cursor=pointer]:
+              - img [ref=e919]
+    - complementary [ref=e922]:
+      - generic [ref=e923]:
+        - generic [ref=e924]:
+          - button "AI" [ref=e925] [cursor=pointer]:
+            - img [ref=e926]
+            - generic [ref=e929]: AI
+          - button "片段" [ref=e930] [cursor=pointer]:
+            - img [ref=e931]
+            - generic [ref=e936]: 片段
+          - button "上传" [ref=e937] [cursor=pointer]:
+            - img [ref=e938]
+            - generic [ref=e941]: 上传
+          - button "配置" [ref=e942] [cursor=pointer]:
+            - img [ref=e943]
+            - generic [ref=e946]: 配置
+          - button "语音输入" [ref=e949] [cursor=pointer]:
+            - img [ref=e950]
+        - generic [ref=e953]:
+          - button "📜" [ref=e954] [cursor=pointer]
+          - button "^C" [ref=e955] [cursor=pointer]
+          - button "clr" [ref=e956] [cursor=pointer]
+          - button "esc" [ref=e957] [cursor=pointer]
+          - button "tab" [ref=e958] [cursor=pointer]
+          - generic [ref=e959]: Ctrl+A
+        - generic [ref=e961]:
+          - generic [ref=e963]: 🖥️ 命令行大神
+          - textbox "描述你想执行的操作..." [ref=e965]
+          - generic [ref=e966]:
+            - button "AI 生成" [disabled] [ref=e967] [cursor=pointer]:
+              - img [ref=e968]
+              - text: AI 生成
+            - button "清空" [disabled] [ref=e971] [cursor=pointer]:
+              - img [ref=e972]
+            - button "发送终端" [disabled] [ref=e975] [cursor=pointer]:
+              - img [ref=e976]
+              - text: 发送终端
+        - generic [ref=e978]:
+          - generic [ref=e979]:
+            - generic [ref=e980]:
+              - img [ref=e981]
+              - generic [ref=e985]: opencode-iterm-dev:1
+            - button "Refresh" [ref=e987] [cursor=pointer]:
+              - img [ref=e988]
+          - generic [ref=e993]:
+            - img [ref=e994]
+            - generic [ref=e996]: opencode-iterm-dev:1
+          - generic [ref=e998]: 该 pane 暂无任务历史
+  - generic [ref=e999]: ��������������������������������▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+  - generic [ref=e1000]: ++++++++++++++++++++++++++++++++

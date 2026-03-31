@@ -16,20 +16,20 @@ OpenCode 插件在每次对话开始时发送 `task_started` 事件，将 `ai_co
 
 ```bash
 # 查看僵尸任务数量
-mysql -u root -proot tmuxweb -e "
+mysql -u root -p tmuxweb -e "
   SELECT conv_status, COUNT(*) as cnt 
   FROM ai_conversation 
   GROUP BY conv_status"
 
 # 按 pane 分组查看僵尸任务
-mysql -u root -proot tmuxweb -e "
+mysql -u root -p tmuxweb -e "
   SELECT pane_key, COUNT(*) as cnt 
   FROM ai_conversation 
   WHERE conv_status = 'in_progress' 
   GROUP BY pane_key"
 
 # 查看 session_meta 中的非 idle 状态
-mysql -u root -proot tmuxweb -e "
+mysql -u root -p tmuxweb -e "
   SELECT session_name, extra 
   FROM tmux_session_meta 
   WHERE extra LIKE '%in_progress%' 
@@ -41,13 +41,13 @@ mysql -u root -proot tmuxweb -e "
 
 ```bash
 # 1. 将所有僵尸 in_progress 标记为 aborted
-mysql -u root -proot tmuxweb -e "
+mysql -u root -p tmuxweb -e "
   UPDATE ai_conversation 
   SET conv_status = 'aborted', mtime = UNIX_TIMESTAMP() 
   WHERE conv_status = 'in_progress'"
 
 # 2. 重置 session_meta 中的 pane 状态（清空 panes 对象）
-mysql -u root -proot tmuxweb -e "
+mysql -u root -p tmuxweb -e "
   UPDATE tmux_session_meta 
   SET extra = JSON_SET(extra, '\$.panes', JSON_OBJECT()), 
       mtime = UNIX_TIMESTAMP() 
@@ -136,20 +136,18 @@ pm2 status
 
 ## Git 多仓库推送
 
-### 配置
-
-`origin` 同时推送到 GitHub 和 GitLab：
+如需同时推送到多个远程仓库，可为 `origin` 添加多个 push URL：
 
 ```bash
 # 查看当前 remote
 git remote -v
 
-# 添加 GitLab 为第二个 push URL
-git remote set-url --add --push origin git@github.com:includewudi/opencode-iterm.git
-git remote set-url --add --push origin ssh://git@code.zmatrix.cn:20022/xiaojy/opencode-iterm.git
+# 添加第二个 push URL
+git remote set-url --add --push origin git@github.com:<user>/<repo>.git
+git remote set-url --add --push origin git@your-gitlab.com:<user>/<repo>.git
 ```
 
-配置后 `git push` 会同时推送到两个仓库。push URL 是本地配置，GitLab 用户看不到 GitHub 地址。
+配置后 `git push` 会同时推送到所有仓库。
 
 ---
 
@@ -159,7 +157,7 @@ git remote set-url --add --push origin ssh://git@code.zmatrix.cn:20022/xiaojy/op
 
 - Host: 127.0.0.1
 - User: root
-- Password: root
+- Password: `<your_password>`
 - Database: tmuxweb
 
 ### 关键表

@@ -1,14 +1,16 @@
 import { useState, useCallback, useRef, RefObject } from 'react'
-import { Bot, FileCode2, Settings } from 'lucide-react'
+import { Bot, FileCode2, Settings, Upload } from 'lucide-react'
 import { VoiceInput, VoiceInputHandle } from '../shared/components/VoiceInput'
 import { AiCommandTab } from '../shared/components/AiCommandTab'
 import { SnippetsTab } from '../shared/components/SnippetsTab'
 import { ConfigViewer } from '../shared/components/ConfigViewer'
+import { FileUpload } from '../shared/components/FileUpload'
 import { TaskHistoryPanel } from '../shared/components/TaskHistoryPanel'
 import { useTmuxPrefix } from '../hooks/useTmuxPrefix'
+import '../shared/components/file-upload.css'
 import './DesktopToolbox.css'
 
-type TabId = 'ai' | 'snippets' | 'config'
+type TabId = 'ai' | 'snippets' | 'upload' | 'config'
 
 interface DesktopToolboxProps {
   onSend: (text: string) => void
@@ -51,6 +53,7 @@ export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey,
   const tabs: { id: TabId; icon: typeof Bot; label: string }[] = [
     { id: 'ai', icon: Bot, label: 'AI' },
     { id: 'snippets', icon: FileCode2, label: '片段' },
+    { id: 'upload', icon: Upload, label: '上传' },
     { id: 'config', icon: Settings, label: '配置' },
   ]
 
@@ -106,6 +109,10 @@ export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey,
             onSend={onSend}
             disabled={disabled}
           />
+        )}
+
+        {activeTab === 'upload' && (
+          <FileUpload compact onSend={onSend} />
         )}
 
         {activeTab === 'config' && (

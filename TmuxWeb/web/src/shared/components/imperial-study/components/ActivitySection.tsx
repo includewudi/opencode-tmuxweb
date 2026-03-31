@@ -14,9 +14,10 @@ function getEventColor(type: string) {
 
 interface ActivitySectionProps {
     events: ActivityEvent[];
+    onActivityClick?: (event: ActivityEvent) => void;
 }
 
-export function ActivitySection({ events }: ActivitySectionProps) {
+export function ActivitySection({ events, onActivityClick }: ActivitySectionProps) {
     const [open, setOpen] = useState(false); // Collapsed by default
 
     return (
@@ -41,7 +42,12 @@ export function ActivitySection({ events }: ActivitySectionProps) {
                             const timeStr = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 
                             return (
-                                <div key={ev.id} className="is-activity-row">
+                                <div
+                                    key={ev.id}
+                                    className={`is-activity-row ${onActivityClick ? 'is-clickable' : ''}`}
+                                    onClick={() => onActivityClick?.(ev)}
+                                    data-clickable={onActivityClick ? true : undefined}
+                                >
                                     <span className="is-activity-row__time">{timeStr}</span>
                                     <span className="is-activity-row__worker">{ev.worker_id}</span>
                                     <span
@@ -51,6 +57,11 @@ export function ActivitySection({ events }: ActivitySectionProps) {
                                     <span className="is-activity-row__summary" title={ev.summary}>
                                         {ev.summary}
                                     </span>
+                                    {ev.detail && (
+                                        <span className="is-activity-detail">
+                                            {ev.detail}
+                                        </span>
+                                    )}
                                 </div>
                             );
                         })}

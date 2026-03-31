@@ -1,5 +1,5 @@
 /**
- * OpenCode plugin template: FAST-EDIT rules + TmuxWeb task tracking.
+ * OpenCode plugin template: TmuxWeb task tracking + custom rules.
  *
  * ⚠️  THIS IS A TEMPLATE FILE (committed to git).
  *     my-rules.js is .gitignored — it's your local copy to customise freely.
@@ -26,7 +26,6 @@ const BASE_URL = `https://localhost:${PORT}`;
 const MY_RULES = `<MY_RULES>
 PHASE-0 GATE: Before selecting ANY tool, check these rules FIRST.
 If the task involves file operations (edit/create/write/save), jump to [FAST-EDIT] below.
-If the task involves memory/recall, jump to [MEMORY] below.
 
 [FAST-EDIT]
 When you need to edit, create, write, or save files — including saving user-pasted content — you MUST:
@@ -37,34 +36,14 @@ When you need to edit, create, write, or save files — including saving user-pa
 Fast-edit is 100x faster than built-in tools. NEVER use Edit/Write when fast-edit can do the job.
 Trigger: any intent to create, modify, save, or write a file.
 
-[MEMORY]
-When the user mentions remembering something, recalling past context, personal preferences,
-or when the task clearly benefits from knowing user history/preferences/prior decisions,
-load the memory skill first: skill("simplemem-pro"), then query as needed.
-Trigger phrases: "记住", "还记得吗", "之前说过", "我的偏好", "remember", "recall", "what do you know about me".
-Do NOT query memory on every conversation — only when relevant.
-When you help the user debug/fix an error and the user CONFIRMS it is resolved,
-ask: "要记住这个解决方案吗？" If user agrees, use simplemem-pro to store the problem + solution.
-Do NOT store automatically — always wait for user confirmation that the fix actually works.
-
-[BUTLER]
-When the user wants to orchestrate tasks, research GitHub projects, generate WeChat articles,
-publish drafts, dispatch dev tasks, manage task queues, discover skills, or check task progress,
-load the butler skill first: skill("butler"), then use Butler API.
-Trigger phrases: "butler", "管家", "研究项目", "写文章", "发布草稿", "publish", "wechat", "公众号",
-"schedule task", "run task", "find skill", "安排任务", "执行任务", "任务进度", "查找技能".
-Always use /api/orchestrate as the primary entry point.
-
-[LEARN]
-When the user confirms a debug fix works AND agrees to save it as a skill,
-or explicitly asks to "save as skill" / "turn this into a skill" / "记住这个解决方案":
-1. Load the extractor skill first: skill("openception")
-2. Follow the extraction pipeline in the openception skill to evaluate, deduplicate, and write.
-3. Also load skill("simplemem-pro") and dual-write a synopsis to long-term memory.
-Trigger phrases: "save as skill", "turn this into a skill", "extract a skill",
-"记住这个解决方案", "保存为技能", "学到了什么", "what did we learn", "/learn".
-Do NOT auto-extract — only when user explicitly requests or confirms.
-Max 50 learned skills in ~/.config/opencode/skills/learned/.
+// ── Add your own rules below ──────────────────────────────────────────────
+// Example: memory, butler, custom skills, etc.
+//
+// [MY-CUSTOM-RULE]
+// When the user asks to do X, load skill("your-skill") first, then ...
+// Trigger phrases: "keyword1", "keyword2".
+//
+// ──────────────────────────────────────────────────────────────────────────
 </MY_RULES>`;
 
 export const MyPlugin = async ({ client, directory }) => {

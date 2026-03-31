@@ -328,6 +328,34 @@
   background: var(--zinc-800);
 }
 
+
+.rebuild-btn {
+  background: none;
+  border: none;
+  color: var(--zinc-600);
+  padding: 2px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.session-row:hover .rebuild-btn {
+  opacity: 1;
+}
+
+.rebuild-btn:hover {
+  color: var(--orange-400, #fb923c);
+}
+
+.rebuild-btn:disabled {
+  cursor: default;
+  opacity: 1;
+  color: var(--blue-400);
+}
 .expand-btn {
   background: none;
   border: none;

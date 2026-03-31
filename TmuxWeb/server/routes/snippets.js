@@ -4,14 +4,14 @@ const path = require('path');
 
 const router = express.Router();
 
-const snippetsPath = path.join(__dirname, '..', 'snippets.json');
+const snippetsDefault = path.join(__dirname, '..', 'snippets.json');
+const snippetsPrivate = path.join(__dirname, '..', 'snippets_private.json');
 
 function loadSnippets() {
   try {
-    if (fs.existsSync(snippetsPath)) {
-      const data = fs.readFileSync(snippetsPath, 'utf8');
-      return JSON.parse(data);
-    }
+    const filePath = fs.existsSync(snippetsPrivate) ? snippetsPrivate : snippetsDefault;
+    const data = fs.readFileSync(filePath, 'utf8');
+    return JSON.parse(data);
   } catch (err) {
     console.error('[Snippets] Failed to load snippets:', err.message);
   }
@@ -20,7 +20,7 @@ function loadSnippets() {
 
 function saveSnippets(snippets) {
   try {
-    fs.writeFileSync(snippetsPath, JSON.stringify(snippets, null, 2), 'utf8');
+    fs.writeFileSync(snippetsPrivate, JSON.stringify(snippets, null, 2), 'utf8');
   } catch (err) {
     console.error('[Snippets] Failed to save snippets:', err.message);
   }

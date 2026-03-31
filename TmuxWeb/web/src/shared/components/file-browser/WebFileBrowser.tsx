@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Folder, File, ChevronUp, ChevronRight, Plus, Loader2, Pencil, Trash2, Terminal } from 'lucide-react'
+import { Folder, File, ChevronUp, ChevronRight, Plus, Loader2, Pencil, Trash2, Terminal, GitCompare, Clock, FileStack, Sparkles, X } from 'lucide-react'
 import { getToken } from '../../../utils/auth'
 import { FileEntry, ContextMenuState, formatSize, sortByFoldersFirst, joinPath } from './web-file-browser-helpers'
 import { FilePreview } from './FilePreview'
@@ -27,6 +27,12 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
   const inputRef = useRef<HTMLInputElement>(null)
   const treePanelRef = useRef<HTMLDivElement>(null)
   const [splitPos, setSplitPos] = useState(250)
+  const [aiSummary, setAiSummary] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [diffContent, setDiffContent] = useState('')
+  const [diffStats, setDiffStats] = useState<{ additions: number; deletions: number } | undefined>()
+  const [fileGitStatus, setFileGitStatus] = useState<string | undefined>()
+  const [forceMode, setForceMode] = useState<'diff' | 'history' | null>(null)
 
   const fetchDir = useCallback(async (dirPath: string) => {
     if (childrenCache.has(dirPath)) return childrenCache.get(dirPath)!
@@ -75,6 +81,19 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
 
   const previewFile = async (fp: string, entry: FileEntry) => {
     setSelectedFile(entry); setSelectedFilePath(fp); setFilePath(fp); setPreviewLoading(true)
+    setDiffContent(''); setDiffStats(undefined); setFileGitStatus(undefined)
+    if (entry.git && entry.git !== 'untracked') {
+      try {
+        const token = getToken()
+        const res = await fetch(`/api/files/diff?path=${encodeURIComponent(fp)}&token=${token}`)
+        if (res.ok) {
+          const data = await res.json()
+          setDiffContent(data.diff || '')
+          setDiffStats(data.stats ? { additions: data.stats.additions || 0, deletions: data.stats.deletions || 0 } : undefined)
+          setFileGitStatus(entry.git)
+        }
+      } catch {}
+    }
     try {
       const res = await fetch(`/api/files/content?path=${encodeURIComponent(fp)}&token=${getToken()}`)
       if (res.ok) {
@@ -160,6 +179,20 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
     document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp)
   }, [])
 
+  const handleRestore = async (sha: string) => {
+    if (!filePath) return
+    setPreviewLoading(true)
+    try {
+      const ref = sha === 'HEAD' ? 'HEAD' : sha
+      const res = await fetch(`/api/files/original?path=${encodeURIComponent(filePath)}&ref=${encodeURIComponent(ref)}&token=${getToken()}`)
+      if (res.ok) {
+        const data = await res.json()
+        setFileContent(data.content || '(failed to load)')
+      }
+    } catch { setFileContent('(failed to load)') }
+    setPreviewLoading(false)
+  }
+
   const renderTree = (dirPath: string, level: number): React.ReactNode[] => {
     const items = childrenCache.get(dirPath)
     const nodes: React.ReactNode[] = []
@@ -186,7 +219,7 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
             <ChevronRight size={14} className="wfb-tree-item__chevron" />
             <Folder size={14} className="wfb-icon-folder" />
             <span className="wfb-tree-item__name">{entry.name}</span>
-            {entry.git && <span className={`wfb-git-badge wfb-git-badge--${entry.git}`}>{entry.git === 'modified' ? 'M' : entry.git === 'staged' ? 'S' : '?'}</span>}
+            {entry.git && <span className={`wfb-git-badge wfb-git-badge--${entry.git}`}>{entry.git === 'modified' ? 'M' : entry.git === 'staged' ? 'S' : entry.git === 'conflicted' ? '!' : '?'}</span>}
           </div>
         )
         if (isExpanded) nodes.push(...renderTree(fp, level + 1))
@@ -200,7 +233,7 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
             <File size={14} className="wfb-icon-file" />
             <span className="wfb-tree-item__name">{entry.name}</span>
             <span className="wfb-tree-item__meta">{formatSize(entry.size)}</span>
-            {entry.git && <span className={`wfb-git-badge wfb-git-badge--${entry.git}`}>{entry.git === 'modified' ? 'M' : entry.git === 'staged' ? 'S' : '?'}</span>}
+            {entry.git && <span className={`wfb-git-badge wfb-git-badge--${entry.git}`}>{entry.git === 'modified' ? 'M' : entry.git === 'staged' ? 'S' : entry.git === 'conflicted' ? '!' : '?'}</span>}
             {editingEntry?.entry.name === entry.name && editingEntry?.dirPath === dirPath && (
               <input ref={inputRef} className="wfb-inline-input wfb-inline-input--rename"
                 value={editingEntry.newName} autoFocus onClick={e => e.stopPropagation()}
@@ -229,6 +262,20 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
             <span className="wfb-tree-header__dir" title={dir}>{displayPath}</span>
           </div>
           <div className="wfb-tree-header__actions">
+            <button className="wfb-icon-btn" onClick={async () => {
+              setAiLoading(true); setAiSummary(null)
+              try {
+                const token = getToken()
+                const res = await fetch(`/api/files/changes-summary?dir=${encodeURIComponent(dir)}&token=${token}`)
+                const data = await res.json()
+                setAiSummary(data.summary || data.error || 'No summary')
+              } catch { setAiSummary('Failed to analyze') }
+              setAiLoading(false)
+            }} title="AI summary">{aiLoading ? <Loader2 size={14} className="wfb-spin" /> : <Sparkles size={14} />}</button>
+            <button className="wfb-icon-btn" onClick={() => {
+              const token = getToken()
+              window.open(`/api/files/diff-report?dir=${encodeURIComponent(dir)}&token=${token}`, '_blank')
+            }} title="Changes report"><FileStack size={14} /></button>
             <button className="wfb-icon-btn" onClick={() => { setCreatingNew('file'); setNewName('') }} title="New file"><Plus size={14} /></button>
             <button className="wfb-icon-btn" onClick={() => { setCreatingNew('folder'); setNewName('') }} title="New folder"><Folder size={14} /></button>
           </div>
@@ -258,11 +305,27 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
 
       <FilePreview selectedFile={selectedFile} filePath={filePath} fileContent={fileContent}
         previewLoading={previewLoading} saving={saving} onEdit={saveFile} onSave={() => {}} onCancelEdit={() => {}}
-        onSendPath={onSendPath}
+        onSendPath={onSendPath} onRestore={handleRestore}
+        diffContent={diffContent} diffStats={diffStats}
+        hasGitChanges={!!selectedFile?.git && selectedFile.git !== 'untracked'} fileGitStatus={fileGitStatus}
+        forceMode={forceMode} onForceModeConsumed={() => setForceMode(null)}
       />
 
       {contextMenu && (
         <div className="wfb-ctx-menu" style={{ left: contextMenu.x, top: contextMenu.y }}>
+          {contextMenu.entry.git && (
+            <div className="wfb-ctx-menu__item" onClick={() => { previewFile(joinPath(contextMenu.dirPath, contextMenu.entry.name), contextMenu.entry); setContextMenu(null) }}>
+              <GitCompare size={13} /><span>Show Diff</span>
+            </div>
+          )}
+          <div className="wfb-ctx-menu__item" onClick={() => { previewFile(joinPath(contextMenu.dirPath, contextMenu.entry.name), contextMenu.entry); setForceMode('history'); setContextMenu(null) }}>
+            <Clock size={13} /><span>Show History</span>
+          </div>
+          {contextMenu.entry.type === 'file' && contextMenu.entry.git && (
+            <div className="wfb-ctx-menu__item" onClick={() => { handleRestore('HEAD'); setContextMenu(null) }}>
+              <Terminal size={13} /><span>Show Original</span>
+            </div>
+          )}
           <div className="wfb-ctx-menu__item" onClick={() => { setEditingEntry({ entry: contextMenu.entry, dirPath: contextMenu.dirPath, newName: contextMenu.entry.name }); setContextMenu(null) }}>
             <Pencil size={13} /><span>Rename</span>
           </div>
@@ -273,6 +336,18 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
           )}
           <div className="wfb-ctx-menu__item wfb-ctx-menu__item--danger" onClick={() => { deleteEntry(contextMenu.entry, contextMenu.dirPath); setContextMenu(null) }}>
             <Trash2 size={13} /><span>Delete</span>
+          </div>
+        </div>
+      )}
+
+      {aiSummary && (
+        <div className="wfb-ai-overlay" onClick={() => setAiSummary(null)}>
+          <div className="wfb-ai-panel" onClick={e => e.stopPropagation()}>
+            <div className="wfb-ai-panel__header">
+              <Sparkles size={14} /><span>AI Changes Summary</span>
+              <button className="wfb-icon-btn" onClick={() => setAiSummary(null)}><X size={14} /></button>
+            </div>
+            <pre className="wfb-ai-panel__content">{aiSummary}</pre>
           </div>
         </div>
       )}

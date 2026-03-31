@@ -47,8 +47,7 @@ export function TaskHistoryPanel({ paneKey, onClose, embedded, onStatusChange }:
         if (!paneKey) return
         setLoading(true)
         try {
-            const urlKey = paneKey.replace(/:/g, '/')
-            const res = await fetch(`/api/tasks/events/${encodeURIComponent(urlKey)}?limit=30`, {
+            const res = await fetch(`/api/tasks/events/${encodeURIComponent(paneKey)}?limit=30`, {
                 credentials: 'include'
             })
             if (!res.ok) throw new Error('Failed to fetch')
@@ -80,7 +79,7 @@ export function TaskHistoryPanel({ paneKey, onClose, embedded, onStatusChange }:
         }
     }, [fetchHistory, onStatusChange])
 
-    const displayName = paneKey ? paneKey.split(':').slice(0, 2).join(':') : '—'
+    const displayName = paneKey || '—'
 
     const inner = (
         <>

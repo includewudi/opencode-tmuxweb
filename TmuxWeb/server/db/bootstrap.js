@@ -3,24 +3,27 @@
 const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
+const { getDbConfig, dbEnabled } = require('./pool');
 
 const SCHEMA_PATH = path.join(__dirname, 'init.sql');
 
 async function bootstrap() {
-  const config = {
-    host: process.env.MYSQL_HOST || '127.0.0.1',
-    port: parseInt(process.env.MYSQL_PORT, 10) || 3306,
-    user: process.env.MYSQL_USER || 'root',
-    password: process.env.MYSQL_PASSWORD || 'root',
-    database: process.env.MYSQL_DATABASE || 'tmuxweb',
+  if (!dbEnabled) {
+    console.log('[Bootstrap] Database not configured, skipping table creation');
+    return;
+  }
+
+  const dbConf = getDbConfig();
+  const connConfig = {
+    ...dbConf,
     multipleStatements: true
   };
 
-  console.log(`[Bootstrap] Connecting to MySQL at ${config.host}:${config.port}/${config.database}`);
+  console.log(`[Bootstrap] Connecting to MySQL at ${connConfig.host}:${connConfig.port}/${connConfig.database}`);
 
   let connection;
   try {
-    connection = await mysql.createConnection(config);
+    connection = await mysql.createConnection(connConfig);
     console.log('[Bootstrap] Connected successfully');
 
     if (!fs.existsSync(SCHEMA_PATH)) {
@@ -33,11 +36,11 @@ async function bootstrap() {
 
     console.log('[Bootstrap] Executing schema...');
     await connection.query(schema);
-    console.log('[Bootstrap] Schema executed successfully');
+    console.log('[Bootstrap] Schema executed successfully — all tables ready');
 
   } catch (err) {
     console.error('[Bootstrap] Error:', err.message);
-    process.exit(1);
+    // Don't exit process — let server continue in degraded mode
   } finally {
     if (connection) {
       await connection.end();

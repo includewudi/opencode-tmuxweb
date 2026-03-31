@@ -3,7 +3,7 @@ export interface FileEntry {
   type: 'file' | 'dir'
   size?: number
   mtime?: string
-  git?: 'modified' | 'staged' | 'untracked'
+  git?: 'modified' | 'staged' | 'untracked' | 'conflicted'
 }
 
 export interface ContextMenuState {

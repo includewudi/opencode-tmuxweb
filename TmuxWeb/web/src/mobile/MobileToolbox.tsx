@@ -1,10 +1,12 @@
 import { useState, useCallback, useRef, RefObject } from 'react'
-import { Grid3X3, Clock, Bot, Settings } from 'lucide-react'
+import { Grid3X3, Clock, Bot, Settings, Upload } from 'lucide-react'
 import { VoiceInput, VoiceInputHandle } from '../shared/components/VoiceInput'
 import { AiCommandTab } from '../shared/components/AiCommandTab'
 import { SnippetsTab } from '../shared/components/SnippetsTab'
 import { useTmuxPrefix } from '../hooks/useTmuxPrefix'
 import { ConfigViewer } from '../shared/components/ConfigViewer'
+import { FileUpload } from '../shared/components/FileUpload'
+import '../shared/components/file-upload.css'
 import './MobileToolbox.css'
 
 const preventFocus = (e: React.MouseEvent | React.TouchEvent) => {
@@ -43,7 +45,7 @@ function createKeyRows(prefixCode: string): [KeyDef[], KeyDef[]] {
   return [row1, row2]
 }
 
-type TabId = 'snippets' | 'ai' | 'config'
+type TabId = 'snippets' | 'ai' | 'upload' | 'config'
 
 interface MobileToolboxProps {
   onSend: (text: string) => void
@@ -233,6 +235,9 @@ export function MobileToolbox({
         {activeTab === 'config' && (
           <ConfigViewer />
         )}
+        {activeTab === 'upload' && (
+          <FileUpload compact onSend={onSend} />
+        )}
       </div>
 
       {/* Tab bar */}
@@ -276,6 +281,16 @@ export function MobileToolbox({
         >
           <Settings size={14} />
           <span>配置</span>
+        </button>
+        <button
+          className={`toolbox-tab ${activeTab === 'upload' ? 'active' : ''}`}
+          onMouseDown={preventFocus}
+          onTouchStart={preventFocus}
+          onTouchEnd={(e) => { e.preventDefault(); setActiveTab('upload') }}
+          type="button"
+        >
+          <Upload size={14} />
+          <span>上传</span>
         </button>
         <button
           className={`toolbox-tab ${activeTab === 'ai' ? 'active' : ''}`}

@@ -1,9 +1,10 @@
 const express = require('express');
-const { pool } = require('../db/pool');
+const { pool, dbEnabled } = require('../db/pool');
 
 const router = express.Router();
 
 async function ensureProfilesTable() {
+  if (!pool) return;
   await pool.query(`
     CREATE TABLE IF NOT EXISTS tmux_profile (
       id int(11) unsigned NOT NULL AUTO_INCREMENT,
@@ -21,9 +22,11 @@ async function ensureProfilesTable() {
   `);
 }
 
-ensureProfilesTable().catch(err => {
-  console.error('[Profiles] Failed to ensure table:', err.message);
-});
+if (dbEnabled) {
+  ensureProfilesTable().catch(err => {
+    console.error('[Profiles] Failed to ensure table:', err.message);
+  });
+}
 
 // GET /api/profiles - List all profiles for current user
 router.get('/', async (req, res) => {

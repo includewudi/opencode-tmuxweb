@@ -19,18 +19,24 @@ function WorkerStatusDot({ state }: { state: WorkerState }) {
 // ── WorkerCard ───────────────────────────────────────────────────────────────
 interface WorkerCardProps {
     worker: WorkerSession;
+    intent?: string;
     onContextMenu: (e: React.MouseEvent, worker: WorkerSession) => void;
+    onWorkerClick?: (runId: string) => void;
 }
 
-function WorkerCard({ worker, onContextMenu }: WorkerCardProps) {
+function WorkerCard({ worker, intent, onContextMenu, onWorkerClick }: WorkerCardProps) {
     const [flash, setFlash] = useState(false);
 
     const handleClick = () => {
-        setFlash(true);
-        setTimeout(() => setFlash(false), 200);
-        window.dispatchEvent(new CustomEvent('imperial:focus-pane', {
-            detail: { paneTarget: worker.pane_target }
-        }));
+        if (onWorkerClick && worker.run_id) {
+            onWorkerClick(worker.run_id);
+        } else {
+            setFlash(true);
+            setTimeout(() => setFlash(false), 200);
+            window.dispatchEvent(new CustomEvent('imperial:focus-pane', {
+                detail: { paneTarget: worker.pane_target }
+            }));
+        }
     };
 
     return (
@@ -38,7 +44,7 @@ function WorkerCard({ worker, onContextMenu }: WorkerCardProps) {
             className={`is-worker-card ${flash ? 'flash' : ''}`}
             onClick={handleClick}
             onContextMenu={e => { e.preventDefault(); onContextMenu(e, worker); }}
-            title={`Click to focus · Right-click for options`}
+            title={onWorkerClick && worker.run_id ? 'Click for details · Right-click for options' : 'Click to focus · Right-click for options'}
         >
             <div className="is-worker-card__row1">
                 <WorkerStatusDot state={worker.state} />
@@ -53,6 +59,11 @@ function WorkerCard({ worker, onContextMenu }: WorkerCardProps) {
             <span className="is-worker-card__meta">
                 {worker.project} · :{worker.port}
             </span>
+            {intent && (
+                <span className="is-worker-intent">
+                    {intent}
+                </span>
+            )}
         </div>
     );
 }
@@ -60,7 +71,9 @@ function WorkerCard({ worker, onContextMenu }: WorkerCardProps) {
 // ── WorkerSection ────────────────────────────────────────────────────────────
 interface WorkerSectionProps {
     workers: WorkerSession[];
+    intentMap?: Record<string, string>;
     onAddWorker?: () => void;
+    onWorkerClick?: (runId: string) => void;
 }
 
 interface ContextMenuState {
@@ -69,7 +82,7 @@ interface ContextMenuState {
     worker: WorkerSession;
 }
 
-export function WorkerSection({ workers, onAddWorker }: WorkerSectionProps) {
+export function WorkerSection({ workers, intentMap, onAddWorker, onWorkerClick }: WorkerSectionProps) {
     const [open, setOpen] = useState(true);
     const [ctxMenu, setCtxMenu] = useState<ContextMenuState | null>(null);
 
@@ -109,7 +122,9 @@ export function WorkerSection({ workers, onAddWorker }: WorkerSectionProps) {
                         <WorkerCard
                             key={w.id}
                             worker={w}
+                            intent={intentMap?.[w.run_id]}
                             onContextMenu={handleContextMenu}
+                            onWorkerClick={onWorkerClick}
                         />
                     ))
                 )}

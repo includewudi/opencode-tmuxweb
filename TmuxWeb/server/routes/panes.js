@@ -1,6 +1,6 @@
 const express = require('express');
 const { pool } = require('../db/pool');
-const { parsePaneKey } = require('../utils');
+const { parsePaneKey, getSessionName } = require('../utils');
 
 const router = express.Router();
 
@@ -10,8 +10,8 @@ const VALID_STATUSES = ['idle', 'in_progress', 'done', 'failed', 'waiting'];
 /**
  * GET /api/panes/status
  * Query params:
- *   - paneKey (single): "sessionName:windowIndex:paneIndex"
- *   - paneKeys (multiple): comma-separated list
+ *   - paneKey (single): session name (e.g. "butler")
+ *   - paneKeys (multiple): comma-separated list of session names
  *   - profile_key: required
  */
 router.get('/status', async (req, res) => {
@@ -37,12 +37,12 @@ router.get('/status', async (req, res) => {
 
     const sessionMap = new Map();
     for (const key of keys) {
-      const parsed = parsePaneKey(key);
-      if (parsed) {
-        if (!sessionMap.has(parsed.sessionName)) {
-          sessionMap.set(parsed.sessionName, []);
+      const sessionName = getSessionName(key);
+      if (sessionName) {
+        if (!sessionMap.has(sessionName)) {
+          sessionMap.set(sessionName, []);
         }
-        sessionMap.get(parsed.sessionName).push(key);
+        sessionMap.get(sessionName).push(key);
       }
     }
 
@@ -70,19 +70,19 @@ router.get('/status', async (req, res) => {
     }
 
     const panes = keys.map(key => {
-      const parsed = parsePaneKey(key);
-      if (!parsed) {
+      const sessionName = getSessionName(key);
+      if (!sessionName) {
         return { paneKey: key, status: 'idle', mtime: null };
       }
 
-      const sessionData = sessionDataMap.get(parsed.sessionName);
+      const sessionData = sessionDataMap.get(sessionName);
       if (!sessionData) {
         return { paneKey: key, status: 'idle', mtime: null };
       }
 
-      const paneStatusKey = `${parsed.windowIndex}:${parsed.paneIndex}`;
-      const paneStatuses = sessionData.extra.panes || {};
-      const status = paneStatuses[paneStatusKey] || 'idle';
+      const status = sessionData.extra.sessionStatus
+        || (sessionData.extra.panes && sessionData.extra.panes['0:0'])
+        || 'idle';
       const mtime = sessionData.mtime ? sessionData.mtime * 1000 : null;
 
       return { paneKey: key, status, mtime };
@@ -99,8 +99,8 @@ router.get('/status', async (req, res) => {
  * PUT /api/panes/status
  * Body:
  *   - profile_key: string
- *   - paneKey: string "sessionName:windowIndex:paneIndex"
- *   - status: "idle" | "in_progress" | "done"
+ *   - paneKey: string (session name, e.g. "butler")
+ *   - status: "idle" | "in_progress" | "done" | "failed" | "waiting"
  */
 router.put('/status', async (req, res) => {
   try {
@@ -119,18 +119,17 @@ router.put('/status', async (req, res) => {
       return res.status(400).json({ error: 'invalid_status', message: 'Status must be idle, in_progress, done, failed, or waiting' });
     }
 
-    const parsed = parsePaneKey(paneKey);
-    if (!parsed) {
+    const sessionName = getSessionName(paneKey);
+    if (!sessionName) {
       return res.status(400).json({ error: 'invalid_pane_key', message: 'Invalid paneKey format' });
     }
 
     const now = Math.floor(Date.now() / 1000);
-    const paneStatusKey = `${parsed.windowIndex}:${parsed.paneIndex}`;
 
     const [existingRows] = await pool.query(
       `SELECT id, extra FROM tmux_session_meta 
        WHERE token = ? AND profile_key = ? AND session_name = ?`,
-      [token, profile_key, parsed.sessionName]
+      [token, profile_key, sessionName]
     );
 
     if (existingRows.length > 0) {
@@ -142,18 +141,19 @@ router.put('/status', async (req, res) => {
       }
 
       if (!extra.panes) extra.panes = {};
-      extra.panes[paneStatusKey] = status;
+      extra.panes['0:0'] = status;
+      extra.sessionStatus = status;
 
       await pool.query(
         `UPDATE tmux_session_meta SET extra = ?, mtime = ? WHERE id = ?`,
         [JSON.stringify(extra), now, existingRows[0].id]
       );
     } else {
-      const extra = { panes: { [paneStatusKey]: status } };
+      const extra = { panes: { '0:0': status }, sessionStatus: status };
       await pool.query(
         `INSERT INTO tmux_session_meta (token, profile_key, session_name, extra, ctime, mtime)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [token, profile_key, parsed.sessionName, JSON.stringify(extra), now, now]
+        [token, profile_key, sessionName, JSON.stringify(extra), now, now]
       );
     }
 

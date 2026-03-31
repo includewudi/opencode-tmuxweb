@@ -25,7 +25,8 @@ export function useInboxItems(filters?: InboxFilters) {
             const url = `${BUTLER_API_BASE}/inbox_items${qs ? `?${qs}` : ''}`;
             const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data: InboxItem[] = await res.json();
+            const json = await res.json();
+            const data: InboxItem[] = json?.data?.inbox_items ?? [];
             setItems(data);
             setUnreadCount(data.filter(i => i.status === 'pending').length);
             setError(null);

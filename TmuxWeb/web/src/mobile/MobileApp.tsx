@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Menu, X, History, ScrollText } from 'lucide-react'
+import { Menu, X, History, ScrollText, FolderSearch } from 'lucide-react'
 import { MobileDrawer } from './MobileDrawer'
 import { MobileTerminal } from './MobileTerminal'
 import { TaskHistoryPanel } from '../shared/components/TaskHistoryPanel'
 import { ImperialStudyPanel } from '../shared/components/imperial-study/components/ImperialStudyPanel'
 import { LoginModal } from '../shared/components/LoginModal'
+import { WebFileBrowser } from '../shared/components/file-browser/WebFileBrowser'
 import { checkAuth, logout } from '../utils/auth'
 import { TmuxSession, OpenTab, Profile, SessionGroup } from '../types'
 import useVisualViewport from '../hooks/useVisualViewport'
@@ -24,14 +25,14 @@ function getAllPaneIds(sessions: TmuxSession[]): Set<string> {
   return ids
 }
 
-/** Map a raw tmux paneId (e.g. "%4") to a structured paneKey (e.g. "session:0:%4") */
+/** Map a raw tmux paneId (e.g. "%4") to session_name as paneKey */
 function getPaneKey(sessions: TmuxSession[], paneId: string): string | null {
   for (const s of sessions) {
     for (let wi = 0; wi < s.windows.length; wi++) {
       const w = s.windows[wi]
       for (let pi = 0; pi < w.panes.length; pi++) {
         if (w.panes[pi].paneId === paneId) {
-          return `${s.sessionName}:${w.windowIndex}:${w.panes[pi].paneId}`
+          return s.sessionName
         }
       }
     }
@@ -72,6 +73,7 @@ export default function MobileApp() {
   const [taskHistoryPaneKey, setTaskHistoryPaneKey] = useState<string | null>(null)
   const [statusRefreshToken, setStatusRefreshToken] = useState(0)
   const [imperialOpen, setImperialOpen] = useState(false)
+  const [fileBrowserOpen, setFileBrowserOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fontSize, setFontSize] = useState(() => {
@@ -244,6 +246,17 @@ export default function MobileApp() {
     return activeTab ? getPaneKey(sessions, activeTab.paneId) : null
   }, [activeTab, sessions])
 
+  const activePaneCwd = useMemo(() => {
+    if (!activeTab) return null
+    for (const s of sessions) {
+      for (const w of s.windows) {
+        const pane = w.panes.find(p => p.paneId === activeTab.paneId)
+        if (pane?.currentPath) return pane.currentPath
+      }
+    }
+    return null
+  }, [activeTab, sessions])
+
   const toggleRightPanel = useCallback(() => {
     setRightPanelOpen(prev => {
       const next = !prev
@@ -304,6 +317,9 @@ export default function MobileApp() {
         )}
         {activeTab && (
           <>
+            <button className="mobile-menu-btn" onClick={() => setFileBrowserOpen(true)} type="button" title="Files">
+              <FolderSearch size={22} />
+            </button>
             <button className="mobile-menu-btn" onClick={() => setImperialOpen(true)} type="button" title="\u5fa1\u66f8\u623f">
               <ScrollText size={22} />
             </button>
@@ -314,8 +330,8 @@ export default function MobileApp() {
         )}
       </header>
 
-      {(drawerOpen || rightPanelOpen || imperialOpen) && (
-        <div className="mobile-overlay" onClick={() => { setDrawerOpen(false); setRightPanelOpen(false); setImperialOpen(false) }} />
+      {(drawerOpen || rightPanelOpen || imperialOpen || fileBrowserOpen) && (
+        <div className="mobile-overlay" onClick={() => { setDrawerOpen(false); setRightPanelOpen(false); setImperialOpen(false); setFileBrowserOpen(false) }} />
       )}
 
       {/* Full-screen \u5fa1\u66f8\u623f panel */}
@@ -327,7 +343,19 @@ export default function MobileApp() {
               <X size={22} />
             </button>
           </header>
-          <ImperialStudyPanel />
+          <ImperialStudyPanel activePaneKey={activePaneKey} />
+        </div>
+      )}
+
+      {fileBrowserOpen && (
+        <div className="mobile-imperial-panel">
+          <header className="mobile-imperial-header">
+            <span>文件管理器</span>
+            <button className="mobile-menu-btn" onClick={() => setFileBrowserOpen(false)} type="button">
+              <X size={22} />
+            </button>
+          </header>
+          <WebFileBrowser dir={activePaneCwd || '~'} />
         </div>
       )}
 

@@ -9,7 +9,7 @@ Web 终端客户端：通过浏览器（主要面向 iPhone/iPad）访问 macOS 
 ## 目录结构
 
 ```
-opencode-iterm/
+opencode-tmuxweb/
 ├── web/                          # ★ 主要工作目录
 │   ├── server.js                 # Node.js 后端（HTTP/HTTPS + WebSocket）
 │   ├── config.js                 # 配置加载器（合并 public + private config）
@@ -108,7 +108,7 @@ brew install mkcert
 mkcert -install
 
 # 生成证书
-cd opencode-iterm/web
+cd opencode-tmuxweb/web
 mkcert -key-file key.pem -cert-file cert.pem localhost 127.0.0.1 $(ipconfig getifaddr en0)
 ```
 
@@ -124,7 +124,7 @@ CA 文件位置：`~/Library/Application Support/mkcert/rootCA.pem`
 ### 方案 B：自签名证书（iPhone 会有提示）
 
 ```bash
-cd opencode-iterm/web
+cd opencode-tmuxweb/web
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout key.pem -out cert.pem -subj "/CN=localhost"
 ```
@@ -138,7 +138,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 ### 1. 安装依赖
 
 ```bash
-cd opencode-iterm/web
+cd opencode-tmuxweb/web
 npm install            # 后端依赖
 cd app && npm install  # 前端依赖
 ```
@@ -146,7 +146,7 @@ cd app && npm install  # 前端依赖
 ### 2. 构建前端
 
 ```bash
-cd opencode-iterm/web/app
+cd opencode-tmuxweb/web/app
 npx vite build         # 输出到 dist/
 ```
 
@@ -157,14 +157,14 @@ npx vite build         # 输出到 dist/
 #### 开发模式
 
 ```bash
-cd opencode-iterm/web
+cd opencode-tmuxweb/web
 node server.js
 ```
 
 #### 生产模式（pm2）
 
 ```bash
-cd opencode-iterm/web
+cd opencode-tmuxweb/web
 pm2 start ecosystem.config.js
 ```
 

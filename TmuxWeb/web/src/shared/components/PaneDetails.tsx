@@ -95,15 +95,6 @@ export function PaneDetails({ paneKey, profileKey, onClose }: Props) {
   const [_loading, setLoading] = useState(false)
   const { conversations: aiConversations, loading: convLoading } = useAIConversations(paneKey)
 
-  const parsePaneKey = (key: string) => {
-    const parts = key.split(':')
-    return {
-      session: parts.slice(0, -2).join(':') || '—',
-      window: parts[parts.length - 2] || '—',
-      pane: parts[parts.length - 1] || '—'
-    }
-  }
-
   const fetchTasks = useCallback(async () => {
     if (!paneKey) return
     setLoading(true)
@@ -158,7 +149,7 @@ export function PaneDetails({ paneKey, profileKey, onClose }: Props) {
 
   if (!paneKey) return null
 
-  const { session, window: win, pane } = parsePaneKey(paneKey)
+  const sessionName = paneKey
 
     const sortedConversations = [...aiConversations].sort((a, b) => b.started_at - a.started_at)
   const runningCount = aiConversations.filter(c => c.conv_status === 'in_progress').length
@@ -172,7 +163,7 @@ export function PaneDetails({ paneKey, profileKey, onClose }: Props) {
         <div className="drawer-header-left">
           <h2 className="drawer-title">Execution History</h2>
           <span className="drawer-pane-badge">
-            {session}<span className="badge-sep">:</span>{win}<span className="badge-sep">:</span>{pane}
+            {sessionName}
           </span>
         </div>
         <button className="drawer-close" onClick={onClose}>

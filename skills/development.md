@@ -1,6 +1,6 @@
 # 开发指南
 
-> 所属项目: opencode-iterm (TmuxWeb) | 更新: 2026-02-27
+> 所属项目: opencode-tmuxweb (TmuxWeb) | 更新: 2026-02-27
 
 ## 环境要求
 
@@ -16,8 +16,8 @@
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/includewudi/opencode-iterm.git
-cd opencode-iterm/TmuxWeb
+git clone https://github.com/includewudi/opencode-tmuxweb.git
+cd opencode-tmuxweb/TmuxWeb
 
 # 2. 安装依赖
 npm run install:all

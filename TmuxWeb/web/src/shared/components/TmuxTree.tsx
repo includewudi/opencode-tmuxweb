@@ -34,7 +34,8 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
-  Clock
+  Clock,
+  RotateCcw
 } from 'lucide-react'
 import { NewTmuxButton } from './NewTmuxButton'
 import { TmuxSession, SessionGroup, PaneStatus, PaneStatusInfo } from '../../types'
@@ -140,8 +141,8 @@ async function fetchTaskPaneStatuses(): Promise<Record<string, PaneStatus>> {
   }
 }
 
-function buildPaneKey(sessionName: string, windowIndex: number, paneId: string): string {
-  return `${sessionName}:${windowIndex}:${paneId}`
+function buildPaneKey(sessionName: string, _windowIndex: number, _paneId: string): string {
+  return sessionName
 }
 
 function DragHandle() {
@@ -367,6 +368,31 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
   const [editingWindowIndex, setEditingWindowIndex] = useState<number | null>(null)
   const [editWindowName, setEditWindowName] = useState('')
   const [quickGroupMenu, setQuickGroupMenu] = useState<{ x: number; y: number } | null>(null)
+  const [rebuilding, setRebuilding] = useState(false)
+
+  const handleRebuild = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (rebuilding) return
+    if (!confirm(`Rebuild session "${session.sessionName}"? This will kill all processes and recreate windows with the same directories.`)) return
+    setRebuilding(true)
+    try {
+      const res = await fetch(`/api/tmux/sessions/${encodeURIComponent(session.sessionName)}/rebuild`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      })
+      if (res.ok) {
+        onRefresh()
+      } else {
+        const data = await res.json().catch(() => ({}))
+        alert(`Rebuild failed: ${data.message || 'Unknown error'}`)
+      }
+    } catch (err) {
+      alert(`Rebuild failed: ${err instanceof Error ? err.message : 'Network error'}`)
+    } finally {
+      setRebuilding(false)
+    }
+  }, [rebuilding, session.sessionName, onRefresh])
 
   // Aggregate session-level status from all panes
   const sessionStatus = useMemo(() => {
@@ -459,6 +485,14 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
             )}
           </span>
         )}
+        <button
+          className="rebuild-btn"
+          onClick={handleRebuild}
+          disabled={rebuilding}
+          title="Rebuild session"
+        >
+          {rebuilding ? <Loader2 size={12} className="spinning" /> : <RotateCcw size={12} />}
+        </button>
       </div>
 
       {quickGroupMenu && profileKey && (
@@ -516,7 +550,7 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
               <div
                 key={pane.paneId}
                 className="pane-node"
-                onClick={() => onSelectPane(pane.paneId, `${session.sessionName}:${window.windowIndex}`)}
+                onClick={() => { console.log(`[TREE-CLICK] paneId=${pane.paneId} name=${session.sessionName}:${window.windowIndex}`); onSelectPane(pane.paneId, `${session.sessionName}:${window.windowIndex}`) }}
                 onContextMenu={(e) => {
                   e.preventDefault()
                   onPaneContextMenu?.(paneKey)

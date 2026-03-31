@@ -1,9 +1,10 @@
 ---
-name: opencode-iterm
+name: opencode-tmuxweb
 description: Web-based tmux 终端客户端，支持 iPhone/iPad/桌面，带 AI 命令生成和语音输入
 ---
+测试
 
-# opencode-iterm (TmuxWeb)
+# opencode-tmuxweb (TmuxWeb)
 
 **TmuxWeb** 是一个 Web 端的 tmux 终端客户端，核心场景是从 iPhone/iPad 远程管理 macOS 上的 tmux 会话。支持 AI 命令生成（DeepSeek/OpenAI）和讯飞语音输入。
 
@@ -18,7 +19,7 @@ description: Web-based tmux 终端客户端，支持 iPhone/iPad/桌面，带 AI
 ## 目录结构
 
 ```
-opencode-iterm/
+opencode-tmuxweb/
 ├── TmuxWeb/                 # 主项目（Node.js + React）
 │   ├── server/              # Express 后端
 │   │   ├── index.js         # 入口：HTTP/S + WebSocket
@@ -55,6 +56,7 @@ opencode-iterm/
 | [development.md](development.md) | 开发环境、构建、部署 |
 | [data-model.md](data-model.md) | 数据库 Schema、ER 关系、常用查询 |
 | [troubleshooting.md](troubleshooting.md) | 故障排查、已知问题解决方案 |
+| [tmux-restart](../tools/tmux-restart.sh) | 重启所有 tmux session（自动跳过 opencode） |
 
 ## 快速开始
 

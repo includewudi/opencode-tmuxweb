@@ -13,7 +13,8 @@ export function useWorkerSessions(studyId?: string) {
             const url = `${BUTLER_API_BASE}/worker_sessions${studyId ? `?study_id=${studyId}` : ''}`;
             const res = await fetch(url);
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data: WorkerSession[] = await res.json();
+            const json = await res.json();
+            const data: WorkerSession[] = json?.data?.worker_sessions ?? [];
             setWorkers(data);
             setError(null);
         } catch (e: any) {

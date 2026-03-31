@@ -70,3 +70,65 @@ export interface ActivityEvent {
     detail: string;
     created_at: string | null;
 }
+
+// ── Run Detail (TaskDetailModal) ─────────────────────────────────────────────
+export interface TaskRunDetail {
+    id: string;
+    task_id: string;
+    state: string;
+    trigger: string | null;
+    attempt: number;
+    input_data: {
+        intent?: string;
+        project?: string;
+        sub_butler?: string;
+    } | null;
+    result: string | null;
+    error: string | null;
+    queued_at: string | null;
+    started_at: string | null;
+    ended_at: string | null;
+    estimated_at: string | null;
+}
+
+export interface TaskEventDetail {
+    id: number;
+    run_id: string;
+    event_type: string;
+    payload: Record<string, unknown> | null;
+    created_at: string;
+}
+
+export interface RunDetailResponse {
+    success: boolean;
+    data: TaskRunDetail;
+}
+
+export interface RunEventsResponse {
+    success: boolean;
+    data: { events: TaskEventDetail[] };
+}
+
+// ── Pipeline (Run Visualization) ────────────────────────────────────────────
+export type PipelineStage = 'outflow' | 'processing' | 'return';
+export type PipelineStatus = 'pending' | 'running' | 'success' | 'failed';
+
+export interface RoutingInfo {
+    strategy: string;     // "assistant" | "sub_butler" | "capability"
+    executor: string;     // "opencode" | "tmux_relay" | etc
+    cap_name?: string;    // capability name if matched
+    pane_target?: string;
+    delegated: boolean;
+}
+
+export interface PipelineRun {
+    run_id: string;
+    task_id?: string;
+    intent: string;
+    routing: RoutingInfo;
+    stage: PipelineStage;
+    status: PipelineStatus;
+    events: ActivityEvent[];
+    result?: string;
+    startedAt: number;
+}

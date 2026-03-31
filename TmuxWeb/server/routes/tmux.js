@@ -20,6 +20,7 @@ function parseTmuxList(output, delimiter = ':') {
 }
 
 router.get('/tree', (req, res) => {
+  console.log('[TMUX-TREE] Fetching tmux tree');
   const sessionsOutput = runTmuxCommand('list-sessions -F "#{session_name}:#{session_id}"');
   if (!sessionsOutput) {
     return res.json({ sessions: [], error: 'No tmux sessions found' });
@@ -29,6 +30,7 @@ router.get('/tree', (req, res) => {
   const sessionLines = parseTmuxList(sessionsOutput);
 
   for (const [sessionName, sessionId] of sessionLines) {
+    if (sessionName.includes('code-intel')) console.log(`[TMUX-TREE] Processing session: ${sessionName}`);
     const windowsOutput = runTmuxCommand(
       `list-windows -t "${sessionName}" -F "#{window_index}:#{window_name}:#{window_id}"`
     );
@@ -38,14 +40,28 @@ router.get('/tree', (req, res) => {
       const windowLines = parseTmuxList(windowsOutput);
       for (const [windowIndex, windowName, windowId] of windowLines) {
         const panesOutput = runTmuxCommand(
-          `list-panes -t "${sessionName}:${windowIndex}" -F "#{pane_id}:#{pane_title}:#{pane_current_command}"`
+          `list-panes -t "${sessionName}:${windowIndex}" -F "#{pane_id}:#{pane_title}:#{pane_current_command}:#{pane_current_path}"`
         );
         const panes = [];
 
         if (panesOutput) {
-          const paneLines = parseTmuxList(panesOutput);
-          for (const [paneId, paneTitle, paneCommand] of paneLines) {
-            panes.push({ paneId, paneTitle, paneCommand });
+          const paneLines = panesOutput.split('\n').filter(Boolean);
+          for (const line of paneLines) {
+            const firstColon = line.indexOf(':');
+            const secondColon = line.indexOf(':', firstColon + 1);
+            const thirdColon = line.indexOf(':', secondColon + 1);
+            if (firstColon < 0 || secondColon < 0 || thirdColon < 0) continue;
+            const pid = line.substring(0, firstColon);
+            const ptitle = line.substring(firstColon + 1, secondColon);
+            const pcmd = line.substring(secondColon + 1, thirdColon);
+            const ppath = line.substring(thirdColon + 1);
+            panes.push({
+              paneId: pid,
+              paneTitle: ptitle,
+              paneCommand: pcmd,
+              currentPath: ppath,
+            });
+            console.log(`[TMUX-TREE] pane: session=${sessionName} win=${windowIndex} paneId=${pid} path=${ppath}`);
           }
         }
 
@@ -157,11 +173,12 @@ router.post('/new-session', (req, res) => {
 
   try {
     runTmuxCommand(cmd);
-    // Return the new session name
     const nameOut = name
       ? name.replace(/['"\\]/g, '').slice(0, 60)
       : runTmuxCommand('display-message -p "#{session_name}"');
-    return res.json({ success: true, sessionName: nameOut });
+    const paneInfo = runTmuxCommand(`list-panes -t "${nameOut}" -F "#{pane_id}"`);
+    const paneId = paneInfo ? paneInfo.split('\n')[0].trim() : null;
+    return res.json({ success: true, sessionName: nameOut, paneId });
   } catch (err) {
     res.status(500).json({ error: 'tmux_error', message: err.message });
   }
@@ -199,6 +216,114 @@ router.post('/new-window', (req, res) => {
   } catch (err) {
     res.status(500).json({ error: 'tmux_error', message: err.message });
   }
+});
+
+
+// POST /api/tmux/sessions/:name/rebuild
+// Capture session's windows + pane directories, kill, and recreate
+router.post('/sessions/:name/rebuild', async (req, res) => {
+  const { name } = req.params;
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ error: 'bad_request', message: 'session name is required' });
+  }
+
+  const sanitizedName = name.replace(/['"\\`]/g, '').slice(0, 60);
+
+  // 1. Verify session exists
+  const sessionsOut = runTmuxCommand('list-sessions -F "#{session_name}"');
+  if (!sessionsOut || !sessionsOut.split('\n').includes(sanitizedName)) {
+    return res.status(404).json({ error: 'not_found', message: `Session '${sanitizedName}' not found` });
+  }
+
+  try {
+    // 2. Capture windows and their pane directories
+    const windowsOut = runTmuxCommand(`list-windows -t "${sanitizedName}" -F "#{window_index}:#{window_name}"`);
+    if (!windowsOut) {
+      return res.status(500).json({ error: 'tmux_error', message: 'Failed to list windows' });
+    }
+
+    const windows = windowsOut.split('\n').filter(Boolean).map(line => {
+      const colonIdx = line.indexOf(':');
+      const windowIndex = line.substring(0, colonIdx);
+      const windowName = line.substring(colonIdx + 1);
+      // Get panes for this window — capture directories
+      const panesOut = runTmuxCommand(`list-panes -t "${sanitizedName}:${windowIndex}" -F "#{pane_index}:#{pane_current_path}"`);
+      const panes = (panesOut || '').split('\n').filter(Boolean).map(pl => {
+        const colonIdx = pl.indexOf(':');
+        return {
+          paneIndex: pl.substring(0, colonIdx),
+          currentPath: pl.substring(colonIdx + 1),
+        };
+      });
+      return {
+        windowIndex: parseInt(windowIndex, 10),
+        windowName,
+        panes,
+      };
+    });
+
+    // 3. Kill the session
+    runTmuxCommand(`kill-session -t "${sanitizedName}"`);
+
+    // 4. Small delay to let tmux clean up
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // 5. Recreate: first window from new-session
+    const firstWindow = windows[0];
+    const firstDir = (firstWindow && firstWindow.panes[0]) ? firstWindow.panes[0].currentPath : os.homedir();
+    const sanitizedDir = firstDir.replace(/['"\\`]/g, '');
+    runTmuxCommand(`new-session -d -s "${sanitizedName}" -c "${sanitizedDir}"`);
+
+    // Rename first window
+    if (firstWindow && firstWindow.windowName) {
+      const sanitizedWinName = firstWindow.windowName.replace(/['"\\`]/g, '').slice(0, 60);
+      runTmuxCommand(`rename-window -t "${sanitizedName}:0" "${sanitizedWinName}"`);
+    }
+
+    // 6. Create additional windows
+    for (let i = 1; i < windows.length; i++) {
+      const w = windows[i];
+      const dir = (w.panes[0]) ? w.panes[0].currentPath : os.homedir();
+      const safeDirW = dir.replace(/['"\\`]/g, '');
+      const safeWinName = (w.windowName || '').replace(/['"\\`]/g, '').slice(0, 60);
+      let newWinCmd = `new-window -t "${sanitizedName}"`;
+      if (safeWinName) newWinCmd += ` -n "${safeWinName}"`;
+      newWinCmd += ` -c "${safeDirW}"`;
+      runTmuxCommand(newWinCmd);
+    }
+
+    res.json({
+      success: true,
+      sessionName: sanitizedName,
+      windows: windows.map(w => ({
+        windowIndex: w.windowIndex,
+        windowName: w.windowName,
+        directory: w.panes[0] ? w.panes[0].currentPath : null,
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'tmux_error', message: err.message });
+  }
+});
+
+router.delete('/window', (req, res) => {
+  const { session, window } = req.query;
+  if (!session || window === undefined) {
+    return res.status(400).json({ error: 'missing_params', message: 'session and window query params required' });
+  }
+  const target = `"${String(session).replace(/"/g, '\\"')}":"${String(window).replace(/"/g, '\\"')}"`;
+  const result = runTmuxCommand(`kill-window -t ${target}`);
+  res.json({ success: true, target });
+});
+
+router.delete('/session/:name', (req, res) => {
+  const { name } = req.params;
+  if (!name) {
+    return res.status(400).json({ error: 'missing_params', message: 'session name required' });
+  }
+  const safeName = String(name).replace(/"/g, '\\"');
+  runTmuxCommand(`kill-session -t "${safeName}"`);
+  res.json({ success: true, sessionName: safeName });
 });
 
 module.exports = router;
