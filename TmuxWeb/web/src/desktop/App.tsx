@@ -9,7 +9,7 @@ import { GroupManager } from '../shared/components/GroupManager'
 import { DesktopToolbox } from './DesktopToolbox'
 import { ImperialStudyPanel } from '../shared/components/imperial-study/components/ImperialStudyPanel'
 import { FloatingImperialStudy } from '../shared/components/imperial-study/components/FloatingImperialStudy'
-import { FloatingYazi } from '../shared/components/floating-yazi/FloatingYazi'
+import { FloatingYazi } from '../shared/components/file-browser/FloatingYazi'
 import { checkAuth, logout } from '../utils/auth'
 import { isMobile } from '../utils/platform'
 import { TmuxSession, OpenTab, Profile, SessionGroup } from '../types'
@@ -298,9 +298,9 @@ export default function App() {
                 title="文件管理器 (yazi)"
                 onClick={() => setYaziFloat(!yaziFloat)}
               >
-                <span className={yaziFloat ? 'yz-float-pin' : ''}>
+                <span className={yaziFloat ? 'fb-float-pin' : ''}>
                   <FolderSearch size={22} strokeWidth={yaziFloat ? 2 : 1.5} />
-                  {yaziFloat && <span className="yz-float-pin__indicator" />}
+                  {yaziFloat && <span className="fb-float-pin__indicator" />}
                 </span>
               </button>
             </div>

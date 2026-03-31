@@ -1,7 +1,7 @@
-/* floating-yazi.css — Floating Yazi File Manager Panel */
+/* file-browser.css — Floating File Manager Panel */
 
 /* ── Floating Bubble (collapsed) ── */
-.yz-floating-bubble {
+.fb-floating-bubble {
     position: fixed;
     z-index: 901;
     width: 48px;
@@ -21,18 +21,18 @@
     user-select: none;
 }
 
-.yz-floating-bubble:hover {
+.fb-floating-bubble:hover {
     transform: scale(1.1);
     background: rgba(63, 63, 70, 0.8);
     box-shadow: 0 6px 28px rgba(0, 0, 0, 0.5);
 }
 
-.yz-floating-bubble:active {
+.fb-floating-bubble:active {
     transform: scale(0.95);
 }
 
 /* ── Floating Panel (expanded) ── */
-.yz-floating-panel {
+.fb-floating-panel {
     position: fixed;
     z-index: 901;
     display: flex;
@@ -45,10 +45,10 @@
     border-radius: 14px;
     box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
     overflow: hidden;
-    animation: yz-panel-appear 250ms ease-out;
+    animation: fb-panel-appear 250ms ease-out;
 }
 
-@keyframes yz-panel-appear {
+@keyframes fb-panel-appear {
     from {
         opacity: 0;
         transform: translateY(12px) scale(0.96);
@@ -59,7 +59,7 @@
     }
 }
 
-.yz-floating-panel--maximized {
+.fb-floating-panel--maximized {
     left: 0 !important;
     top: 0 !important;
     width: 100vw !important;
@@ -71,12 +71,12 @@
     -webkit-backdrop-filter: none;
 }
 
-.yz-floating-panel--maximized .yz-floating-panel__resize {
+.fb-floating-panel--maximized .fb-floating-panel__resize {
     display: none;
 }
 
 /* ── Titlebar ── */
-.yz-floating-panel__titlebar {
+.fb-floating-panel__titlebar {
     display: flex;
     align-items: center;
     gap: 6px;
@@ -89,23 +89,23 @@
     flex-shrink: 0;
 }
 
-.yz-floating-panel__titlebar:active {
+.fb-floating-panel__titlebar:active {
     cursor: grabbing;
 }
 
-.yz-floating-panel__icon {
+.fb-floating-panel__icon {
     color: rgba(161, 161, 170, 0.7);
     flex-shrink: 0;
 }
 
-.yz-floating-panel__title {
+.fb-floating-panel__title {
     font-size: 12px;
     font-weight: 600;
     color: rgba(228, 228, 231, 0.85);
     letter-spacing: 0.3px;
 }
 
-.yz-floating-panel__stats {
+.fb-floating-panel__stats {
     font-size: 10px;
     color: rgba(161, 161, 170, 0.5);
     margin-left: 4px;
@@ -115,12 +115,12 @@
     white-space: nowrap;
 }
 
-.yz-floating-panel__actions {
+.fb-floating-panel__actions {
     display: flex;
     gap: 1px;
 }
 
-.yz-floating-panel__btn {
+.fb-floating-panel__btn {
     width: 22px;
     height: 22px;
     border: none;
@@ -134,18 +134,18 @@
     transition: background 100ms, color 100ms;
 }
 
-.yz-floating-panel__btn:hover {
+.fb-floating-panel__btn:hover {
     background: rgba(63, 63, 70, 0.5);
     color: var(--zinc-200, #e4e4e7);
 }
 
-.yz-floating-panel__btn--close:hover {
+.fb-floating-panel__btn--close:hover {
     background: rgba(239, 68, 68, 0.7);
     color: white;
 }
 
 /* ── Opacity slider ── */
-.yz-floating-panel__opacity-slider {
+.fb-floating-panel__opacity-slider {
     -webkit-appearance: none;
     appearance: none;
     width: 48px;
@@ -157,7 +157,7 @@
     margin-right: 4px;
 }
 
-.yz-floating-panel__opacity-slider::-webkit-slider-thumb {
+.fb-floating-panel__opacity-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 10px;
     height: 10px;
@@ -167,7 +167,7 @@
     cursor: pointer;
 }
 
-.yz-floating-panel__opacity-slider::-moz-range-thumb {
+.fb-floating-panel__opacity-slider::-moz-range-thumb {
     width: 10px;
     height: 10px;
     border-radius: 50%;
@@ -177,29 +177,29 @@
 }
 
 /* ── Panel body ── */
-.yz-floating-panel__body {
+.fb-floating-panel__body {
     flex: 1;
     overflow: hidden;
     position: relative;
 }
 
 /* Override terminal background to be transparent for glassmorphism */
-.yz-floating-panel__body .terminal-wrapper {
+.fb-floating-panel__body .terminal-wrapper {
     height: 100%;
 }
 
-.yz-floating-panel__body .terminal-container {
+.fb-floating-panel__body .terminal-container {
     height: 100%;
     background: transparent;
 }
 
 /* Hide the terminal toolbar in floating mode */
-.yz-floating-panel__body .terminal-toolbar {
+.fb-floating-panel__body .terminal-toolbar {
     display: none;
 }
 
 /* ── Loading state ── */
-.yz-floating-panel__loading {
+.fb-floating-panel__loading {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -209,17 +209,17 @@
     font-size: 13px;
 }
 
-.yz-spin {
-    animation: yz-spin 700ms linear infinite;
+.fb-spin {
+    animation: fb-spin 700ms linear infinite;
 }
 
-@keyframes yz-spin {
+@keyframes fb-spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
 }
 
 /* ── Error state ── */
-.yz-floating-panel__error {
+.fb-floating-panel__error {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -231,7 +231,7 @@
 }
 
 /* ── Resize handle ── */
-.yz-floating-panel__resize {
+.fb-floating-panel__resize {
     position: absolute;
     right: 0;
     bottom: 0;
@@ -240,7 +240,7 @@
     cursor: nwse-resize;
 }
 
-.yz-floating-panel__resize::after {
+.fb-floating-panel__resize::after {
     content: "";
     position: absolute;
     right: 4px;
@@ -253,16 +253,16 @@
     opacity: 0.4;
 }
 
-.yz-floating-panel__resize:hover::after {
+.fb-floating-panel__resize:hover::after {
     opacity: 1;
 }
 
 /* ── Activity bar pin indicator ── */
-.yz-float-pin {
+.fb-float-pin {
     position: relative;
 }
 
-.yz-float-pin__indicator {
+.fb-float-pin__indicator {
     position: absolute;
     bottom: 2px;
     right: 2px;
