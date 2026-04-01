@@ -98,8 +98,6 @@ export function Terminal({ paneId, active, onSendRef }: Props) {
     const connect = () => {
       if (isCleanupRef.current) return
 
-      console.log(`[WS-CONNECT] paneId=${paneId} url=${buildWsUrl()}`)
-      console.log(`[TERM-WS] Connecting paneId=${paneId} url=${buildWsUrl()}`)
       const ws = new WebSocket(buildWsUrl())
       ws.binaryType = 'arraybuffer'
       ws.onopen = () => {

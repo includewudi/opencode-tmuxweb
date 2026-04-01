@@ -20,7 +20,6 @@ function parseTmuxList(output, delimiter = ':') {
 }
 
 router.get('/tree', (req, res) => {
-  console.log('[TMUX-TREE] Fetching tmux tree');
   const sessionsOutput = runTmuxCommand('list-sessions -F "#{session_name}:#{session_id}"');
   if (!sessionsOutput) {
     return res.json({ sessions: [], error: 'No tmux sessions found' });
@@ -30,7 +29,6 @@ router.get('/tree', (req, res) => {
   const sessionLines = parseTmuxList(sessionsOutput);
 
   for (const [sessionName, sessionId] of sessionLines) {
-    if (sessionName.includes('code-intel')) console.log(`[TMUX-TREE] Processing session: ${sessionName}`);
     const windowsOutput = runTmuxCommand(
       `list-windows -t "${sessionName}" -F "#{window_index}:#{window_name}:#{window_id}"`
     );
@@ -61,7 +59,6 @@ router.get('/tree', (req, res) => {
               paneCommand: pcmd,
               currentPath: ppath,
             });
-            console.log(`[TMUX-TREE] pane: session=${sessionName} win=${windowIndex} paneId=${pid} path=${ppath}`);
           }
         }
 

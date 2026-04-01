@@ -167,10 +167,41 @@ async function handleTerminalConnection(ws, paneId, clientId) {
     console.log(`[Terminal] Spawning new PTY for session=${sessionName}, pane=${paneId}`);
 
     let ptyProcess;
+    const linkedSessionName = `__tw_${paneId.replace('%', 'p')}`;
     try {
-      // Use shell -c so we can chain commands: attach then select the right pane
+      let windowTarget = '';
+      try {
+        const { stdout: winOut } = await execAsync(
+          `tmux display-message -t "${paneId}" -p "#{session_name}:#{window_index}"`,
+          { timeout: 3000 }
+        );
+        windowTarget = winOut.trim();
+        console.log(`[Terminal] Resolved pane ${paneId} → window ${windowTarget}`);
+      } catch (err) {
+        console.log(`[Terminal] Could not resolve window for ${paneId}: ${err.message}`);
+      }
+
+      // ── Linked session approach ──────────────────────────────────
+      // attach-session shares the session view across ALL attached clients,
+      // so select-pane from one PTY affects all others (= the same-pane bug).
+      //
+      // Fix: create a NEW linked session per PTY via `new-session -t`.
+      // Linked sessions share the same windows/panes but have INDEPENDENT
+      // active pane tracking — each client can view a different pane.
+      //
+      // Session name: "__tw_<paneId>" to make cleanup easy to identify.
+
+      const selectWindow = windowTarget
+        ? `\\; select-window -t "${linkedSessionName}:${windowTarget.split(':')[1] || windowTarget}"`
+        : '';
+
       ptyProcess = pty.spawn('/bin/sh', ['-c',
-        `tmux set-option -t "${sessionName}" window-size latest \\; attach-session -t "${sessionName}" \\; select-pane -t "${paneId}"`
+        `tmux set-option -t "${sessionName}" window-size latest ` +
+        `\\; new-session -d -s "${linkedSessionName}" -t "${sessionName}" ` +
+        `\\; set-option -t "${linkedSessionName}" destroy-unattached off ` +
+        `\\; select-window -t "${linkedSessionName}:${windowTarget.split(':')[1] || 0}" ` +
+        `\\; select-pane -t "${paneId}" ` +
+        `\\; attach-session -t "${linkedSessionName}"`
       ], {
         name: 'xterm-256color',
         cols: 80,
@@ -201,6 +232,7 @@ async function handleTerminalConnection(ws, paneId, clientId) {
       clients: new Set([ws]),
       createdAt: Date.now(),
       sessionName,
+      linkedSessionName,
     };
     activePTYs.set(paneId, entry);
     console.log(`[Terminal] PTY spawned. Active: ${activePTYs.size}/${MAX_PTYS}`);
@@ -216,6 +248,12 @@ async function handleTerminalConnection(ws, paneId, clientId) {
 
     ptyProcess.onExit((code) => {
       console.log(`[Terminal] PTY exited for pane ${paneId}, code=${code?.exitCode}`);
+      // Kill the linked session so it doesn't linger
+      if (entry.linkedSessionName) {
+        execAsync(`tmux kill-session -t "${entry.linkedSessionName}"`, { timeout: 3000 })
+          .then(() => console.log(`[Terminal] Killed linked session ${entry.linkedSessionName}`))
+          .catch(() => {});
+      }
       // Close all clients when PTY exits
       for (const client of entry.clients) {
         if (client.readyState === client.OPEN) {
@@ -346,6 +384,9 @@ function shutdownAllPTYs(signal) {
     } catch (err) {
       console.log(`[Terminal] Failed to kill PTY ${paneId}: ${err.message}`);
     }
+    if (entry.linkedSessionName) {
+      execAsync(`tmux kill-session -t "${entry.linkedSessionName}"`, { timeout: 3000 }).catch(() => {});
+    }
     // Close all WS clients
     for (const client of entry.clients) {
       try { client.terminate(); } catch {}
@@ -364,19 +405,22 @@ process.on('exit', () => { shutdownAllPTYs('exit'); });
 // ── Startup: kill orphaned tmux attach-session processes ─────────────
 async function cleanupOrphanedPTYs() {
   try {
-    // Find tmux attach-session processes spawned by previous server instances
-    // that are now orphaned (parent PID = 1 on Linux, or parent is launchd/init)
-    const { stdout } = await execAsync(
-      'pgrep -f "tmux attach-session" | xargs -r ps -o pid,ppid,command -p 2>/dev/null || true',
-      { timeout: 5000 }
+    // Kill leftover linked sessions (__tw_*) from previous server instances
+    const { stdout: linkedSessions } = await execAsync(
+      'tmux list-sessions -F "#{session_name}" 2>/dev/null | grep "^__tw_" || true',
+      { timeout: 3000 }
     );
-    if (stdout.trim()) {
-      console.log('[Terminal] Found potential orphaned tmux attach processes:');
-      console.log(stdout.trim());
+    const staleSessions = linkedSessions.trim().split('\n').filter(Boolean);
+    if (staleSessions.length > 0) {
+      console.log(`[Terminal] Killing ${staleSessions.length} stale linked sessions: ${staleSessions.join(', ')}`);
+      for (const sess of staleSessions) {
+        await execAsync(`tmux kill-session -t "${sess}"`, { timeout: 3000 }).catch(() => {});
+      }
+    } else {
+      console.log('[Terminal] No stale linked sessions found');
     }
 
-    // Kill orphaned attach-session processes whose parent is NOT a running node server
-    // Use a safer approach: kill only those with PPID=1 (truly orphaned)
+    // Find orphaned tmux attach processes (PPID=1)
     const { stdout: orphans } = await execAsync(
       'pgrep -f "tmux attach-session" | while read pid; do ppid=$(ps -o ppid= -p $pid 2>/dev/null | tr -d " "); if [ "$ppid" = "1" ]; then echo $pid; fi; done',
       { timeout: 5000 }

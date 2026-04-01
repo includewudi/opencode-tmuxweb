@@ -171,7 +171,6 @@ export default function App() {
   }
 
   function openPane(paneId: string, paneName: string) {
-    console.log(`[OPEN-PANE] paneId=${paneId} paneName=${paneName}`);
     const existing = tabs.find(t => t.paneId === paneId)
     if (existing) {
       setActiveTabId(existing.id)

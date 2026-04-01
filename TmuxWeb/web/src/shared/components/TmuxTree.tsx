@@ -550,7 +550,7 @@ function SortableSession({ item, session, isInGroup, isOver, statusMap, onSelect
               <div
                 key={pane.paneId}
                 className="pane-node"
-                onClick={() => { console.log(`[TREE-CLICK] paneId=${pane.paneId} name=${session.sessionName}:${window.windowIndex}`); onSelectPane(pane.paneId, `${session.sessionName}:${window.windowIndex}`) }}
+                onClick={() => { onSelectPane(pane.paneId, `${session.sessionName}:${window.windowIndex}`) }}
                 onContextMenu={(e) => {
                   e.preventDefault()
                   onPaneContextMenu?.(paneKey)
