@@ -13,14 +13,34 @@
  * The symlink means OpenCode always picks up the latest version automatically.
  *
  * Port config: Update the PORT constant below to match your TmuxWeb server port.
+ *
+ * Features:
+ * - Task tracking: reports task_started/task_completed to TmuxWeb
+ * - macOS notifications: alerter-based notifications for permission/question events
+ *   - Different sounds: Ping (permission), Pop (question)
+ *   - Click notification → focus tmux window
+ *   - Graceful degradation: works silently without alerter
+ *   - Install: brew install vjeantet/tap/alerter
+ *
+ * Known alerter caveats (do NOT change):
+ * - Never use --sender (breaks --timeout, see alerter#66)
+ * - Always use Node.js safety timeout (alerter hangs on permission denied, see alerter#38)
+ * - Always kill activeAlerterChild before spawning new (--group doesn't kill old process)
  */
 
-import { execSync } from 'child_process';
+import { execSync, spawn } from 'child_process';
 import crypto from 'crypto';
 
 // ── Config ────────────────────────────────────────────────────────────────────
 const PORT = 8215;            // TmuxWeb HTTPS port (update if you change server/config.json)
 const BASE_URL = `https://localhost:${PORT}`;
+const TERMINAL_APP = 'iTerm2';        // Change to 'Terminal' if not using iTerm2
+const ALERTER_TIMEOUT = 30;           // Notification auto-dismiss seconds
+const ALERTER_GROUP = 'opencode-notify';
+const NOTIFICATION_SOUNDS = {
+  'permission.asked': 'Ping',         // Attention-grabbing for permission dialogs
+  'question.asked': 'Pop',            // Lighter tone for question prompts
+};
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MY_RULES = `<MY_RULES>
@@ -47,9 +67,80 @@ Trigger: any intent to create, modify, save, or write a file.
 </MY_RULES>`;
 
 export const MyPlugin = async ({ client, directory }) => {
+  // Alerter availability check (once at plugin init)
+  let alerterAvailable = false;
+  try {
+    execSync('which alerter', { stdio: 'ignore', timeout: 3000 });
+    alerterAvailable = true;
+  } catch (_) {}
+
+  // Track active alerter child process (kill before spawning new)
+  let activeAlerterChild = null;
+
   // Task tracking state (shared between chat.message and event hooks)
   let lastConversationId = null;
   let lastPaneKey = null;
+
+  /**
+   * Send macOS notification via alerter. Async — never blocks the plugin.
+   * On click → focus the originating tmux window + activate terminal app.
+   */
+  function sendNotification(title, message, eventType, paneKey) {
+    if (!alerterAvailable) return;
+    try {
+      // Kill previous alerter to avoid stale @CLOSED triggering wrong tmux focus
+      if (activeAlerterChild) {
+        activeAlerterChild.kill('SIGTERM');
+        activeAlerterChild = null;
+      }
+
+      const args = [
+        '--title', title,
+        '--message', message,
+        '--sound', NOTIFICATION_SOUNDS[eventType] || 'default',
+        '--timeout', String(ALERTER_TIMEOUT),
+        '--group', ALERTER_GROUP,
+      ];
+
+      const child = spawn('alerter', args, { stdio: ['ignore', 'pipe', 'ignore'] });
+      activeAlerterChild = child;
+
+      // Collect stdout to read click result
+      const chunks = [];
+      child.stdout.on('data', (chunk) => chunks.push(chunk));
+
+      // Must use 'close' (not 'exit') to ensure stdout is fully flushed
+      child.on('close', () => {
+        clearTimeout(safetyTimer);
+        if (activeAlerterChild === child) activeAlerterChild = null;
+
+        const result = Buffer.concat(chunks).toString().trim();
+        if (result === '@CONTENTCLICKED' && paneKey) {
+          try {
+            const [sessionName, windowIndex] = paneKey.split('/');
+            execSync(`tmux select-window -t "${sessionName}:${windowIndex}"`, { timeout: 3000, stdio: 'ignore' });
+            execSync(`osascript -e 'tell application "${TERMINAL_APP}" to activate'`, { timeout: 3000, stdio: 'ignore' });
+          } catch (_) {}
+        }
+      });
+
+      // Safety timeout: kill alerter if it hangs (permission denied, hover-blocking, etc.)
+      const safetyTimer = setTimeout(() => {
+        if (activeAlerterChild === child) {
+          child.kill('SIGTERM');
+          activeAlerterChild = null;
+        }
+      }, (ALERTER_TIMEOUT + 10) * 1000);
+
+      // Don't block Node.js exit
+      child.unref();
+
+      child.on('error', () => {
+        clearTimeout(safetyTimer);
+        if (activeAlerterChild === child) activeAlerterChild = null;
+      });
+    } catch (_) {}
+  }
 
   return {
     'experimental.chat.system.transform': async (_input, output) => {
@@ -89,6 +180,28 @@ export const MyPlugin = async ({ client, directory }) => {
     },
 
     'event': async ({ event }) => {
+      // ── Notification events: permission / question ──
+      if (event.type === 'permission.asked' || event.type === 'question.asked') {
+        const title = event.type === 'permission.asked'
+          ? '🔐 Permission Required'
+          : '❓ Question Asked';
+        const message = event.properties?.message
+          || event.properties?.description
+          || event.properties?.tool
+          || 'OpenCode needs your attention';
+        const paneKey = lastPaneKey || (() => {
+          try {
+            return execSync(
+              "tmux display-message -p '#{session_name}/#{window_index}/#{pane_id}'",
+              { encoding: 'utf8', timeout: 3000 }
+            ).trim();
+          } catch (_) { return null; }
+        })();
+        sendNotification(title, message, event.type, paneKey);
+        return;
+      }
+
+      // ── Task completion: session.idle ──
       if (event.type !== 'session.idle' || !lastConversationId) return;
       try {
         const convId = lastConversationId;
