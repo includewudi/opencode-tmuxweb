@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const config = require('../config-loader');
 
+function ts() { return new Date().toISOString(); }
+
 const XFYUN_HOST = 'iat.xf-yun.com';
 const XFYUN_PATH = '/v1';
 
@@ -172,7 +174,7 @@ function handleSpeechConnection(clientWs) {
   let seq = 0;
   let isFirstFrame = true;
   
-  console.log('[Speech] Client connected');
+  console.log(`[${ts()}] [Speech] Client connected`);
   
   clientWs.on('message', (message) => {
     try {
@@ -180,12 +182,12 @@ function handleSpeechConnection(clientWs) {
       
       if (data.type === 'start') {
         const url = generateAuthUrl();
-        console.log('[Speech] Connecting to XFYun...');
+        console.log(`[${ts()}] [Speech] Connecting to XFYun...`);
         
         xfyunWs = new WebSocket(url);
         
         xfyunWs.on('open', () => {
-          console.log('[Speech] XFYun connected');
+          console.log(`[${ts()}] [Speech] XFYun connected`);
           clientWs.send(JSON.stringify({ type: 'ready' }));
         });
         
@@ -193,7 +195,7 @@ function handleSpeechConnection(clientWs) {
           const result = parseResult(msg.toString());
           
           if (result.error) {
-            console.error('[Speech] XFYun error:', result.error);
+            console.error(`[${ts()}] [Speech] XFYun error:`, result.error);
             clientWs.send(JSON.stringify({ type: 'error', message: result.error }));
             return;
           }
@@ -210,18 +212,21 @@ function handleSpeechConnection(clientWs) {
           }
           
           if (result.status === 2) {
-            console.log('[Speech] Recognition complete');
+            console.log(`[${ts()}] [Speech] Recognition complete`);
             clientWs.send(JSON.stringify({ type: 'end' }));
           }
         });
         
         xfyunWs.on('error', (err) => {
-          console.error('[Speech] XFYun WebSocket error:', err.message);
+          console.error(`[${ts()}] [Speech] XFYun WebSocket error:`, err.message);
           clientWs.send(JSON.stringify({ type: 'error', message: err.message }));
         });
         
         xfyunWs.on('close', () => {
-          console.log('[Speech] XFYun disconnected');
+          console.log(`[${ts()}] [Speech] XFYun disconnected`);
+          if (clientWs.readyState === WebSocket.OPEN) {
+            clientWs.send(JSON.stringify({ type: 'error', message: '讯飞语音服务连接断开' }));
+          }
         });
         
       } else if (data.type === 'audio') {
@@ -246,19 +251,19 @@ function handleSpeechConnection(clientWs) {
         }
       }
     } catch (e) {
-      console.error('[Speech] Parse error:', e.message);
+      console.error(`[${ts()}] [Speech] Parse error:`, e.message);
     }
   });
   
   clientWs.on('close', () => {
-    console.log('[Speech] Client disconnected');
+    console.log(`[${ts()}] [Speech] Client disconnected`);
     if (xfyunWs) {
       xfyunWs.close();
     }
   });
   
   clientWs.on('error', (err) => {
-    console.error('[Speech] Client error:', err.message);
+    console.error(`[${ts()}] [Speech] Client error:`, err.message);
     if (xfyunWs) {
       xfyunWs.close();
     }

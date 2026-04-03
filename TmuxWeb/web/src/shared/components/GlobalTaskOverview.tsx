@@ -4,7 +4,7 @@ import { RefreshCw, TerminalSquare, CheckCircle2, Clock, XCircle, Loader2 } from
 import './GlobalTaskOverview.css'
 
 interface GlobalTaskOverviewProps {
-    onSelectPane: (paneId: string, paneName: string) => void
+    onSelectPane?: (paneId: string, paneName: string) => void
     statusRefreshToken?: number
 }
 
@@ -14,9 +14,10 @@ interface GlobalTask extends Task {
     session_name: string
     window_index: number
     pane_index: number
+    mtime: number
 }
 
-export function GlobalTaskOverview({ onSelectPane, statusRefreshToken }: GlobalTaskOverviewProps) {
+export function GlobalTaskOverview({ statusRefreshToken }: GlobalTaskOverviewProps) {
     const [tasks, setTasks] = useState<GlobalTask[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -63,12 +64,10 @@ export function GlobalTaskOverview({ onSelectPane, statusRefreshToken }: GlobalT
     }, [tasks])
 
     const handleTaskClick = (task: GlobalTask) => {
-        const paneName = `${task.session_name}:${task.window_index}`
-        // the UI expects a paneId string like "%4" which we don't have directly parsed out as a distinct variable, 
-        // but we can construct it or pass the exact paneKey components. MobileDrawer & App expect paneId (%id) and paneName
-        // Let's pass the pane ID which is stored in pane_index (often an integer or string like "%4")
-        // Note: the backend returns pane_index which might be the string %id. Let's use it directly.
-        onSelectPane(String(task.pane_index), paneName)
+        // Dispatch navigate-to-pane event — usePaneNavigation hook resolves pane_key to actual paneId
+        window.dispatchEvent(new CustomEvent('navigate-to-pane', {
+            detail: { paneKey: task.paneKey || task.session_name }
+        }))
     }
 
     const renderTaskGroup = (title: string, icon: React.ReactNode, groupTasks: GlobalTask[], emptyText?: string) => {

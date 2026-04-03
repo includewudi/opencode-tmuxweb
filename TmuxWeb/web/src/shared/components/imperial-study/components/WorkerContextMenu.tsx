@@ -46,7 +46,7 @@ export function WorkerContextMenu({
         switch (action) {
             case 'open':
                 window.dispatchEvent(
-                    new CustomEvent('imperial:focus-pane', { detail: { paneTarget } })
+                    new CustomEvent('navigate-to-pane', { detail: { paneKey: paneTarget } })
                 );
                 break;
             case 'copy':

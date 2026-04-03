@@ -1,14 +1,13 @@
 const express = require('express');
 const { pool, dbEnabled } = require('../db/pool');
 const config = require('../config-loader');
-const { syncPaneStatus, getSessionName } = require('../utils');
+const { syncPaneStatus, getCanonicalSessionName, getSessionNameAliases } = require('../utils');
 
 const router = express.Router();
 
 function normalizePaneKey(key) {
   if (!key) return key;
-  const colonized = key.replace(/\//g, ':');
-  return getSessionName(colonized);
+  return getCanonicalSessionName(key);
 }
 
 // syncPaneStatus is now imported from ../utils
@@ -33,17 +32,51 @@ function removeSubscriber(paneKey, res) {
 }
 
 function broadcast(paneKey, eventData) {
-  const subs = sseSubscribers.get(paneKey);
-  if (!subs || subs.size === 0) return;
   const payload = `data: ${JSON.stringify(eventData)}\n\n`;
-  for (const res of subs) {
-    try {
-      res.write(payload);
-    } catch (err) {
-      console.error('[task-events] SSE write error:', err.message);
+
+  // Send to pane-specific subscribers
+  const subs = sseSubscribers.get(paneKey);
+  if (subs && subs.size > 0) {
+    for (const res of subs) {
+      try {
+        res.write(payload);
+      } catch (err) {
+        console.error('[task-events] SSE write error:', err.message);
+      }
+    }
+  }
+
+  // Also send to global subscribers (for toast notifications)
+  const globalSubs = sseSubscribers.get('__global__');
+  if (globalSubs && globalSubs.size > 0) {
+    for (const res of globalSubs) {
+      try {
+        res.write(payload);
+      } catch (err) {
+        console.error('[task-events] SSE global write error:', err.message);
+      }
     }
   }
 }
+
+router.get('/stream', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'X-Accel-Buffering': 'no',
+  });
+  res.write('\n');
+
+  addSubscriber('__global__', res);
+  const count = sseSubscribers.get('__global__')?.size || 0;
+  console.log(`[task-events] Global SSE subscriber added (total: ${count})`);
+
+  req.on('close', () => {
+    removeSubscriber('__global__', res);
+    console.log('[task-events] Global SSE subscriber removed');
+  });
+});
 
 router.get('/stream/:pane_key(*)', (req, res) => {
   const paneKey = normalizePaneKey(req.params.pane_key);
@@ -260,13 +293,15 @@ router.get('/:pane_key(*)', async (req, res) => {
   console.log(`[task-events GET] rawKey=${rawKey} → paneKey=${paneKey}, limit=${limit}`);
 
   try {
+    const aliases = getSessionNameAliases(paneKey);
+    const placeholders = aliases.map(() => '?').join(', ');
     const [conversations] = await pool.query(
-      `SELECT conversation_id, pane_key, user_message, assistant_message, conv_status, started_at, completed_at
+      `SELECT id, conversation_id, pane_key, user_message, assistant_message, conv_status, started_at, completed_at
        FROM ai_conversation
-       WHERE pane_key = ? AND is_deleted = 0
+       WHERE pane_key IN (${placeholders}) AND is_deleted = 0
        ORDER BY started_at DESC
        LIMIT ?`,
-      [paneKey, limit]
+      [...aliases, limit]
     );
 
     return res.json({ conversations });

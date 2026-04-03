@@ -6,6 +6,9 @@ import { TaskHistoryPanel } from '../shared/components/TaskHistoryPanel'
 import { ImperialStudyPanel } from '../shared/components/imperial-study/components/ImperialStudyPanel'
 import { LoginModal } from '../shared/components/LoginModal'
 import { WebFileBrowser } from '../shared/components/file-browser/WebFileBrowser'
+import { TaskToastContainer } from '../shared/components/TaskToast'
+import { usePaneNavigation } from '../hooks/usePaneNavigation'
+import { useGlobalTaskNotifications } from '../hooks/useGlobalTaskNotifications'
 import { checkAuth, logout } from '../utils/auth'
 import { TmuxSession, OpenTab, Profile, SessionGroup } from '../types'
 import useVisualViewport from '../hooks/useVisualViewport'
@@ -200,6 +203,22 @@ export default function MobileApp() {
     })
     setDrawerOpen(false)
   }, [])
+
+  const openPane = useCallback((paneId: string, paneName: string) => {
+    setTabs(prev => {
+      const existing = prev.find(t => t.paneId === paneId)
+      if (existing) {
+        setActiveTabId(existing.id)
+        return prev
+      }
+      const newTab: OpenTab = { id: `tab-${paneId}`, paneId, title: paneName }
+      setActiveTabId(newTab.id)
+      return [...prev, newTab]
+    })
+  }, [])
+
+  usePaneNavigation(sessions, openPane)
+  const { notifications, dismissNotification } = useGlobalTaskNotifications()
 
   // Open task history for a specific pane (from status icon click in drawer)
   const handlePaneStatusClick = useCallback((paneKey: string) => {
@@ -410,6 +429,8 @@ export default function MobileApp() {
           </div>
         )}
       </main>
+
+      <TaskToastContainer notifications={notifications} onDismiss={dismissNotification} />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare, ScrollText, FolderSearch } from 'lucide-react'
+import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare, ScrollText, FolderSearch, BrainCircuit } from 'lucide-react'
 import { TmuxTree } from '../shared/components/TmuxTree'
 import { TaskStatBadges } from '../shared/components/TaskStatBadges'
 import { TerminalTabs } from './TerminalTabs'
@@ -10,6 +10,10 @@ import { DesktopToolbox } from './DesktopToolbox'
 import { ImperialStudyPanel } from '../shared/components/imperial-study/components/ImperialStudyPanel'
 import { FloatingImperialStudy } from '../shared/components/imperial-study/components/FloatingImperialStudy'
 import { FloatingYazi } from '../shared/components/file-browser/FloatingYazi'
+import { FloatingCLIHistory } from '../shared/components/cli-history/FloatingCLIHistory'
+import { TaskToastContainer } from '../shared/components/TaskToast'
+import { usePaneNavigation } from '../hooks/usePaneNavigation'
+import { useGlobalTaskNotifications } from '../hooks/useGlobalTaskNotifications'
 import { checkAuth, logout } from '../utils/auth'
 import { isMobile } from '../utils/platform'
 import { TmuxSession, OpenTab, Profile, SessionGroup } from '../types'
@@ -51,6 +55,7 @@ export default function App() {
   })
   const [yaziFloat, setYaziFloat] = useState(false)
 
+  const [cliHistoryFloat, setCLIHistoryFloat] = useState(false)
   const activePaneKey = useMemo(() => {
     const tab = tabs.find(t => t.id === activeTabId)
     if (!tab) return null
@@ -189,6 +194,9 @@ export default function App() {
     setActiveTabId(newTab.id)
   }
 
+  usePaneNavigation(sessions, openPane)
+  const { notifications, dismissNotification } = useGlobalTaskNotifications()
+
   function closeTab(tabId: string) {
     setTabs(prev => {
       const filtered = prev.filter(t => t.id !== tabId)
@@ -303,6 +311,16 @@ export default function App() {
                   {yaziFloat && <span className="fb-float-pin__indicator" />}
                 </span>
               </button>
+              <button
+                className={`activity-tab ${cliHistoryFloat ? 'active' : ''}`}
+                title="CLI History"
+                onClick={() => setCLIHistoryFloat(!cliHistoryFloat)}
+              >
+                <span className={cliHistoryFloat ? 'fb-float-pin' : ''}>
+                  <BrainCircuit size={22} strokeWidth={cliHistoryFloat ? 2 : 1.5} />
+                  {cliHistoryFloat && <span className="fb-float-pin__indicator" />}
+                </span>
+              </button>
             </div>
             <div className="activity-bar-bottom">
               <button className="activity-tab" onClick={() => setShowGroupManager(!showGroupManager)} title="Manage groups">
@@ -414,6 +432,15 @@ export default function App() {
           onClose={() => setYaziFloat(false)}
         />
       )}
+
+      {cliHistoryFloat && (
+        <FloatingCLIHistory
+          cwd={activePaneCwd}
+          onClose={() => setCLIHistoryFloat(false)}
+        />
+      )}
+
+      <TaskToastContainer notifications={notifications} onDismiss={dismissNotification} />
 
     </div>
   )

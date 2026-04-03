@@ -122,7 +122,16 @@ export function TaskHistoryPanel({ paneKey, onClose, embedded, onStatusChange }:
                     <div className="task-history-empty">该 pane 暂无任务历史</div>
                 ) : (
                     conversations.map(conv => (
-                        <div key={conv.id} className={`task-history-item status-${conv.conv_status}`}>
+                        <div
+                            key={conv.id}
+                            className={`task-history-item status-${conv.conv_status}`}
+                            onClick={() => {
+                                window.dispatchEvent(new CustomEvent('navigate-to-pane', {
+                                    detail: { paneKey: conv.pane_key }
+                                }))
+                            }}
+                            style={{ cursor: 'pointer' }}
+                        >
                             <div className="task-history-item-top">
                                 <StatusIcon status={conv.conv_status} />
                                 <span className="task-history-item-msg">{conv.user_message || 'Untitled'}</span>
@@ -130,7 +139,7 @@ export function TaskHistoryPanel({ paneKey, onClose, embedded, onStatusChange }:
                                 {conv.conv_status === 'in_progress' && (
                                     <button
                                         className="task-history-complete-btn"
-                                        onClick={() => markComplete(conv.id)}
+                                        onClick={(e) => { e.stopPropagation(); markComplete(conv.id) }}
                                         title="标记为已完成"
                                     >
                                         <CheckCheck size={12} />

@@ -33,8 +33,8 @@ function WorkerCard({ worker, intent, onContextMenu, onWorkerClick }: WorkerCard
         } else {
             setFlash(true);
             setTimeout(() => setFlash(false), 200);
-            window.dispatchEvent(new CustomEvent('imperial:focus-pane', {
-                detail: { paneTarget: worker.pane_target }
+            window.dispatchEvent(new CustomEvent('navigate-to-pane', {
+                detail: { paneKey: worker.pane_target }
             }));
         }
     };
