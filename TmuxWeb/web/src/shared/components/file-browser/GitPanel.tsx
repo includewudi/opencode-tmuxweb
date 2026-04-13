@@ -106,7 +106,24 @@ export function GitPanel({ dir, onRefresh }: GitPanelProps) {
       })
       if (aiRes.ok) {
         const data = await aiRes.json()
-        setCommitMsg(data.command || data.explanation || '')
+        const raw = (data.command || data.explanation || '').trim()
+        // 检测未配置 AI 的回显
+        if (data.explanation?.includes('未配置') || data.explanation?.includes('API')) {
+          setCommitMsg('')
+          setOperationOutput(`⚠️ ${data.explanation}`)
+          return
+        }
+        let msg = raw
+        // 清洗 AI 返回的 prompt 残留
+        const promptPrefixes = ['为以下 git 变更', '生成简洁的中文', '只输出 message', 'commit message', 'Generate a commit']
+        for (const p of promptPrefixes) {
+          const idx = msg.indexOf(p)
+          if (idx > 0) { msg = msg.substring(0, idx).trim(); break }
+          if (idx === 0) { msg = ''; break }
+        }
+        // 去掉 markdown 代码块包裹
+        msg = msg.replace(/^```\w*\n?/, '').replace(/\n?```$/, '').trim()
+        setCommitMsg(msg)
       }
     } catch (e) { console.warn('[GitPanel:suggest]', e) }
     setSuggesting(false)
@@ -224,7 +241,7 @@ export function GitPanel({ dir, onRefresh }: GitPanelProps) {
           className="wfb-git-panel__commit-input"
           value={commitMsg}
           onChange={e => setCommitMsg(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleCommit() }}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { /* Enter: 不自动提交，允许换行 */ } }}
           placeholder="输入提交信息..."
         />
         <button className="wfb-git-btn wfb-git-btn--commit" onClick={handleCommit} disabled={committing || !commitMsg.trim()} title="提交">
