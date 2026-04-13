@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react'
 import { TmuxSession } from '../types'
+import { resolvePaneTarget } from './paneNavigationUtils'
 
 interface NavigateToPaneDetail {
   paneKey: string
@@ -8,7 +9,7 @@ interface NavigateToPaneDetail {
 type OpenPaneFn = (paneId: string, paneName: string) => void
 
 /**
- * Resolves a pane_key (session name like "im-bot-server") to a concrete
+ * Resolves a pane_key (session name or session/window/pane path) to a concrete
  * paneId + paneName by searching the live sessions tree, then calls openPane.
  *
  * Also listens for the global 'navigate-to-pane' CustomEvent so any component
@@ -26,21 +27,13 @@ export function usePaneNavigation(
 
   const navigateToPane = useCallback((paneKey: string) => {
     const currentSessions = sessionsRef.current
-    const session = currentSessions.find(s => s.sessionName === paneKey)
-    if (!session || session.windows.length === 0) {
-      console.warn(`[usePaneNavigation] Session "${paneKey}" not found in tree`)
+    const target = resolvePaneTarget(currentSessions, paneKey)
+    if (!target) {
+      console.warn(`[usePaneNavigation] Pane target "${paneKey}" not found in tree`)
       return false
     }
 
-    const window = session.windows[0]
-    if (!window.panes || window.panes.length === 0) {
-      console.warn(`[usePaneNavigation] Session "${paneKey}" has no panes`)
-      return false
-    }
-
-    const pane = window.panes[0]
-    const paneName = `${session.sessionName}:${window.windowIndex}`
-    openPaneRef.current(pane.paneId, paneName)
+    openPaneRef.current(target.paneId, target.paneName)
     return true
   }, [])
 

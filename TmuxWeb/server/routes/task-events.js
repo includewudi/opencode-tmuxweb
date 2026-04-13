@@ -5,6 +5,8 @@ const { syncPaneStatus, getCanonicalSessionName, getSessionNameAliases } = requi
 
 const router = express.Router();
 
+const rawPaneKeyCache = new Map();
+
 function normalizePaneKey(key) {
   if (!key) return key;
   return getCanonicalSessionName(key);
@@ -123,6 +125,7 @@ router.post('/', async (req, res) => {
       }
 
       const paneKey = normalizePaneKey(rawPaneKey);
+      rawPaneKeyCache.set(conversation_id, rawPaneKey);
 
       // Auto-close any stale in_progress conversations on this pane
       await pool.query(
@@ -149,6 +152,7 @@ router.post('/', async (req, res) => {
         type: 'task_started',
         conversation_id,
         pane_key: paneKey,
+        pane_key_raw: rawPaneKey,
         user_message: user_message || '',
         timestamp: eventTime,
       });
@@ -188,6 +192,7 @@ router.post('/', async (req, res) => {
       );
       if (existing.length > 0) {
         const paneKeyForBroadcast = existing[0].pane_key;
+        const rawPaneKey = rawPaneKeyCache.get(conversation_id) || paneKeyForBroadcast;
 
         // Sync pane status to sidebar
         const token = req.token || req.query.token || config.token;
@@ -197,10 +202,13 @@ router.post('/', async (req, res) => {
           type: 'task_completed',
           conversation_id,
           pane_key: paneKeyForBroadcast,
+          pane_key_raw: rawPaneKey,
           assistant_message: assistant_message || '',
           timestamp: eventTime,
         });
       }
+
+      rawPaneKeyCache.delete(conversation_id);
 
       await pool.query(
         `UPDATE ai_conversation SET 
@@ -219,6 +227,7 @@ router.post('/', async (req, res) => {
       );
       if (existing.length > 0) {
         const paneKeyForBroadcast = existing[0].pane_key;
+        const rawPaneKey = rawPaneKeyCache.get(conversation_id) || paneKeyForBroadcast;
 
         const token = req.token || req.query.token || config.token;
         await syncPaneStatus(pool, token, 'default', paneKeyForBroadcast, 'failed');
@@ -227,10 +236,13 @@ router.post('/', async (req, res) => {
           type: 'task_failed',
           conversation_id,
           pane_key: paneKeyForBroadcast,
+          pane_key_raw: rawPaneKey,
           assistant_message: assistant_message || '',
           timestamp: eventTime,
         });
       }
+
+      rawPaneKeyCache.delete(conversation_id);
 
       await pool.query(
         `UPDATE ai_conversation SET
@@ -249,6 +261,7 @@ router.post('/', async (req, res) => {
       );
       if (existing.length > 0) {
         const paneKeyForBroadcast = existing[0].pane_key;
+        const rawPaneKey = rawPaneKeyCache.get(conversation_id) || paneKeyForBroadcast;
 
         const token = req.token || req.query.token || config.token;
         await syncPaneStatus(pool, token, 'default', paneKeyForBroadcast, 'waiting');
@@ -257,6 +270,7 @@ router.post('/', async (req, res) => {
           type: 'task_waiting',
           conversation_id,
           pane_key: paneKeyForBroadcast,
+          pane_key_raw: rawPaneKey,
           assistant_message: assistant_message || '',
           timestamp: eventTime,
         });

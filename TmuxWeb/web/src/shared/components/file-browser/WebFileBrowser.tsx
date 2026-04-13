@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Folder, File, ChevronUp, ChevronRight, Plus, Loader2, Pencil, Trash2, Terminal, GitCompare, Clock, FileStack, Sparkles, X } from 'lucide-react'
 import { getToken } from '../../../utils/auth'
-import { FileEntry, ContextMenuState, formatSize, sortByFoldersFirst, joinPath } from './web-file-browser-helpers'
+import { FileEntry, ContextMenuState, formatSize, sortByFoldersFirst, joinPath, isMediaFile } from './web-file-browser-helpers'
 import { FilePreview } from './FilePreview'
 import './web-file-browser.css'
 
@@ -11,6 +11,12 @@ interface Props {
 }
 
 export function WebFileBrowser({ dir, onSendPath }: Props) {
+  const normalizedDir = useMemo(() => {
+    if (!dir) return '/'
+    const normalized = dir.replace(/\\/g, '/').replace(/\/+$/, '')
+    return normalized === '' ? '/' : normalized
+  }, [dir])
+  const childrenCacheRef = useRef<Map<string, FileEntry[]>>(new Map())
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set())
   const [childrenCache, setChildrenCache] = useState<Map<string, FileEntry[]>>(new Map())
   const [loadingDirs, setLoadingDirs] = useState<Set<string>>(new Set())
@@ -34,8 +40,8 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
   const [fileGitStatus, setFileGitStatus] = useState<string | undefined>()
   const [forceMode, setForceMode] = useState<'diff' | 'history' | null>(null)
 
-  const fetchDir = useCallback(async (dirPath: string) => {
-    if (childrenCache.has(dirPath)) return childrenCache.get(dirPath)!
+  const fetchDir = useCallback(async (dirPath: string, force = false) => {
+    if (!force && childrenCacheRef.current.has(dirPath)) return childrenCacheRef.current.get(dirPath)!
     setLoadingDirs(prev => new Set(prev).add(dirPath))
     try {
       const token = getToken()
@@ -44,13 +50,14 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
         const data = await res.json()
         const items = Array.isArray(data) ? data : (data.items || data.entries || [])
         const sorted = sortByFoldersFirst(items)
+        childrenCacheRef.current.set(dirPath, sorted)
         setChildrenCache(prev => new Map(prev).set(dirPath, sorted))
         return sorted
       }
     } catch {}
     setLoadingDirs(prev => { const n = new Set(prev); n.delete(dirPath); return n })
     return []
-  }, [childrenCache])
+  }, [])
 
   const toggleDir = useCallback(async (dirPath: string) => {
     setExpandedDirs(prev => {
@@ -64,9 +71,9 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
   useEffect(() => {
     if (expandedDirs.size === 0) return
     for (const d of expandedDirs) {
-      if (!childrenCache.has(d)) fetchDir(d)
+      if (!childrenCacheRef.current.has(d)) fetchDir(d)
     }
-  }, [expandedDirs])
+  }, [expandedDirs, fetchDir])
 
   useEffect(() => {
     if ((creatingNew || editingEntry) && inputRef.current) inputRef.current.focus()
@@ -95,12 +102,16 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
       } catch {}
     }
     try {
-      const res = await fetch(`/api/files/content?path=${encodeURIComponent(fp)}&token=${getToken()}`)
-      if (res.ok) {
-        const data = await res.json()
-        if (data.error) setFileContent(data.error === 'binary_file' ? '(binary file)' : `(error: ${data.error})`)
-        else setFileContent(data.content)
-      } else setFileContent('(failed to load)')
+      if (isMediaFile(fp)) {
+        setFileContent('')
+      } else {
+        const res = await fetch(`/api/files/content?path=${encodeURIComponent(fp)}&token=${getToken()}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.error) setFileContent(data.error === 'binary_file' ? '(binary file)' : `(error: ${data.error})`)
+          else setFileContent(data.content)
+        } else setFileContent('(failed to load)')
+      }
     } catch { setFileContent('(failed to load)') }
     setPreviewLoading(false)
   }
@@ -166,8 +177,8 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
   }
 
   const goUp = () => {
-    if (dir === '/') return
-    const parent = dir.split('/').slice(0, -1).join('/') || '/'
+    if (normalizedDir === '/') return
+    const parent = normalizedDir.split('/').slice(0, -1).join('/') || '/'
     setExpandedDirs(prev => new Set(prev).add(parent))
   }
 
@@ -212,20 +223,20 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
       const isSelected = selectedFilePath === fp
       if (entry.type === 'dir') {
         nodes.push(
-          <div key={fp} className={`wfb-tree-item${isExpanded ? ' wfb-tree-item--expanded' : ''}`}
+          <div key={fp} className={`wfb-tree-item${isExpanded ? ' wfb-tree-item--expanded' : ''}${entry.git === 'ignored' ? ' wfb-tree-item--ignored' : ''}`}
             style={{ paddingLeft: 8 + level * 16 }}
             onClick={() => toggleDir(fp)}
             onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, entry, dirPath }) }}>
             <ChevronRight size={14} className="wfb-tree-item__chevron" />
             <Folder size={14} className="wfb-icon-folder" />
             <span className="wfb-tree-item__name">{entry.name}</span>
-            {entry.git && <span className={`wfb-git-badge wfb-git-badge--${entry.git}`}>{entry.git === 'modified' ? 'M' : entry.git === 'staged' ? 'S' : entry.git === 'conflicted' ? '!' : '?'}</span>}
+            {entry.git && <span className={`wfb-git-badge wfb-git-badge--${entry.git}`}>{entry.git === 'modified' ? 'M' : entry.git === 'staged' ? 'S' : entry.git === 'conflicted' ? '!' : entry.git === 'ignored' ? 'I' : '?'}</span>}
           </div>
         )
         if (isExpanded) nodes.push(...renderTree(fp, level + 1))
       } else {
         nodes.push(
-          <div key={fp} className={`wfb-tree-item${isSelected ? ' wfb-tree-item--selected' : ''}`}
+          <div key={fp} className={`wfb-tree-item${isSelected ? ' wfb-tree-item--selected' : ''}${entry.git === 'ignored' ? ' wfb-tree-item--ignored' : ''}`}
             style={{ paddingLeft: 8 + level * 16 }}
             onClick={() => previewFile(fp, entry)}
             onContextMenu={e => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, entry, dirPath }) }}>
@@ -233,7 +244,7 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
             <File size={14} className="wfb-icon-file" />
             <span className="wfb-tree-item__name">{entry.name}</span>
             <span className="wfb-tree-item__meta">{formatSize(entry.size)}</span>
-            {entry.git && <span className={`wfb-git-badge wfb-git-badge--${entry.git}`}>{entry.git === 'modified' ? 'M' : entry.git === 'staged' ? 'S' : entry.git === 'conflicted' ? '!' : '?'}</span>}
+            {entry.git && <span className={`wfb-git-badge wfb-git-badge--${entry.git}`}>{entry.git === 'modified' ? 'M' : entry.git === 'staged' ? 'S' : entry.git === 'conflicted' ? '!' : entry.git === 'ignored' ? 'I' : '?'}</span>}
             {editingEntry?.entry.name === entry.name && editingEntry?.dirPath === dirPath && (
               <input ref={inputRef} className="wfb-inline-input wfb-inline-input--rename"
                 value={editingEntry.newName} autoFocus onClick={e => e.stopPropagation()}
@@ -249,24 +260,35 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
     return nodes
   }
 
-  useEffect(() => { fetchDir(dir) }, [])
+  useEffect(() => {
+    setExpandedDirs(new Set())
+    setSelectedFile(null)
+    setSelectedFilePath('')
+    setFileContent('')
+    setFilePath('')
+    setDiffContent('')
+    setDiffStats(undefined)
+    setFileGitStatus(undefined)
+    setForceMode(null)
+    fetchDir(normalizedDir, true)
+  }, [normalizedDir, fetchDir])
 
-  const displayPath = dir.replace(/^\/home\/[^/]+/, '~')
+  const displayPath = normalizedDir.replace(/^\/home\/[^/]+/, '~')
 
   return (
     <div className="wfb-container">
       <div className="wfb-tree-panel" ref={treePanelRef} style={{ width: splitPos }}>
         <div className="wfb-tree-header">
           <div className="wfb-tree-header__path">
-            <button className="wfb-icon-btn" onClick={goUp} disabled={dir === '/'} title="Up"><ChevronUp size={14} /></button>
-            <span className="wfb-tree-header__dir" title={dir}>{displayPath}</span>
+            <button className="wfb-icon-btn" onClick={goUp} disabled={normalizedDir === '/'} title="Up"><ChevronUp size={14} /></button>
+            <span className="wfb-tree-header__dir" title={normalizedDir}>{displayPath}</span>
           </div>
           <div className="wfb-tree-header__actions">
             <button className="wfb-icon-btn" onClick={async () => {
               setAiLoading(true); setAiSummary(null)
               try {
                 const token = getToken()
-                const res = await fetch(`/api/files/changes-summary?dir=${encodeURIComponent(dir)}&token=${token}`)
+                const res = await fetch(`/api/files/changes-summary?dir=${encodeURIComponent(normalizedDir)}&token=${token}`)
                 const data = await res.json()
                 setAiSummary(data.summary || data.error || 'No summary')
               } catch { setAiSummary('Failed to analyze') }
@@ -274,7 +296,7 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
             }} title="AI summary">{aiLoading ? <Loader2 size={14} className="wfb-spin" /> : <Sparkles size={14} />}</button>
             <button className="wfb-icon-btn" onClick={() => {
               const token = getToken()
-              window.open(`/api/files/diff-report?dir=${encodeURIComponent(dir)}&token=${token}`, '_blank')
+              window.open(`/api/files/diff-report?dir=${encodeURIComponent(normalizedDir)}&token=${token}`, '_blank')
             }} title="Changes report"><FileStack size={14} /></button>
             <button className="wfb-icon-btn" onClick={() => { setCreatingNew('file'); setNewName('') }} title="New file"><Plus size={14} /></button>
             <button className="wfb-icon-btn" onClick={() => { setCreatingNew('folder'); setNewName('') }} title="New folder"><Folder size={14} /></button>

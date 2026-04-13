@@ -21,6 +21,14 @@ const CONNECT_TIMEOUT_MS = 10000
 export const VoiceInput = forwardRef<VoiceInputHandle | null, Props>(function VoiceInput({ onText, onPartial, disabled }, ref) {
   const [status, setStatus] = useState<Status>('idle')
   const [partialText, setPartialText] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
+  const errorMsgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const showError = useCallback((msg: string) => {
+    if (errorMsgTimerRef.current) clearTimeout(errorMsgTimerRef.current)
+    setErrorMsg(msg)
+    errorMsgTimerRef.current = setTimeout(() => setErrorMsg(''), 3000)
+  }, [])
   const wsRef = useRef<WebSocket | null>(null)
   const mediaStreamRef = useRef<MediaStream | null>(null)
   const processorRef = useRef<ScriptProcessorNode | null>(null)
@@ -32,6 +40,10 @@ export const VoiceInput = forwardRef<VoiceInputHandle | null, Props>(function Vo
     if (connectTimeoutRef.current) {
       clearTimeout(connectTimeoutRef.current)
       connectTimeoutRef.current = null
+    }
+    if (errorMsgTimerRef.current) {
+      clearTimeout(errorMsgTimerRef.current)
+      errorMsgTimerRef.current = null
     }
     if (processorRef.current) {
       processorRef.current.disconnect()
@@ -207,17 +219,20 @@ export const VoiceInput = forwardRef<VoiceInputHandle | null, Props>(function Vo
           cleanup()
           setStatus('idle')
           setPartialText('')
+          showError(data.message || '语音服务不可用')
         }
       }
 
       ws.onerror = () => {
         cleanup()
         setStatus('idle')
+        showError('语音服务连接失败')
       }
 
       ws.onclose = () => {
         cleanup()
         setStatus('idle')
+        showError('语音服务连接断开')
       }
 
     } catch (err) {
@@ -275,6 +290,9 @@ export const VoiceInput = forwardRef<VoiceInputHandle | null, Props>(function Vo
       </button>
       {partialText && (
         <div className="voice-preview">{partialText}</div>
+      )}
+      {errorMsg && (
+        <div className="voice-error-toast" onClick={() => setErrorMsg('')}>{errorMsg}</div>
       )}
     </div>
   )

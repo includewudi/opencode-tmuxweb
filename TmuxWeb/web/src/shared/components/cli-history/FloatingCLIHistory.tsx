@@ -1,22 +1,17 @@
-import { useEffect, useState } from 'react'
-import { FolderSearch, Minus, X, Maximize2, Minimize2 } from 'lucide-react'
+import { useState } from 'react'
+import { BrainCircuit, Minus, X, Maximize2, Minimize2 } from 'lucide-react'
 import { useFloatingPanel } from '../imperial-study/hooks/useFloatingPanel'
-import { WebFileBrowser } from './WebFileBrowser'
-import './file-browser.css'
+import { CLIHistoryPanel } from './CLIHistoryPanel'
+import '../file-browser/file-browser.css'
+import './CLIHistoryPanel.css'
 
-interface FloatingYaziProps {
-  dir?: string
-  onSendPath?: (path: string) => void
+interface FloatingCLIHistoryProps {
+  cwd?: string | null
   onClose: () => void
 }
 
-export function FloatingYazi({ dir, onSendPath, onClose }: FloatingYaziProps) {
+export function FloatingCLIHistory({ cwd, onClose }: FloatingCLIHistoryProps) {
   const [maximized, setMaximized] = useState(false)
-  const [activePath, setActivePath] = useState(dir || '~')
-
-  useEffect(() => {
-    if (dir) setActivePath(dir)
-  }, [dir])
 
   const {
     collapsed,
@@ -28,10 +23,10 @@ export function FloatingYazi({ dir, onSendPath, onClose }: FloatingYaziProps) {
     toggleCollapse,
     setOpacity,
   } = useFloatingPanel({
-    storageKey: 'yazi-floating',
-    defaultSize: { width: 900, height: 520 },
-    minWidth: 500,
-    minHeight: 300,
+    storageKey: 'cli-history-floating',
+    defaultSize: { width: 1000, height: 560 },
+    minWidth: 600,
+    minHeight: 350,
   })
 
   const handleClose = () => onClose()
@@ -42,9 +37,9 @@ export function FloatingYazi({ dir, onSendPath, onClose }: FloatingYaziProps) {
         className="fb-floating-bubble"
         style={{ left: position.x, top: position.y }}
         onClick={toggleCollapse}
-        title="展开文件管理器"
+        title="CLI History"
       >
-        <FolderSearch size={20} />
+        <BrainCircuit size={20} />
       </div>
     )
   }
@@ -61,10 +56,10 @@ export function FloatingYazi({ dir, onSendPath, onClose }: FloatingYaziProps) {
       } as React.CSSProperties}
     >
       <div className="fb-floating-panel__titlebar" onMouseDown={onDragStart}>
-        <FolderSearch size={12} className="fb-floating-panel__icon" />
-        <span className="fb-floating-panel__title">文件管理器</span>
+        <BrainCircuit size={12} className="fb-floating-panel__icon" />
+        <span className="fb-floating-panel__title">CLI History</span>
         <span className="fb-floating-panel__stats">
-          {dir || '~'}
+          {cwd ? cwd.split('/').slice(-2).join('/') : 'OpenCode Sessions'}
         </span>
         <div className="fb-floating-panel__actions">
           {!maximized && (
@@ -105,7 +100,7 @@ export function FloatingYazi({ dir, onSendPath, onClose }: FloatingYaziProps) {
       </div>
 
       <div className="fb-floating-panel__body">
-        <WebFileBrowser dir={activePath} onSendPath={onSendPath} />
+        <CLIHistoryPanel cwd={cwd} />
       </div>
 
       {!maximized && (

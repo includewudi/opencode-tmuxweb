@@ -31,6 +31,7 @@ const butlerProxyRouter = require('./routes/butler-proxy');
 const capabilitiesRouter = require('./routes/capabilities');
 const uploadRouter = require('./routes/upload');
 const filesRouter = require('./routes/files');
+const cliHistoryRouter = require('./routes/cli-history');
 // Terminal mode: 'pty' (default, one PTY per pane) or 'controlmode' (single PTY via tmux -C)
 const terminalMode = config.terminalMode || 'pty';
 const terminalModule = terminalMode === 'controlmode'
@@ -98,6 +99,7 @@ app.use('/api/opencode-config', tokenMiddleware, opencodeConfigRouter);
 app.use('/api/butler', tokenMiddleware, butlerProxyRouter);
 app.use('/api/files', tokenMiddleware, filesRouter);
 app.use('/api/upload', tokenMiddleware, uploadRouter);
+app.use('/api/cli-history', tokenMiddleware, cliHistoryRouter);
 
 // Task routes: task CRUD (tasks-db.js), summaries
 app.use('/api/tasks', tokenMiddleware, requireDb, tasksDbRouter);       // /:id, /:id/complete, /:id/detail

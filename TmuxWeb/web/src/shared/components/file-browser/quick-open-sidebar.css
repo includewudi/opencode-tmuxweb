@@ -1,0 +1,15 @@
+.quick-open-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--wfb-bg, #18181b);
+}
+
+.quick-open-sidebar__browser {
+  flex: 1;
+  min-height: 0;
+}
+
+.quick-open-sidebar .wfb-container {
+  height: 100%;
+}

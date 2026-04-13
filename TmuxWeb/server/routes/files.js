@@ -19,7 +19,7 @@ function resolveSafe(raw) {
 
 function getGitStatus(dir) {
   try {
-    const out = execSync('git status --porcelain -uall', { cwd: dir, encoding: 'utf-8', timeout: 3000 }).trim();
+    const out = execSync('git status --porcelain -uall --ignored', { cwd: dir, encoding: 'utf-8', timeout: 3000 }).trim();
     if (!out) return {};
     let repoRoot = dir;
     try {
@@ -32,7 +32,8 @@ function getGitStatus(dir) {
       const raw = line.slice(3).replace(/^"(.*)"$/, '$1');
       if (raw.includes(' -> ')) continue;
       const xy = line.slice(0, 2);
-      const status = xy === '??' ? 'untracked'
+      const status = xy === '!!' ? 'ignored'
+        : xy === '??' ? 'untracked'
         : xy[0] !== ' ' && xy[0] !== '?' ? 'staged'
         : xy[1] !== ' ' && xy[1] !== '?' ? 'modified'
         : 'modified';
@@ -112,6 +113,28 @@ router.get('/content', async (req, res) => {
       return res.json({ error: 'binary_file', size: stat.size });
     }
     res.json({ content: buf.toString('utf-8'), encoding: 'utf-8' });
+  } catch (err) {
+    const code = err.code === 'ENOENT' ? 404 : err.code === 'EACCES' ? 403 : 500;
+    res.status(code).json({ error: err.message });
+  }
+});
+
+router.get('/preview', async (req, res) => {
+  try {
+    const filePath = req.query.path;
+    if (!filePath) return res.status(400).json({ error: 'path is required' });
+    const target = resolveSafe(filePath);
+    const stat = await fsp.stat(target);
+    if (!stat.isFile()) return res.status(400).json({ error: 'Not a file' });
+    if (stat.size > 10 * 1024 * 1024) {
+      return res.status(413).json({ error: 'File too large' });
+    }
+    res.setHeader('Content-Length', stat.size);
+    const stream = fs.createReadStream(target);
+    stream.on('error', (streamErr) => {
+      res.status(streamErr.code === 'EACCES' ? 403 : 500).end();
+    });
+    stream.pipe(res);
   } catch (err) {
     const code = err.code === 'ENOENT' ? 404 : err.code === 'EACCES' ? 403 : 500;
     res.status(code).json({ error: err.message });
@@ -399,6 +422,218 @@ router.get('/diff-report', async (req, res) => {
     });
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(out);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/git/is-repo', async (req, res) => {
+  try {
+    const dir = req.query.dir;
+    if (!dir) return res.status(400).json({ error: 'dir is required' });
+    const target = resolveSafe(dir);
+    try {
+      execSync('git rev-parse --is-inside-work-tree', { cwd: target, encoding: 'utf-8', timeout: 3000 });
+      res.json({ isRepo: true });
+    } catch {
+      res.json({ isRepo: false });
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/git/status', async (req, res) => {
+  try {
+    const dir = req.query.dir;
+    if (!dir) return res.status(400).json({ error: 'dir is required' });
+    const target = resolveSafe(dir);
+    let repoRoot;
+    try {
+      repoRoot = execSync('git rev-parse --show-toplevel', { cwd: target, encoding: 'utf-8', timeout: 3000 }).trim();
+    } catch {
+      return res.status(400).json({ error: 'Not a git repository' });
+    }
+    let branch = '';
+    let ahead = 0, behind = 0;
+    try {
+      branch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: repoRoot, encoding: 'utf-8', timeout: 3000 }).trim();
+    } catch {}
+    try {
+      const abOut = execSync('git rev-list --left-right --count HEAD...@{upstream}', { cwd: repoRoot, encoding: 'utf-8', timeout: 5000 }).trim();
+      const parts = abOut.split(/\s+/);
+      ahead = parseInt(parts[0]) || 0;
+      behind = parseInt(parts[1]) || 0;
+    } catch {}
+    const statusOut = execSync('git status --porcelain -uall', { cwd: repoRoot, encoding: 'utf-8', timeout: 5000 }).trim();
+    const staged = [], modified = [], untracked = [];
+    if (statusOut) {
+      const relativeTo = target;
+      for (const line of statusOut.split('\n')) {
+        if (!line) continue;
+        const raw = line.slice(3).replace(/^"(.*)"$/, '$1');
+        if (raw.includes(' -> ')) continue;
+        const xy = line.slice(0, 2);
+        const absPath = path.resolve(repoRoot, raw);
+        const rel = path.relative(relativeTo, absPath);
+        if (xy === '??') untracked.push(rel);
+        else if (xy[0] !== ' ' && xy[0] !== '?') staged.push(rel);
+        else if (xy[1] !== ' ' && xy[1] !== '?') modified.push(rel);
+      }
+    }
+    res.json({ branch, ahead, behind, staged, modified, untracked });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/git/log', async (req, res) => {
+  try {
+    const dir = req.query.dir;
+    if (!dir) return res.status(400).json({ error: 'dir is required' });
+    const target = resolveSafe(dir);
+    let repoRoot;
+    try {
+      repoRoot = execSync('git rev-parse --show-toplevel', { cwd: target, encoding: 'utf-8', timeout: 3000 }).trim();
+    } catch {
+      return res.status(400).json({ error: 'Not a git repository' });
+    }
+    const from = req.query.from;
+    const count = parseInt(req.query.count) || 20;
+    let range = `-n ${count}`;
+    if (from) range = `${from}..HEAD`;
+    let out;
+    try {
+      out = execSync(`git log --format="%H|%an|%aI|%s" ${range}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 5000 }).trim();
+    } catch { out = ''; }
+    if (!out) return res.json({ commits: [] });
+    const commits = out.split('\n').map(line => {
+      const [sha, author, date, ...msgParts] = line.split('|');
+      return { sha, author, date, message: msgParts.join('|') };
+    });
+    res.json({ commits });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/git/diff-range', async (req, res) => {
+  try {
+    const dir = req.query.dir;
+    if (!dir) return res.status(400).json({ error: 'dir is required' });
+    const from = req.query.from;
+    const to = req.query.to || 'HEAD';
+    if (!from) return res.status(400).json({ error: 'from is required' });
+    const target = resolveSafe(dir);
+    let repoRoot;
+    try {
+      repoRoot = execSync('git rev-parse --show-toplevel', { cwd: target, encoding: 'utf-8', timeout: 3000 }).trim();
+    } catch {
+      return res.status(400).json({ error: 'Not a git repository' });
+    }
+    let diff;
+    try {
+      diff = execSync(`git diff ${from}..${to}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 10000, maxBuffer: 2 * 1024 * 1024 }).trim();
+    } catch { diff = ''; }
+    let stats = '';
+    try {
+      stats = execSync(`git diff --stat ${from}..${to}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 5000 }).trim();
+    } catch { stats = ''; }
+    let additions = 0, deletions = 0;
+    for (const line of diff.split('\n')) {
+      if (line.startsWith('+') && !line.startsWith('+++')) additions++;
+      else if (line.startsWith('-') && !line.startsWith('---')) deletions++;
+    }
+    res.json({ diff, stats, additions, deletions });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/git/commit', async (req, res) => {
+  try {
+    const { dir, message, excludeFiles } = req.body;
+    if (!dir || !message) return res.status(400).json({ error: 'dir and message are required' });
+    const target = resolveSafe(dir);
+    let repoRoot;
+    try {
+      repoRoot = execSync('git rev-parse --show-toplevel', { cwd: target, encoding: 'utf-8', timeout: 3000 }).trim();
+    } catch {
+      return res.status(400).json({ error: 'Not a git repository' });
+    }
+    execSync('git add -A', { cwd: repoRoot, encoding: 'utf-8', timeout: 10000 });
+    if (excludeFiles && excludeFiles.length > 0) {
+      for (const f of excludeFiles) {
+        try {
+          execSync(`git reset HEAD -- "${f}"`, { cwd: repoRoot, encoding: 'utf-8', timeout: 5000 });
+        } catch {}
+      }
+    }
+    let out;
+    try {
+      out = execSync(`git commit -m ${JSON.stringify(message)}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 10000 }).trim();
+    } catch (e) {
+      return res.status(400).json({ error: e.stderr?.trim() || e.message || 'Commit failed' });
+    }
+    res.json({ ok: true, output: out });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/git/pull', async (req, res) => {
+  try {
+    const { dir } = req.body;
+    if (!dir) return res.status(400).json({ error: 'dir is required' });
+    const target = resolveSafe(dir);
+    let repoRoot;
+    try {
+      repoRoot = execSync('git rev-parse --show-toplevel', { cwd: target, encoding: 'utf-8', timeout: 3000 }).trim();
+    } catch {
+      return res.status(400).json({ error: 'Not a git repository' });
+    }
+    let branch;
+    try {
+      branch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: repoRoot, encoding: 'utf-8', timeout: 3000 }).trim();
+    } catch {
+      return res.status(400).json({ error: 'Cannot determine current branch' });
+    }
+    let out;
+    try {
+      out = execSync(`git pull origin ${branch}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30000, maxBuffer: 2 * 1024 * 1024 }).trim();
+    } catch (e) {
+      return res.status(400).json({ error: e.stderr?.trim() || e.message || 'Pull failed' });
+    }
+    res.json({ ok: true, output: out });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/git/push', async (req, res) => {
+  try {
+    const { dir } = req.body;
+    if (!dir) return res.status(400).json({ error: 'dir is required' });
+    const target = resolveSafe(dir);
+    let repoRoot;
+    try {
+      repoRoot = execSync('git rev-parse --show-toplevel', { cwd: target, encoding: 'utf-8', timeout: 3000 }).trim();
+    } catch {
+      return res.status(400).json({ error: 'Not a git repository' });
+    }
+    let branch;
+    try {
+      branch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: repoRoot, encoding: 'utf-8', timeout: 3000 }).trim();
+    } catch {
+      return res.status(400).json({ error: 'Cannot determine current branch' });
+    }
+    let out;
+    try {
+      out = execSync(`git push origin ${branch}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 30000, maxBuffer: 2 * 1024 * 1024 }).trim();
+    } catch (e) {
+      return res.status(400).json({ error: e.stderr?.trim() || e.message || 'Push failed' });
+    }
+    res.json({ ok: true, output: out });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

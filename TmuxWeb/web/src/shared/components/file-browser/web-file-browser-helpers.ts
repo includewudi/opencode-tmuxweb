@@ -3,7 +3,7 @@ export interface FileEntry {
   type: 'file' | 'dir'
   size?: number
   mtime?: string
-  git?: 'modified' | 'staged' | 'untracked' | 'conflicted'
+  git?: 'modified' | 'staged' | 'untracked' | 'conflicted' | 'ignored'
 }
 
 export interface ContextMenuState {
@@ -29,5 +29,33 @@ export function sortByFoldersFirst(entries: FileEntry[]): FileEntry[] {
 }
 
 export function joinPath(base: string, name: string): string {
-  return base === '/' ? '/' + name : base + '/' + name
+  if (base === '/') return '/' + name
+  if (base === '~') return '~/' + name
+  return base + '/' + name
+}
+
+export function getFileExtension(filePath: string): string {
+  const dotIndex = filePath.lastIndexOf('.')
+  if (dotIndex === -1) return ''
+  return filePath.slice(dotIndex + 1).toLowerCase()
+}
+
+const imageExts = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp', 'ico'])
+const videoExts = new Set(['mp4', 'webm', 'mov', 'm4v', 'ogv'])
+const docExts = new Set(['pdf'])
+
+export function isImageFile(filePath: string): boolean {
+  return imageExts.has(getFileExtension(filePath))
+}
+
+export function isVideoFile(filePath: string): boolean {
+  return videoExts.has(getFileExtension(filePath))
+}
+
+export function isDocFile(filePath: string): boolean {
+  return docExts.has(getFileExtension(filePath))
+}
+
+export function isMediaFile(filePath: string): boolean {
+  return isImageFile(filePath) || isVideoFile(filePath) || isDocFile(filePath)
 }

@@ -20,11 +20,12 @@ function parseTmuxList(output, delimiter = ':') {
 }
 
 router.get('/tree', (req, res) => {
-  const sessionsOutput = runTmuxCommand('list-sessions -F "#{session_name}:#{session_id}"');
-  if (!sessionsOutput) {
+  const rawOutput = runTmuxCommand('list-sessions -F "#{session_name}:#{session_id}"');
+  if (!rawOutput) {
     return res.json({ sessions: [], error: 'No tmux sessions found' });
   }
 
+  const sessionsOutput = rawOutput.split('\n').filter(line => !line.startsWith('__tw_')).join('\n');
   const sessions = [];
   const sessionLines = parseTmuxList(sessionsOutput);
 

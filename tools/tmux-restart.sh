@@ -127,13 +127,15 @@ if [[ ${#SESSION_DATA[@]} -eq 0 ]]; then
 fi
 
 echo "Sessions to restart (${#SESSION_DATA[@]}):"
-for sess in $(echo "${!SESSION_DATA[@]}" | tr ' ' '\n' | sort); do
+mapfile -t SESSION_LIST < <(printf '%s\n' "${!SESSION_DATA[@]}" | sort)
+for sess in "${SESSION_LIST[@]}"; do
   echo "  $sess"
 done
 if [[ ${#SKIP_SESSIONS[@]} -gt 0 ]]; then
   echo ""
   echo "Skipped (protected, ${#SKIP_SESSIONS[@]}):"
-  for sess in $(echo "${!SKIP_SESSIONS[@]}" | tr ' ' '\n' | sort); do
+  mapfile -t SKIP_SESSION_LIST < <(printf '%s\n' "${!SKIP_SESSIONS[@]}" | sort)
+  for sess in "${SKIP_SESSION_LIST[@]}"; do
     echo "  $sess"
   done
 fi
@@ -141,7 +143,7 @@ echo ""
 
 # List mode
 if [[ "$LIST_ONLY" == "true" ]]; then
-  for sess in $(echo "${!SESSION_DATA[@]}" | tr ' ' '\n' | sort); do
+  for sess in "${SESSION_LIST[@]}"; do
     echo "=== $sess ==="
     while IFS='|' read -r win_idx win_name pane_idx pane_path win_layout; do
       echo "  Window $win_idx ($win_name) Pane $pane_idx -> $pane_path"
@@ -157,7 +159,7 @@ echo "Saving session state to: $SAVED_FILE"
 
 echo "{" > "$SAVED_FILE"
 first_sess=true
-for sess in $(echo "${!SESSION_DATA[@]}" | tr ' ' '\n' | sort); do
+for sess in "${SESSION_LIST[@]}"; do
   if [[ "$first_sess" == "true" ]]; then
     first_sess=false
   else
@@ -183,7 +185,7 @@ echo ""
 # Dry run
 if [[ "$DRY_RUN" == "true" ]]; then
   echo "[DRY RUN] Would kill and recreate these sessions:"
-  for sess in $(echo "${!SESSION_DATA[@]}" | tr ' ' '\n' | sort); do
+  for sess in "${SESSION_LIST[@]}"; do
     echo "  - $sess"
     while IFS='|' read -r win_idx win_name pane_idx pane_path win_layout; do
       echo "      Window $win_idx Pane $pane_idx -> $pane_path"
@@ -198,7 +200,7 @@ fi
 echo "Killing sessions..."
 killed=0
 failed_kill=0
-for sess in $(echo "${!SESSION_DATA[@]}" | tr ' ' '\n' | sort); do
+for sess in "${SESSION_LIST[@]}"; do
   if tmux kill-session -t "$sess" 2>/dev/null; then
     echo "  ✓ Killed: $sess"
     ((killed++))
@@ -213,7 +215,7 @@ echo ""
 echo "Recreating sessions..."
 created=0
 failed_create=0
-for sess in $(echo "${!SESSION_DATA[@]}" | tr ' ' '\n' | sort); do
+for sess in "${SESSION_LIST[@]}"; do
   first_path=""
   pane_count=0
   declare -a pane_paths=()

@@ -14,6 +14,7 @@ interface UseFloatingPanelOptions {
     storageKey?: string;
     defaultPosition?: FloatingPosition;
     defaultSize?: FloatingSize;
+    defaultOpacity?: number;
     minWidth?: number;
     minHeight?: number;
 }
@@ -28,7 +29,10 @@ const DEFAULTS = {
 function loadFromStorage<T>(key: string, fallback: T): T {
     try {
         const raw = localStorage.getItem(key);
-        return raw ? JSON.parse(raw) : fallback;
+        if (raw === null) return fallback;
+        const parsed = JSON.parse(raw);
+        if (parsed === null || typeof parsed !== 'object') return fallback;
+        return parsed;
     } catch {
         return fallback;
     }
@@ -55,7 +59,7 @@ export function useFloatingPanel(options?: UseFloatingPanelOptions) {
         loadFromStorage(`${storageKey}-size`, options?.defaultSize ?? DEFAULTS.size)
     );
     const [opacity, setOpacity] = useState(() =>
-        loadFromStorage(`${storageKey}-opacity`, 0.15)
+        loadFromStorage(`${storageKey}-opacity`, options?.defaultOpacity ?? 0.15)
     );
 
     // Persist state

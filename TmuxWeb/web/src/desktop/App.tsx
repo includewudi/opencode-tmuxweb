@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare, ScrollText, FolderSearch, BrainCircuit } from 'lucide-react'
+import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare, ScrollText, FolderSearch, BrainCircuit, FolderTree, GitBranch } from 'lucide-react'
 import { TmuxTree } from '../shared/components/TmuxTree'
 import { TaskStatBadges } from '../shared/components/TaskStatBadges'
 import { TerminalTabs } from './TerminalTabs'
@@ -10,8 +10,11 @@ import { DesktopToolbox } from './DesktopToolbox'
 import { ImperialStudyPanel } from '../shared/components/imperial-study/components/ImperialStudyPanel'
 import { FloatingImperialStudy } from '../shared/components/imperial-study/components/FloatingImperialStudy'
 import { FloatingYazi } from '../shared/components/file-browser/FloatingYazi'
+import { FloatingQuickOpen } from '../shared/components/file-browser/FloatingQuickOpen'
+import { FloatingGitPanel } from '../shared/components/file-browser/FloatingGitPanel'
 import { FloatingCLIHistory } from '../shared/components/cli-history/FloatingCLIHistory'
 import { TaskToastContainer } from '../shared/components/TaskToast'
+import { ErrorBoundary } from '../shared/components/ErrorBoundary'
 import { usePaneNavigation } from '../hooks/usePaneNavigation'
 import { useGlobalTaskNotifications } from '../hooks/useGlobalTaskNotifications'
 import { checkAuth, logout } from '../utils/auth'
@@ -49,6 +52,10 @@ export default function App() {
   const [showMobileHint, setShowMobileHint] = useState(() => isMobile())
   const [fullscreen, setFullscreen] = useState(false)
   const [taskHistoryPaneKey, setTaskHistoryPaneKey] = useState<string | null>(null)
+  const [pendingPaneKey, setPendingPaneKey] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('paneKey')
+  })
   const [sidebarMode, setSidebarMode] = useState<'explorer' | 'imperial'>('explorer')
   const [imperialFloat, setImperialFloat] = useState(() => {
     try { return localStorage.getItem('imperial-float-mode') === 'true' } catch { return false }
@@ -56,6 +63,8 @@ export default function App() {
   const [yaziFloat, setYaziFloat] = useState(false)
 
   const [cliHistoryFloat, setCLIHistoryFloat] = useState(false)
+  const [quickOpenFloat, setQuickOpenFloat] = useState(false)
+  const [gitFloat, setGitFloat] = useState(false)
   const activePaneKey = useMemo(() => {
     const tab = tabs.find(t => t.id === activeTabId)
     if (!tab) return null
@@ -63,17 +72,22 @@ export default function App() {
   }, [tabs, activeTabId])
 
   const activePaneCwd = useMemo(() => {
-    if (!activePaneKey) return null
-    const [sessionName, windowIndex] = activePaneKey.split(':')
-    const session = sessions.find(s => s.sessionName === sessionName)
-    if (!session) return null
-    const window = session.windows.find(w => String(w.windowIndex) === windowIndex)
-    if (!window) return null
-    const activeTab = tabs.find(t => t.id === activeTabId)
-    const pane = activeTab
-      ? window.panes.find(p => p.paneId === activeTab.paneId)
-      : window.panes[0]
-    return pane?.currentPath || window.panes[0]?.currentPath || null
+    try {
+      if (!activePaneKey) return null
+      const [sessionName, windowIndex] = activePaneKey.split(':')
+      const session = sessions.find(s => s.sessionName === sessionName)
+      if (!session?.windows) return null
+      const win = session.windows.find(w => String(w.windowIndex) === windowIndex)
+      if (!win?.panes) return null
+      const activeTab = tabs.find(t => t.id === activeTabId)
+      const pane = activeTab
+        ? win.panes.find(p => p.paneId === activeTab.paneId)
+        : win.panes[0]
+      return pane?.currentPath || win.panes[0]?.currentPath || null
+    } catch (e) {
+      console.warn('[activePaneCwd]', e)
+      return null
+    }
   }, [activePaneKey, sessions, tabs, activeTabId])
 
   // Persist floating mode preference
@@ -127,6 +141,18 @@ export default function App() {
       fetchTree()
     }
   }, [isAuthenticated])
+
+  useEffect(() => {
+    if (!pendingPaneKey || sessions.length === 0) return
+    window.dispatchEvent(new CustomEvent('navigate-to-pane', {
+      detail: { paneKey: pendingPaneKey }
+    }))
+    setTaskHistoryPaneKey(pendingPaneKey)
+    setPendingPaneKey(null)
+    if (window.location.search) {
+      window.history.replaceState({}, '', '/')
+    }
+  }, [pendingPaneKey, sessions])
 
   async function fetchTree() {
     setLoading(true)
@@ -312,6 +338,23 @@ export default function App() {
                 </span>
               </button>
               <button
+                className={`activity-tab ${quickOpenFloat ? 'active' : ''}`}
+                title="快速路径"
+                onClick={() => setQuickOpenFloat(!quickOpenFloat)}
+              >
+                <FolderTree size={22} strokeWidth={quickOpenFloat ? 2 : 1.5} />
+              </button>
+              <button
+                className={`activity-tab ${gitFloat ? 'active' : ''}`}
+                title="Git 操作"
+                onClick={() => setGitFloat(!gitFloat)}
+              >
+                <span className={gitFloat ? 'fb-float-pin' : ''}>
+                  <GitBranch size={22} strokeWidth={gitFloat ? 2 : 1.5} />
+                  {gitFloat && <span className="fb-float-pin__indicator" />}
+                </span>
+              </button>
+              <button
                 className={`activity-tab ${cliHistoryFloat ? 'active' : ''}`}
                 title="CLI History"
                 onClick={() => setCLIHistoryFloat(!cliHistoryFloat)}
@@ -419,25 +462,50 @@ export default function App() {
       )}
 
       {imperialFloat && (
-        <FloatingImperialStudy
-          activePaneKey={activePaneKey}
-          onClose={() => setImperialFloat(false)}
-        />
+        <ErrorBoundary>
+          <FloatingImperialStudy
+            activePaneKey={activePaneKey}
+            onClose={() => setImperialFloat(false)}
+          />
+        </ErrorBoundary>
       )}
 
       {yaziFloat && (
-        <FloatingYazi
-          dir={activePaneCwd || undefined}
-          onSendPath={sendToActiveTerminal}
-          onClose={() => setYaziFloat(false)}
-        />
+        <ErrorBoundary>
+          <FloatingYazi
+            dir={activePaneCwd || undefined}
+            onSendPath={sendToActiveTerminal}
+            onClose={() => setYaziFloat(false)}
+          />
+        </ErrorBoundary>
       )}
 
       {cliHistoryFloat && (
-        <FloatingCLIHistory
-          cwd={activePaneCwd}
-          onClose={() => setCLIHistoryFloat(false)}
-        />
+        <ErrorBoundary>
+          <FloatingCLIHistory
+            cwd={activePaneCwd}
+            onClose={() => setCLIHistoryFloat(false)}
+          />
+        </ErrorBoundary>
+      )}
+
+      {quickOpenFloat && (
+        <ErrorBoundary>
+          <FloatingQuickOpen
+            dir={activePaneCwd || undefined}
+            onSendPath={sendToActiveTerminal}
+            onClose={() => setQuickOpenFloat(false)}
+          />
+        </ErrorBoundary>
+      )}
+
+      {gitFloat && (
+        <ErrorBoundary>
+          <FloatingGitPanel
+            dir={activePaneCwd || undefined}
+            onClose={() => setGitFloat(false)}
+          />
+        </ErrorBoundary>
       )}
 
       <TaskToastContainer notifications={notifications} onDismiss={dismissNotification} />

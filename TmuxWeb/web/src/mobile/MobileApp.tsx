@@ -74,6 +74,10 @@ export default function MobileApp() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [rightPanelOpen, setRightPanelOpen] = useState(false)
   const [taskHistoryPaneKey, setTaskHistoryPaneKey] = useState<string | null>(null)
+  const [pendingPaneKey, setPendingPaneKey] = useState<string | null>(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('paneKey')
+  })
   const [statusRefreshToken, setStatusRefreshToken] = useState(0)
   const [imperialOpen, setImperialOpen] = useState(false)
   const [fileBrowserOpen, setFileBrowserOpen] = useState(false)
@@ -174,6 +178,18 @@ export default function MobileApp() {
       fetchTree()
     }
   }, [isAuthenticated, fetchTree])
+
+  useEffect(() => {
+    if (!pendingPaneKey || sessions.length === 0) return
+    window.dispatchEvent(new CustomEvent('navigate-to-pane', {
+      detail: { paneKey: pendingPaneKey }
+    }))
+    setTaskHistoryPaneKey(pendingPaneKey)
+    setPendingPaneKey(null)
+    if (window.location.search) {
+      window.history.replaceState({}, '', '/m')
+    }
+  }, [pendingPaneKey, sessions])
 
   const handleProfileChange = useCallback((profile: Profile) => {
     setCurrentProfile(profile)

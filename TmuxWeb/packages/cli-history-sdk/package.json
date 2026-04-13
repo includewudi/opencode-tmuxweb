@@ -1,0 +1,27 @@
+{
+  "name": "cli-history-sdk",
+  "version": "1.0.0",
+  "description": "CLI History SDK — provider-abstracted conversation history API for OpenCode and other AI coding tools",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./express": "./src/express-plugin.js"
+  },
+  "scripts": {
+    "test": "node -e \"const sdk = require('.'); console.log('createProvider:', typeof sdk.createProvider); console.log('createRouter:', typeof sdk.createRouter);\""
+  },
+  "keywords": ["cli-history", "opencode", "sdk", "ai-tools"],
+  "license": "MIT",
+  "author": "Wu Di",
+  "dependencies": {
+    "better-sqlite3": "^12.8.0"
+  },
+  "peerDependencies": {
+    "express": ">=4"
+  },
+  "peerDependenciesMeta": {
+    "express": {
+      "optional": true
+    }
+  }
+}

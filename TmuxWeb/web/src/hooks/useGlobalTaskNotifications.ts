@@ -1,20 +1,20 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
+import { classifyWaitingAction, shouldNotifyForTaskEvent, type WaitingAction } from './taskNotificationUtils'
 
 export interface TaskNotification {
   id: string
-  type: 'task_started' | 'task_completed' | 'task_failed' | 'task_waiting'
+  type: 'task_completed' | 'task_waiting'
   paneKey: string
   conversationId: string
   userMessage: string
   assistantMessage: string
   timestamp: number
   startedAt: number
+  waitingAction?: WaitingAction
 }
 
 const DISMISS_MS: Record<string, number> = {
-  task_started: 30_000,
   task_completed: 8_000,
-  task_failed: 10_000,
   task_waiting: 12_000,
 }
 
@@ -54,6 +54,7 @@ export function useGlobalTaskNotifications() {
         const data = JSON.parse(evt.data)
         const validTypes = ['task_started', 'task_completed', 'task_failed', 'task_waiting']
         if (!validTypes.includes(data.type)) return
+        if (!shouldNotifyForTaskEvent(data)) return
 
         const conversationId = data.conversation_id || ''
         const ts = data.timestamp || Math.floor(Date.now() / 1000)
@@ -70,6 +71,9 @@ export function useGlobalTaskNotifications() {
               timestamp: ts,
               userMessage: data.user_message || old.userMessage,
               assistantMessage: data.assistant_message || old.assistantMessage,
+              waitingAction: data.type === 'task_waiting'
+                ? classifyWaitingAction({ assistant_message: data.assistant_message, user_message: data.user_message }) ?? old.waitingAction
+                : undefined,
             }
             scheduleDismiss(old.id, DISMISS_MS[data.type] ?? 8000)
             return updated
@@ -86,6 +90,9 @@ export function useGlobalTaskNotifications() {
             assistantMessage: data.assistant_message || '',
             timestamp: ts,
             startedAt: ts,
+            waitingAction: data.type === 'task_waiting'
+              ? classifyWaitingAction({ assistant_message: data.assistant_message, user_message: data.user_message }) ?? undefined
+              : undefined,
           }]
         })
       } catch (err) {

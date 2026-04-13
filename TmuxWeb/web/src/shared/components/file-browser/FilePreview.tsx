@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Save, Loader2, Pencil, X, Terminal, Eye, GitCompare, Clock } from 'lucide-react'
 import type { FileEntry } from './web-file-browser-helpers'
 import { DiffView } from './DiffView'
+import { getToken } from '../../../utils/auth'
+import { isImageFile, isVideoFile, isDocFile } from './web-file-browser-helpers'
 import { FileHistory } from './FileHistory'
 
 type PreviewMode = 'preview' | 'diff' | 'history'
@@ -46,6 +48,12 @@ export function FilePreview({ selectedFile, filePath, fileContent, previewLoadin
     { key: 'diff' as const, icon: <GitCompare size={13} />, label: 'Diff' },
     { key: 'history' as const, icon: <Clock size={13} />, label: 'History' },
   ]
+
+  const encodedPath = filePath ? encodeURIComponent(filePath) : ''
+  const mediaUrl = filePath ? `/api/files/preview?path=${encodedPath}&token=${getToken()}` : ''
+  const isImage = filePath ? isImageFile(filePath) : false
+  const isVideo = filePath ? isVideoFile(filePath) : false
+  const isDoc = filePath ? isDocFile(filePath) : false
 
   return (
     <div className="wfb-preview-panel">
@@ -94,6 +102,24 @@ export function FilePreview({ selectedFile, filePath, fileContent, previewLoadin
           />
         ) : mode === 'history' && onRestore ? (
           <FileHistory filePath={filePath} onRestore={onRestore} />
+        ) : isImage ? (
+          <div className="wfb-media-preview">
+            <div className="wfb-media-preview__toolbar">
+              <a className="wfb-media-preview__action" href={mediaUrl} target="_blank" rel="noreferrer">View original</a>
+            </div>
+            <img className="wfb-media-preview__image" src={mediaUrl} alt={selectedFile?.name || 'image'} loading="lazy" />
+          </div>
+        ) : isVideo ? (
+          <div className="wfb-media-preview">
+            <video className="wfb-media-preview__video" src={mediaUrl} controls />
+          </div>
+        ) : isDoc ? (
+          <div className="wfb-media-preview">
+            <iframe className="wfb-media-preview__doc" src={mediaUrl} title={selectedFile?.name || 'document'} />
+            <div className="wfb-media-preview__toolbar">
+              <a className="wfb-media-preview__action" href={mediaUrl} target="_blank" rel="noreferrer">View original</a>
+            </div>
+          </div>
         ) : (
           <pre className="wfb-preview-content">{fileContent}</pre>
         )}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { X, Play, CheckCircle2, XCircle, Clock, Terminal, MessageSquare } from 'lucide-react'
+import { X, CheckCircle2, Clock, Terminal, MessageSquare } from 'lucide-react'
 import type { TaskNotification } from '../../hooks/useGlobalTaskNotifications'
+import { waitingActionLabel } from '../../hooks/taskNotificationUtils'
 import './TaskToast.css'
 
 interface TaskToastContainerProps {
@@ -9,14 +10,12 @@ interface TaskToastContainerProps {
 }
 
 const STATUS_CONFIG: Record<string, {
-  icon: typeof Play
+  icon: typeof CheckCircle2
   color: string
   label: string
   borderColor: string
 }> = {
-  task_started:   { icon: Play,         color: 'var(--blue-400, #60a5fa)',   label: 'In Progress', borderColor: 'var(--blue-500, #3b82f6)' },
   task_completed: { icon: CheckCircle2, color: 'var(--green-400, #4ade80)',  label: 'Completed',   borderColor: 'var(--green-500, #22c55e)' },
-  task_failed:    { icon: XCircle,      color: 'var(--red-400, #f87171)',    label: 'Failed',      borderColor: 'var(--red-500, #ef4444)' },
   task_waiting:   { icon: Clock,        color: 'var(--yellow-400, #facc15)', label: 'Waiting',     borderColor: 'var(--yellow-500, #eab308)' },
 }
 
@@ -46,9 +45,16 @@ export function TaskToastContainer({ notifications, onDismiss }: TaskToastContai
   return (
     <div className="task-toast-container">
       {notifications.map(n => {
-        const config = STATUS_CONFIG[n.type] || STATUS_CONFIG.task_started
+        const config = STATUS_CONFIG[n.type]
         const Icon = config.icon
-        const isRunning = n.type === 'task_started'
+        const label = n.type === 'task_waiting'
+          ? waitingActionLabel(n.waitingAction ?? null)
+          : config.label
+        const glow = n.type === 'task_completed' ? '74, 222, 128' : '250, 204, 21'
+        const style = {
+          '--island-accent': config.color,
+          '--island-glow': glow,
+        } as React.CSSProperties
 
         const handleClick = () => {
           window.dispatchEvent(new CustomEvent('navigate-to-pane', {
@@ -60,15 +66,15 @@ export function TaskToastContainer({ notifications, onDismiss }: TaskToastContai
         return (
           <div
             key={n.id}
-            className={`task-toast ${isRunning ? 'task-toast--running' : ''}`}
-            style={{ borderLeftColor: config.borderColor }}
+            className="task-toast"
+            style={style}
             onClick={handleClick}
             role="button"
             tabIndex={0}
           >
             <div className="task-toast-header">
               <Icon size={14} style={{ color: config.color, flexShrink: 0 }} />
-              <span className="task-toast-label" style={{ color: config.color }}>{config.label}</span>
+              <span className="task-toast-label" style={{ color: config.color }}>{label}</span>
               <div className="task-toast-header-right">
                 <Terminal size={10} style={{ color: 'var(--zinc-500, #71717a)' }} />
                 <span className="task-toast-pane">{n.paneKey}</span>
@@ -96,8 +102,6 @@ export function TaskToastContainer({ notifications, onDismiss }: TaskToastContai
                 {truncate(n.assistantMessage, 160)}
               </div>
             )}
-
-            {isRunning && <div className="task-toast-progress" />}
           </div>
         )
       })}
