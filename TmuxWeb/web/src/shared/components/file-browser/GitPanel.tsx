@@ -4,32 +4,11 @@ import { getToken } from '../../../utils/auth'
 import './web-file-browser.css'
 
 interface GitStatus {
-  branch: string
-  ahead: number
-  behind: number
-  staged: string[]
-  modified: string[]
-  untracked: string[]
+  branch: string; ahead: number; behind: number
+  staged: string[]; modified: string[]; untracked: string[]
 }
-
-interface GitCommit {
-  sha: string
-  author: string
-  date: string
-  message: string
-}
-
-interface DiffResult {
-  from: string
-  to: string
-  stats: { additions: number; deletions: number; files: { path: string; additions: number; deletions: number }[] }
-  diff: string
-}
-
-interface GitPanelProps {
-  dir: string
-  onRefresh: () => void
-}
+interface GitCommit { sha: string; author: string; date: string; message: string }
+interface GitPanelProps { dir: string; onRefresh: () => void }
 
 export function GitPanel({ dir, onRefresh }: GitPanelProps) {
   const [status, setStatus] = useState<GitStatus | null>(null)
@@ -41,11 +20,10 @@ export function GitPanel({ dir, onRefresh }: GitPanelProps) {
   const [pulling, setPulling] = useState(false)
   const [pushing, setPushing] = useState(false)
   const [suggesting, setSuggesting] = useState(false)
-  const [logs, setLogs] = useState<GitCommit[]>([])
   const [diffFrom, setDiffFrom] = useState<string | null>(null)
-  const [diffResult, setDiffResult] = useState<DiffResult | null>(null)
-  const [operationOutput, setOperationOutput] = useState<string | null>(null)
+  const [logs, setLogs] = useState<GitCommit[]>([])
   const [loadingLog, setLoadingLog] = useState(false)
+  const [operationOutput, setOperationOutput] = useState<string | null>(null)
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -87,41 +65,26 @@ export function GitPanel({ dir, onRefresh }: GitPanelProps) {
     setSuggesting(true)
     try {
       const token = getToken()
-      await fetch(`/api/files/diff?path=&token=${token}`)
-      let diffText = ''
-      try {
-        const diffOut = await fetch(`/api/files/changes-summary?dir=${encodeURIComponent(dir)}&token=${token}`)
-        if (diffOut.ok) {
-          const d = await diffOut.json()
-          diffText = d.diff || d.summary || ''
-        }
-      } catch {}
-      const aiRes = await fetch(`/api/ai/command?token=${token}`, {
+      const aiRes = await fetch(`/api/files/git/ai-commit-msg?token=${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: `为以下 git 变更生成简洁的中文 commit message（一行，50字以内），只输出 message 内容，不要解释、不要代码块：\n${diffText}`,
-          role: 'cli'
-        })
+        body: JSON.stringify({ dir })
       })
       if (aiRes.ok) {
         const data = await aiRes.json()
-        const raw = (data.command || data.explanation || '').trim()
-        // 检测未配置 AI 的回显
-        if (data.explanation?.includes('未配置') || data.explanation?.includes('API')) {
+        const raw = (data.command || '').trim()
+        if (data.error || !raw) {
           setCommitMsg('')
-          setOperationOutput(`⚠️ ${data.explanation}`)
+          setOperationOutput(`⚠️ ${data.error || data.detail || 'AI 未返回有效内容'}`)
           return
         }
         let msg = raw
-        // 清洗 AI 返回的 prompt 残留
         const promptPrefixes = ['为以下 git 变更', '生成简洁的中文', '只输出 message', 'commit message', 'Generate a commit']
         for (const p of promptPrefixes) {
           const idx = msg.indexOf(p)
           if (idx > 0) { msg = msg.substring(0, idx).trim(); break }
           if (idx === 0) { msg = ''; break }
         }
-        // 去掉 markdown 代码块包裹
         msg = msg.replace(/^```\w*\n?/, '').replace(/\n?```$/, '').trim()
         setCommitMsg(msg)
       }
@@ -137,36 +100,20 @@ export function GitPanel({ dir, onRefresh }: GitPanelProps) {
       const res = await fetch(`/api/files/git/commit?token=${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          dir,
-          message: commitMsg.trim(),
-          excludeFiles: Array.from(excludedFiles)
-        })
+        body: JSON.stringify({ dir, message: commitMsg.trim(), excludeFiles: Array.from(excludedFiles) })
       })
       const data = await res.json()
       setOperationOutput(data.ok ? `✅ 提交成功\n${data.output || ''}` : `❌ 提交失败: ${data.error || ''}\n${data.output || ''}`)
-      if (data.ok) {
-        setCommitMsg('')
-        setExcludedFiles(new Set())
-        fetchStatus()
-        onRefresh()
-      }
-    } catch (e) {
-      setOperationOutput(`❌ 提交失败: ${e}`)
-    }
+      if (data.ok) { setCommitMsg(''); setExcludedFiles(new Set()); fetchStatus(); onRefresh() }
+    } catch (e) { setOperationOutput(`❌ 提交失败: ${e}`) }
     setCommitting(false)
   }
 
   const handlePull = async () => {
-    setPulling(true)
-    setOperationOutput(null)
+    setPulling(true); setOperationOutput(null)
     try {
       const token = getToken()
-      const res = await fetch(`/api/files/git/pull?token=${token}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dir })
-      })
+      const res = await fetch(`/api/files/git/pull?token=${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dir }) })
       const data = await res.json()
       setOperationOutput(data.ok ? `✅ 拉取成功\n${data.output || 'Already up to date.'}` : `❌ 拉取失败: ${data.error || ''}\n${data.output || ''}`)
       if (data.ok) { fetchStatus(); onRefresh() }
@@ -175,15 +122,10 @@ export function GitPanel({ dir, onRefresh }: GitPanelProps) {
   }
 
   const handlePush = async () => {
-    setPushing(true)
-    setOperationOutput(null)
+    setPushing(true); setOperationOutput(null)
     try {
       const token = getToken()
-      const res = await fetch(`/api/files/git/push?token=${token}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dir })
-      })
+      const res = await fetch(`/api/files/git/push?token=${token}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dir }) })
       const data = await res.json()
       setOperationOutput(data.ok ? `✅ 推送成功\n${data.output || ''}` : `❌ 推送失败: ${data.error || ''}\n${data.output || ''}`)
       if (data.ok) fetchStatus()
@@ -191,16 +133,10 @@ export function GitPanel({ dir, onRefresh }: GitPanelProps) {
     setPushing(false)
   }
 
-  const handleCompare = async (sha: string) => {
+  const handleCompare = (sha: string) => {
+    if (diffFrom === sha) { setDiffFrom(null); return }
     setDiffFrom(sha)
-    try {
-      const token = getToken()
-      const res = await fetch(`/api/files/git/diff-range?dir=${encodeURIComponent(dir)}&from=${sha}&to=HEAD&token=${token}`)
-      if (res.ok) {
-        const data = await res.json()
-        setDiffResult(data)
-      }
-    } catch (e) { console.warn('[GitPanel:compare]', e) }
+    window.open(`/api/files/diff-report?dir=${encodeURIComponent(dir)}&from=${encodeURIComponent(sha)}&to=HEAD`, '_blank')
   }
 
   const allFiles = [
@@ -237,13 +173,8 @@ export function GitPanel({ dir, onRefresh }: GitPanelProps) {
         <button className="wfb-git-btn wfb-git-btn--suggest" onClick={handleSuggest} disabled={suggesting} title="AI 生成提交信息">
           {suggesting ? <Loader2 size={12} className="wfb-spin" /> : <Lightbulb size={12} />}
         </button>
-        <input
-          className="wfb-git-panel__commit-input"
-          value={commitMsg}
-          onChange={e => setCommitMsg(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { /* Enter: 不自动提交，允许换行 */ } }}
-          placeholder="输入提交信息..."
-        />
+        <input className="wfb-git-panel__commit-input" value={commitMsg} onChange={e => setCommitMsg(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) {} }} placeholder="输入提交信息..." />
         <button className="wfb-git-btn wfb-git-btn--commit" onClick={handleCommit} disabled={committing || !commitMsg.trim()} title="提交">
           {committing ? <Loader2 size={12} className="wfb-spin" /> : <Check size={12} />}
           <span>提交</span>
@@ -263,15 +194,12 @@ export function GitPanel({ dir, onRefresh }: GitPanelProps) {
         </button>
         {showStatus && (
           <div className="wfb-git-panel__file-list">
+            <div style={{ fontSize: 10, color: 'var(--zinc-500)', padding: '2px 8px' }}>☑ 勾选 = 排除该文件（不提交），默认全部提交</div>
             {allFiles.length === 0 && <div className="wfb-git-panel__empty">无变更</div>}
             {allFiles.map((f, i) => (
               <label key={i} className={`wfb-git-panel__file-item${excludedFiles.has(f.name) ? ' wfb-git-panel__file-item--excluded' : ''}`}>
-                <input
-                  type="checkbox"
-                  checked={excludedFiles.has(f.name)}
-                  onChange={() => toggleExcluded(f.name)}
-                  title={excludedFiles.has(f.name) ? '排除此文件' : '将提交此文件'}
-                />
+                <input type="checkbox" checked={excludedFiles.has(f.name)} onChange={() => toggleExcluded(f.name)}
+                  title={excludedFiles.has(f.name) ? '排除此文件' : '将提交此文件'} />
                 <FileCode size={12} />
                 <span className="wfb-git-panel__file-name" title={f.name}>{f.name}</span>
                 <span className={`wfb-git-badge wfb-git-badge--${f.status === '?' ? 'untracked' : f.status === 'M' || f.status === 'MM' ? 'modified' : f.status === 'A' ? 'staged' : 'modified'}`}>
@@ -292,7 +220,7 @@ export function GitPanel({ dir, onRefresh }: GitPanelProps) {
         </button>
         {showLog && (
           <div className="wfb-git-panel__log-list">
-            {logs.length === 0 && <div className="wfb-git-panel__empty">无提交记录</div>}
+            {logs.length === 0 && !loadingLog && <div className="wfb-git-panel__empty">无提交记录</div>}
             {logs.map(c => (
               <div key={c.sha} className={`wfb-git-panel__log-item${diffFrom === c.sha ? ' wfb-git-panel__log-item--active' : ''}`}>
                 <div className="wfb-git-panel__log-info" onClick={() => handleCompare(c.sha)}>
@@ -310,29 +238,6 @@ export function GitPanel({ dir, onRefresh }: GitPanelProps) {
           </div>
         )}
       </div>
-
-      {/* 对比结果 */}
-      {diffResult && (
-        <div className="wfb-git-panel__diff-result">
-          <div className="wfb-git-panel__diff-header">
-            <span>对比: {diffResult.from.slice(0, 7)}..{diffResult.to}</span>
-            <button className="wfb-git-btn wfb-git-btn--small" onClick={() => { setDiffResult(null); setDiffFrom(null) }} title="关闭">
-              <X size={10} />
-            </button>
-          </div>
-          <div className="wfb-git-panel__diff-stats">
-            {(diffResult.stats?.files || []).map((f, i) => (
-              <div key={i} className="wfb-git-panel__diff-file">
-                <span className="wfb-git-panel__diff-file-path">{f.path}</span>
-                <span className="wfb-git-panel__diff-file-nums">+{f.additions} -{f.deletions}</span>
-              </div>
-            ))}
-          </div>
-          {diffResult.diff && (
-            <pre className="wfb-git-panel__diff-content">{diffResult.diff.slice(0, 20000)}</pre>
-          )}
-        </div>
-      )}
 
       {/* 操作输出 */}
       {operationOutput && (

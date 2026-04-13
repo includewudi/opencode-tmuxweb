@@ -835,7 +835,8 @@
   flex-direction: column;
   border-bottom: 1px solid var(--wfb-border);
   background: rgba(15, 23, 42, 0.25);
-  max-height: 360px;
+  flex: 1;
+  min-height: 200px;
   overflow-y: auto;
 }
 
@@ -1120,6 +1121,52 @@
   border-radius: 4px;
   padding: 6px 8px;
   margin: 0;
+}
+
+/* ── 对比结果（可收缩，内嵌 DiffView）── */
+.wfb-git-panel__diff-section {
+  border-bottom: 1px solid var(--wfb-border);
+}
+
+.wfb-git-panel__diff-body {
+  display: flex;
+  flex-direction: column;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.wfb-git-panel__diff-files {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--wfb-border);
+  flex-shrink: 0;
+}
+
+.wfb-git-panel__diff-file-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+  font-size: 11px;
+  font-family: var(--wfb-font-mono);
+}
+
+.wfb-git-panel__diff-file-add { color: #22c55e; flex-shrink: 0; }
+.wfb-git-panel__diff-file-del { color: #ef4444; flex-shrink: 0; }
+
+.wfb-git-panel__diff-view {
+  flex: 1;
+  overflow: auto;
+  min-height: 80px;
+}
+
+.wfb-git-panel__diff-view .wfb-diff-container {
+  border: none;
+  height: auto;
+}
+
+.wfb-git-panel__diff-view .wfb-diff-content {
+  max-height: none;
+  background: transparent;
 }
 
 .wfb-git-panel__output {

@@ -409,13 +409,17 @@ router.get('/diff-report', async (req, res) => {
   try {
     const dir = req.query.dir || process.env.HOME || '/tmp';
     const target = resolveSafe(dir);
+    const from = req.query.from || '';
+    const to = req.query.to || 'HEAD';
     const scriptPath = path.join(os.homedir(), '.config/opencode/skills/diff-report/diff_report.py');
     const fs = require('fs');
     if (!fs.existsSync(scriptPath)) {
       return res.status(404).json({ error: 'diff-report skill not found' });
     }
     const { execSync } = require('child_process');
-    const out = execSync(`python3 "${scriptPath}" --raw --repo-root "${target}" --no-open -o /dev/stdout`, {
+    let cmd = `python3 "${scriptPath}" --raw --repo-root "${target}" --no-open -o /dev/stdout`;
+    if (from) cmd += ` --from "${from}" --to "${to}"`;
+    const out = execSync(cmd, {
       encoding: 'utf-8',
       timeout: 30000,
       maxBuffer: 10 * 1024 * 1024,
@@ -535,18 +539,132 @@ router.get('/git/diff-range', async (req, res) => {
     try {
       diff = execSync(`git diff ${from}..${to}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 10000, maxBuffer: 2 * 1024 * 1024 }).trim();
     } catch { diff = ''; }
-    let stats = '';
+    let statsRaw = '';
     try {
-      stats = execSync(`git diff --stat ${from}..${to}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 5000 }).trim();
-    } catch { stats = ''; }
-    let additions = 0, deletions = 0;
-    for (const line of diff.split('\n')) {
-      if (line.startsWith('+') && !line.startsWith('+++')) additions++;
-      else if (line.startsWith('-') && !line.startsWith('---')) deletions++;
+      statsRaw = execSync(`git diff --stat ${from}..${to}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 5000 }).trim();
+    } catch { statsRaw = ''; }
+    // Parse --stat into structured format
+    const files = [];
+    let totalAdditions = 0, totalDeletions = 0;
+    for (const line of statsRaw.split('\n')) {
+      const m = line.match(/\s*([^\s]+)\s+\|\s*(\d+)\s*[+-]*\s*(\d*)/);
+      if (m) {
+        const f = m[1].replace(/^"(.*)"$/, '$1');
+        const a = parseInt(m[2]) || 0;
+        const d = parseInt(m[3]) || 0;
+        files.push({ path: f, additions: a, deletions: d });
+        totalAdditions += a;
+        totalDeletions += d;
+      }
     }
-    res.json({ diff, stats, additions, deletions });
+    res.json({ from, to, diff, stats: { additions: totalAdditions, deletions: totalDeletions, files } });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/git/diff-range-report', async (req, res) => {
+  try {
+    const dir = req.query.dir;
+    const from = req.query.from;
+    const to = req.query.to || 'HEAD';
+    if (!dir || !from) return res.status(400).send('Missing dir or from');
+    const target = resolveSafe(dir);
+    let repoRoot;
+    try {
+      repoRoot = execSync('git rev-parse --show-toplevel', { cwd: target, encoding: 'utf-8', timeout: 3000 }).trim();
+    } catch {
+      return res.status(400).send('Not a git repository');
+    }
+    let diff = '';
+    try { diff = execSync(`git diff ${from}..${to}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 15000, maxBuffer: 10 * 1024 * 1024 }).trim(); } catch { diff = ''; }
+    let statsRaw = '';
+    try { statsRaw = execSync(`git diff --stat ${from}..${to}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 5000 }).trim(); } catch { statsRaw = ''; }
+
+    const files = [];
+    let totalAdditions = 0, totalDeletions = 0;
+    for (const line of statsRaw.split('\n')) {
+      const m = line.match(/\s*([^\s]+)\s+\|\s*(\d+)\s*[+-]*\s*(\d*)/);
+      if (m) {
+        const f = m[1].replace(/^"(.*)"$/, '$1');
+        const a = parseInt(m[2]) || 0, d = parseInt(m[3]) || 0;
+        files.push({ path: f, additions: a, deletions: d });
+        totalAdditions += a; totalDeletions += d;
+      }
+    }
+
+    const hunks = [];
+    let currentHunk = null;
+    for (const line of diff.split('\n')) {
+      if (line.startsWith('@@')) {
+        currentHunk = { header: line, lines: [] };
+        hunks.push(currentHunk);
+      } else if (currentHunk) {
+        let type = 'ctx';
+        if (line.startsWith('+') && !line.startsWith('+++')) type = 'add';
+        else if (line.startsWith('-') && !line.startsWith('---')) type = 'del';
+        currentHunk.lines.push({ type, text: line.replace(/</g, '&lt;').replace(/>/g, '&gt;') });
+      }
+    }
+
+    const fileRows = files.map(f =>
+      `<tr><td class="dr-fpath">${f.path}</td><td class="dr-num dr-add">+${f.additions}</td><td class="dr-num dr-del">-${f.deletions}</td></tr>`
+    ).join('\n');
+
+    const hunkHtml = hunks.map(h => {
+      const linesHtml = h.lines.map(l =>
+        `<div class="dr-line dr-line--${l.type}">${l.text}</div>`
+      ).join('');
+      return `<div class="dr-hunk"><div class="dr-hunk-header">${h.header}</div>${linesHtml}</div>`;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diff ${from.slice(0,7)} .. ${to}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'SF Mono',SFMono-Regular,Consolas,'Liberation Mono',Menlo,monospace;background:#0d1117;color:#c9d1d9;font-size:13px;line-height:1.5}
+.dr-header{background:#161b22;border-bottom:1px solid #30363d;padding:12px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
+.dr-header h1{font-size:15px;font-weight:600;color:#e6edf3}
+.dr-stats{display:flex;gap:16px;margin-left:auto;font-size:12px}
+.dr-stats .dr-add{color:#3fb950}.dr-stats .dr-del{color:#f85149}
+.dr-summary{background:#161b22;padding:12px 20px;border-bottom:1px solid #30363d}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;color:#8b949e;font-size:11px;text-transform:uppercase;padding:6px 12px;border-bottom:1px solid #21262d}
+td{padding:5px 12px;border-bottom:1px solid #21262d}
+.dr-fpath{color:#58a6ff;word-break:break-all;max-width:60vw}
+.dr-num{font-size:12px;text-align:right;width:60px}
+.dr-content{padding:16px 20px}
+.dr-hunk{margin-bottom:16px;border:1px solid #30363d;border-radius:6px;overflow:hidden}
+.dr-hunk-header{background:#161b22;padding:4px 12px;color:#8b949e;font-size:11px;border-bottom:1px solid #30363d}
+.dr-line{padding:0 12px;white-space:pre;min-height:20px}
+.dr-line--add{background:rgba(46,160,67,.15);color:#3fb950}
+.dr-line--del{background:rgba(248,81,73,.15);color:#f85149}
+.dr-line--ctx{color:#8b949e}
+.empty{padding:40px;text-align:center;color:#8b949e}
+</style>
+</head>
+<body>
+<div class="dr-header">
+  <h1>📋 ${from.slice(0,7)} .. ${to}</h1>
+  <div class="dr-stats">
+    <span class="dr-add">+${totalAdditions}</span>
+    <span class="dr-del">-${totalDeletions}</span>
+    <span>${files.length} files</span>
+  </div>
+</div>
+<div class="dr-summary">
+  <table><thead><tr><th>File</th><th>Additions</th><th>Deletions</th></tr></thead><tbody>${fileRows || '<tr><td colspan="3" class="empty">No changes</td></tr>'}</tbody></table>
+</div>
+<div class="dr-content">${hunkHtml || '<div class="empty">No diff content</div>'}</div>
+</body></html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(html);
+  } catch (err) {
+    res.status(500).send(`Error: ${err.message}`);
   }
 });
 
@@ -634,6 +752,109 @@ router.post('/git/push', async (req, res) => {
       return res.status(400).json({ error: e.stderr?.trim() || e.message || 'Push failed' });
     }
     res.json({ ok: true, output: out });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/git/diff-for-commit', async (req, res) => {
+  try {
+    const dir = req.query.dir;
+    if (!dir) return res.status(400).json({ error: 'dir is required' });
+    const target = resolveSafe(dir);
+    let repoRoot;
+    try {
+      repoRoot = execSync('git rev-parse --show-toplevel', { cwd: target, encoding: 'utf-8', timeout: 3000 }).trim();
+    } catch {
+      return res.status(400).json({ error: 'Not a git repository' });
+    }
+    const repoName = path.basename(repoRoot);
+    let branch = '';
+    try { branch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: repoRoot, encoding: 'utf-8', timeout: 3000 }).trim(); } catch {}
+    const statOut = execSync('git diff --stat HEAD', { cwd: repoRoot, encoding: 'utf-8', timeout: 5000 }).trim();
+    let diffContent = '';
+    try { diffContent = execSync('git diff HEAD', { cwd: repoRoot, encoding: 'utf-8', timeout: 10000, maxBuffer: 2 * 1024 * 1024 }).trim(); } catch {}
+    const MAX_DIFF = 8000;
+    if (diffContent.length > MAX_DIFF) {
+      diffContent = diffContent.slice(0, MAX_DIFF) + '\n... (diff truncated)';
+    }
+    res.json({ repoName, branch, stat: statOut, diff: diffContent });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/git/ai-commit-msg', async (req, res) => {
+  try {
+    const { dir } = req.body;
+    if (!dir) return res.status(400).json({ error: 'dir is required' });
+    const target = resolveSafe(dir);
+    let repoRoot;
+    try {
+      repoRoot = execSync('git rev-parse --show-toplevel', { cwd: target, encoding: 'utf-8', timeout: 3000 }).trim();
+    } catch {
+      return res.status(400).json({ error: 'Not a git repository' });
+    }
+
+    const ocHost = process.env.OPENCODE_SERVER_HOST || '127.0.0.1';
+    const ocPort = process.env.OPENCODE_SERVER_PORT || 13460;
+    const ocBase = `http://${ocHost}:${ocPort}`;
+
+    const sessionRes = await fetch(`${ocBase}/session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: `git-commit:${path.basename(repoRoot)}` })
+    });
+    if (!sessionRes.ok) return res.status(502).json({ error: `OpenCode server unavailable: ${sessionRes.status}` });
+    const { id: sessionId } = await sessionRes.json();
+
+    const prompt = `请为以下 Git 仓库的未提交变更生成一个简洁的中文 commit message。
+
+仓库路径: ${repoRoot}
+
+请先执行以下命令获取变更信息：
+1. git -C "${repoRoot}" rev-parse --abbrev-ref HEAD   (当前分支)
+2. git -C "${repoRoot}" diff --stat HEAD                (变更统计)
+3. git -C "${repoRoot}" diff HEAD                       (详细diff，如果太长只看关键文件)
+
+然后根据变更内容生成 commit message：
+- 只输出一行（中文，50字以内）
+- 使用 conventional commits 风格前缀（feat/fix/docs/refactor/chore/style/test 等）
+- 不要解释、不要代码块、不要多余内容
+- 直接输出 message 文本`;
+
+    const msgRes = await fetch(`${ocBase}/session/${sessionId}/message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        parts: [{ type: 'text', text: prompt }],
+        noReply: false
+      }),
+      signal: AbortSignal.timeout(120000)
+    });
+
+    if (!msgRes.ok) {
+      const errText = await msgRes.text().catch(() => '');
+      return res.status(502).json({ error: `OpenCode message failed: ${msgRes.status}`, detail: errText.slice(0, 200) });
+    }
+    const msgData = await msgRes.json();
+
+    let aiText = '';
+    if (msgData.message?.content) aiText = msgData.message.content;
+    else if (Array.isArray(msgData.parts)) {
+      for (const p of msgData.parts) {
+        if (p.type === 'text' && p.text) { aiText += p.text; }
+      }
+    }
+
+    aiText = aiText.trim()
+      .replace(/^```[\w]*\n?/, '').replace(/\n?```$/, '')
+      .replace(/^[#\*\-\s]+/, '');
+
+    const codeMatch = aiText.match(/```(?:\w+)?\n?([\s\S]*?)```/);
+    const command = codeMatch ? codeMatch[1].trim() : aiText;
+
+    res.json({ command, raw: aiText });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

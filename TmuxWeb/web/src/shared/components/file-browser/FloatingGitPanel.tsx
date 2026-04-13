@@ -28,10 +28,10 @@ export function FloatingGitPanel({ dir, onClose }: FloatingGitPanelProps) {
     setOpacity,
   } = useFloatingPanel({
     storageKey: 'git-floating',
-    defaultSize: { width: 680, height: 560 },
+    defaultSize: { width: 780, height: 680 },
     defaultOpacity: 0.95,
-    minWidth: 480,
-    minHeight: 320,
+    minWidth: 520,
+    minHeight: 400,
   })
 
   if (collapsed && !maximized) {
