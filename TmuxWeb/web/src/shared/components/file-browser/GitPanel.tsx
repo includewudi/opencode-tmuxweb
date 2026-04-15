@@ -88,8 +88,10 @@ export function GitPanel({ dir, onRefresh }: GitPanelProps) {
         msg = msg.replace(/^```\w*\n?/, '').replace(/\n?```$/, '').trim()
         setCommitMsg(msg)
       }
-    } catch (e) { console.warn('[GitPanel:suggest]', e) }
-    setSuggesting(false)
+    } catch (e) {
+      console.warn('[GitPanel:suggest]', e)
+      setOperationOutput(`❌ AI 生成失败: ${e instanceof Error ? e.message : String(e)}`)
+    } finally { setSuggesting(false) }
   }
 
   const handleCommit = async () => {
