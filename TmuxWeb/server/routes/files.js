@@ -784,6 +784,211 @@ router.get('/git/diff-for-commit', async (req, res) => {
   }
 });
 
+// ── OpenCode Session Cache for AI Commit Messages ──
+
+const MAX_SESSION_USES = 10;
+const MAX_CACHE_SIZE = 50;
+const sessionCache = new Map();
+
+function getCachedSession(dir) {
+  const entry = sessionCache.get(dir);
+  if (!entry || entry.useCount >= MAX_SESSION_USES) {
+    if (entry) sessionCache.delete(dir);
+    return null;
+  }
+  entry.useCount++;
+  return { sessionId: entry.sessionId, useCount: entry.useCount };
+}
+
+function putCachedSession(dir, sessionId) {
+  if (sessionCache.size >= MAX_CACHE_SIZE) {
+    let oldestKey = null;
+    let oldestTime = Infinity;
+    for (const [key, val] of sessionCache) {
+      if (val.createdAt < oldestTime) {
+        oldestTime = val.createdAt;
+        oldestKey = key;
+      }
+    }
+    if (oldestKey !== null) sessionCache.delete(oldestKey);
+  }
+  sessionCache.set(dir, { sessionId, useCount: 1, createdAt: Date.now() });
+}
+
+async function createPreloadedSession(repoRoot) {
+  const ocHost = process.env.OPENCODE_SERVER_HOST || '127.0.0.1';
+  const ocPort = process.env.OPENCODE_SERVER_PORT || 13460;
+  const ocBase = `http://${ocHost}:${ocPort}`;
+
+  const sessionRes = await fetch(`${ocBase}/session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: `git-commit:${path.basename(repoRoot)}` })
+  });
+  if (!sessionRes.ok) throw new Error(`OpenCode server unavailable: ${sessionRes.status}`);
+  const { id: sessionId } = await sessionRes.json();
+
+  let gitLogOneline = '';
+  try {
+    gitLogOneline = execSync('git log --oneline -5', { cwd: repoRoot, encoding: 'utf-8', timeout: 3000 }).trim();
+  } catch {}
+
+  let branch = 'HEAD';
+  try {
+    branch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: repoRoot, encoding: 'utf-8', timeout: 3000 }).trim();
+  } catch {}
+
+  const basename = path.basename(repoRoot);
+  const warmupPrompt = `你是 commit message 生成助手。
+
+项目: ${basename}
+当前分支: ${branch}
+最近提交风格:
+${gitLogOneline}
+
+规则:
+- 只输出一行中文 commit message
+- 使用 conventional commits 风格（feat/fix/docs/refactor/chore/style/test）
+- 50字以内
+- 不要解释、不要代码块、不要多余内容
+- 直接输出 message 文本`;
+
+  fetch(`${ocBase}/session/${sessionId}/message`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ parts: [{ type: 'text', text: warmupPrompt }], noReply: true })
+  }).catch(() => {});
+
+  return { sessionId };
+}
+
+async function getOrCreateSession(dir, repoRoot) {
+  const cached = getCachedSession(dir);
+  if (cached) return cached.sessionId;
+  const { sessionId } = await createPreloadedSession(repoRoot);
+  putCachedSession(dir, sessionId);
+  return sessionId;
+}
+
+/**
+ * Build a diff summary for AI commit message generation.
+ * Returns a string ≤ 8000 bytes containing stat overview + top file diffs.
+ * @param {string} repoRoot - Absolute path to git repo root
+ * @returns {string} Diff summary string (empty string on failure)
+ */
+function buildDiffSummary(repoRoot) {
+  const MAX_SUMMARY = 8000;
+  const MAX_STAT_LINES = 50;
+  const TOP_N = 5;
+  const MAX_DIFF_PER_FILE = 1500;
+  const execOpts = { cwd: repoRoot, encoding: 'utf-8', timeout: 5000 };
+
+  // 1. Get diff stat (truncated to 50 lines)
+  let statOutput = '';
+  try {
+    statOutput = execSync('git diff --stat HEAD', execOpts).trim();
+  } catch {
+    // Zero commits fallback: try staged changes
+    try {
+      statOutput = execSync('git diff --cached --stat', execOpts).trim();
+    } catch {
+      return '';
+    }
+  }
+  const statLines = statOutput.split('\n').slice(0, MAX_STAT_LINES).join('\n');
+
+  // 2. Get numstat for churn ranking
+  let numstatOutput = '';
+  try {
+    numstatOutput = execSync('git diff --numstat HEAD', execOpts).trim();
+  } catch {
+    try {
+      numstatOutput = execSync('git diff --cached --numstat', execOpts).trim();
+    } catch {
+      numstatOutput = '';
+    }
+  }
+
+  // Parse numstat into [{add, del, path, churn}]
+  const fileStats = [];
+  if (numstatOutput) {
+    for (const line of numstatOutput.split('\n')) {
+      const m = line.match(/^(\d+)\s+(\d+)\s+(.+)$/);
+      if (m) {
+        const add = parseInt(m[1], 10);
+        const del = parseInt(m[2], 10);
+        fileStats.push({ add, del, path: m[3], churn: add + del });
+      }
+    }
+  }
+  fileStats.sort((a, b) => b.churn - a.churn);
+
+  // 3. Top 5 non-binary files: get full diff snippets
+  const topFiles = fileStats.slice(0, TOP_N);
+  const topSnippets = [];
+  const remainingStats = [];
+
+  for (const f of topFiles) {
+    // Binary check + diff in one shot
+    let diff = '';
+    try {
+      diff = execSync(`git diff HEAD -- "${f.path}"`, { ...execOpts, timeout: 10000, maxBuffer: 2 * 1024 * 1024 }).trim();
+    } catch {
+      try {
+        diff = execSync(`git diff --cached -- "${f.path}"`, { ...execOpts, timeout: 10000, maxBuffer: 2 * 1024 * 1024 }).trim();
+      } catch {
+        diff = '';
+      }
+    }
+
+    if (!diff) {
+      remainingStats.push(`  ${f.path} (+${f.add}/-${f.del})`);
+      continue;
+    }
+
+    // Skip binary files
+    if (diff.includes('Binary files differ') || diff.includes('Binary files /dev/null')) {
+      remainingStats.push(`  ${f.path} (+${f.add}/-${f.del}) [binary]`);
+      continue;
+    }
+
+    // Truncate diff to MAX_DIFF_PER_FILE bytes (by lines)
+    if (Buffer.byteLength(diff, 'utf-8') > MAX_DIFF_PER_FILE) {
+      let acc = '';
+      for (const ln of diff.split('\n')) {
+        if (Buffer.byteLength(acc + '\n' + ln, 'utf-8') > MAX_DIFF_PER_FILE) break;
+        acc = acc ? acc + '\n' + ln : ln;
+      }
+      diff = acc + '\n... (truncated)';
+    }
+
+    topSnippets.push(`--- ${f.path} (+${f.add}/-${f.del}) ---\n${diff}`);
+  }
+
+  // 4. Remaining files (6th onward): stat-only
+  for (const f of fileStats.slice(TOP_N)) {
+    remainingStats.push(`  ${f.path} (+${f.add}/-${f.del})`);
+  }
+
+  // 5. Assemble
+  let result = '';
+  if (statLines) result += `## File Changes (stat)\n${statLines}\n\n`;
+  if (topSnippets.length) result += `## Top File Diffs\n${topSnippets.join('\n\n')}\n\n`;
+  if (remainingStats.length) result += `## Other Changed Files\n${remainingStats.join('\n')}\n`;
+
+  // 6. Hard-truncate to MAX_SUMMARY bytes
+  if (Buffer.byteLength(result, 'utf-8') > MAX_SUMMARY) {
+    let acc = '';
+    for (const ln of result.split('\n')) {
+      if (Buffer.byteLength(acc + '\n' + ln, 'utf-8') > MAX_SUMMARY) break;
+      acc = acc ? acc + '\n' + ln : ln;
+    }
+    result = acc + '\n... (summary truncated)';
+  }
+
+  return result;
+}
+
 router.post('/git/ai-commit-msg', async (req, res) => {
   try {
     const { dir } = req.body;
@@ -796,32 +1001,16 @@ router.post('/git/ai-commit-msg', async (req, res) => {
       return res.status(400).json({ error: 'Not a git repository' });
     }
 
+    const wasCached = sessionCache.has(dir);
+    const sessionId = await getOrCreateSession(dir, repoRoot);
+    const diffSummary = buildDiffSummary(repoRoot);
+    console.log('[ai-commit] session:', sessionId, 'cached:', wasCached, 'diffLen:', diffSummary.length);
+
+    const prompt = `基于以下 Git 变更生成 commit message。\n\n${diffSummary}`;
+
     const ocHost = process.env.OPENCODE_SERVER_HOST || '127.0.0.1';
     const ocPort = process.env.OPENCODE_SERVER_PORT || 13460;
     const ocBase = `http://${ocHost}:${ocPort}`;
-
-    const sessionRes = await fetch(`${ocBase}/session`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: `git-commit:${path.basename(repoRoot)}` })
-    });
-    if (!sessionRes.ok) return res.status(502).json({ error: `OpenCode server unavailable: ${sessionRes.status}` });
-    const { id: sessionId } = await sessionRes.json();
-
-    const prompt = `请为以下 Git 仓库的未提交变更生成一个简洁的中文 commit message。
-
-仓库路径: ${repoRoot}
-
-请先执行以下命令获取变更信息：
-1. git -C "${repoRoot}" rev-parse --abbrev-ref HEAD   (当前分支)
-2. git -C "${repoRoot}" diff --stat HEAD                (变更统计)
-3. git -C "${repoRoot}" diff HEAD                       (详细diff，如果太长只看关键文件)
-
-然后根据变更内容生成 commit message：
-- 只输出一行（中文，50字以内）
-- 使用 conventional commits 风格前缀（feat/fix/docs/refactor/chore/style/test 等）
-- 不要解释、不要代码块、不要多余内容
-- 直接输出 message 文本`;
 
     const msgRes = await fetch(`${ocBase}/session/${sessionId}/message`, {
       method: 'POST',
@@ -849,12 +1038,16 @@ router.post('/git/ai-commit-msg', async (req, res) => {
 
     aiText = aiText.trim()
       .replace(/^```[\w]*\n?/, '').replace(/\n?```$/, '')
-      .replace(/^[#\*\-\s]+/, '');
+      .replace(/^[#\*\-\s]+/, '')
+      .replace(/^为以下 git 变更.*?(?=\n)/im, '')
+      .replace(/^基于以下 Git 变更.*?(?=\n)/im, '')
+      .replace(/^你是 commit.*?(?=\n)/im, '')
+      .replace(/^(项目|当前分支|最近提交风格|规则)[^\n]*\n/gm, '');
 
     const codeMatch = aiText.match(/```(?:\w+)?\n?([\s\S]*?)```/);
-    const command = codeMatch ? codeMatch[1].trim() : aiText;
+    const command = codeMatch ? codeMatch[1].trim() : aiText.trim();
 
-    res.json({ command, raw: aiText });
+    res.json({ command, raw: aiText.trim() });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
