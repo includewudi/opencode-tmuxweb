@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Folder, File, ChevronUp, ChevronRight, Plus, Loader2, Pencil, Trash2, Terminal, GitCompare, Clock, FileStack, Sparkles, X } from 'lucide-react'
+import { Folder, File, ChevronUp, ChevronRight, Plus, Loader2, Pencil, Trash2, Terminal, GitCompare, Clock, FileStack, Sparkles, X, Search } from 'lucide-react'
 import { getToken } from '../../../utils/auth'
 import { FileEntry, ContextMenuState, formatSize, sortByFoldersFirst, joinPath, isMediaFile } from './web-file-browser-helpers'
 import { FilePreview } from './FilePreview'
+import { SearchPanel } from './SearchPanel'
 import './web-file-browser.css'
 
 interface Props {
@@ -39,6 +40,7 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
   const [diffStats, setDiffStats] = useState<{ additions: number; deletions: number } | undefined>()
   const [fileGitStatus, setFileGitStatus] = useState<string | undefined>()
   const [forceMode, setForceMode] = useState<'diff' | 'history' | null>(null)
+  const [showSearch, setShowSearch] = useState(false)
 
   const fetchDir = useCallback(async (dirPath: string, force = false) => {
     if (!force && childrenCacheRef.current.has(dirPath)) return childrenCacheRef.current.get(dirPath)!
@@ -284,6 +286,7 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
             <span className="wfb-tree-header__dir" title={normalizedDir}>{displayPath}</span>
           </div>
           <div className="wfb-tree-header__actions">
+            <button className={`wfb-icon-btn${showSearch ? ' wfb-icon-btn--active' : ''}`} onClick={() => setShowSearch(s => !s)} title="搜索"><Search size={14} /></button>
             <button className="wfb-icon-btn" onClick={async () => {
               setAiLoading(true); setAiSummary(null)
               try {
@@ -312,6 +315,18 @@ export function WebFileBrowser({ dir, onSendPath }: Props) {
               onBlur={() => { setCreatingNew(null); setNewName('') }}
             />
           </div>
+        )}
+
+        {showSearch && (
+          <SearchPanel
+            dir={normalizedDir}
+            onSelectFile={(fp) => {
+              const entry: FileEntry = { name: fp.split('/').pop() || '', type: 'file' }
+              previewFile(fp, entry)
+              setShowSearch(false)
+            }}
+            onClose={() => setShowSearch(false)}
+          />
         )}
 
         <div className="wfb-tree-list">

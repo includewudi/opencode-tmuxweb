@@ -1053,4 +1053,264 @@ router.post('/git/ai-commit-msg', async (req, res) => {
   }
 });
 
+// ── Filename search (recursive) ─────────────────────────────────────
+router.get('/search', async (req, res) => {
+  try {
+    const q = req.query.q;
+    if (!q || typeof q !== 'string') {
+      return res.status(400).json({ error: 'q (search query) is required' });
+    }
+    const dir = req.query.dir || process.env.HOME || '/tmp';
+    const target = resolveSafe(dir);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 200);
+    const showHidden = req.query.showHidden === '1';
+
+    let stat;
+    try { stat = await fsp.stat(target); } catch {
+      return res.status(404).json({ error: 'Directory not found' });
+    }
+    if (!stat.isDirectory()) {
+      return res.status(400).json({ error: 'Not a directory' });
+    }
+
+    const prunePatterns = ['-name', shq('node_modules'), '-o', '-name', shq('.git')];
+    if (!showHidden) {
+      prunePatterns.push('-o', '-name', shq('.*'));
+    }
+
+    const charPattern = [...q].join('*');
+    const cmd = [
+      'find', shq(target),
+      '-type', 'd', '\\(', ...prunePatterns, '\\)', '-prune',
+      '-o', '-type', 'f',
+      '-iname', shq('*' + charPattern + '*'),
+      '-print',
+    ].join(' ');
+
+    let stdout;
+    try {
+      stdout = execSync(cmd, {
+        encoding: 'utf-8',
+        timeout: 5000,
+        maxBuffer: 2 * 1024 * 1024,
+      }).trim();
+    } catch (err) {
+      stdout = err.stdout ? err.stdout.trim() : '';
+    }
+
+    const lines = stdout ? stdout.split('\n').filter(Boolean) : [];
+    const lowerQ = q.toLowerCase();
+    const fuzzy = fuzzyMatch(lowerQ);
+
+    const scored = [];
+    for (const absPath of lines) {
+      const name = path.basename(absPath);
+      const lowerName = name.toLowerCase();
+      const score = fuzzy(lowerName);
+      if (score < 0) continue;
+      scored.push({ name, path: absPath, score });
+    }
+
+    scored.sort((a, b) => b.score - a.score);
+
+    const results = [];
+    for (const item of scored) {
+      if (results.length >= limit) break;
+      const relPath = path.relative(target, item.path);
+      let size = 0;
+      try { size = (await fsp.stat(item.path)).size; } catch {}
+      results.push({
+        name: item.name,
+        path: relPath,
+        type: 'file',
+        size,
+      });
+    }
+
+    res.json({ results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Content search (grep / ripgrep) ────────────────────────────────
+router.get('/grep', async (req, res) => {
+  try {
+    const q = req.query.q;
+    if (!q || typeof q !== 'string') {
+      return res.status(400).json({ error: 'q (search query) is required' });
+    }
+    const limit = Math.min(parseInt(req.query.limit, 10) || 30, 100);
+    const singleFile = req.query.file ? resolveSafe(req.query.file) : null;
+
+    const extFilter = req.query.ext
+      ? String(req.query.ext).split(',').map(e => e.trim().replace(/^\./, '')).filter(Boolean)
+      : [];
+
+    if (singleFile) {
+      let stat;
+      try { stat = await fsp.stat(singleFile); } catch {
+        return res.status(404).json({ error: 'File not found' });
+      }
+      if (stat.isDirectory()) {
+        return res.status(400).json({ error: 'Parameter "file" must be a file, not a directory' });
+      }
+
+      const isSymbol = req.query.mode === 'symbol';
+      let grepPattern;
+      let grepExtraFlags = '';
+      if (isSymbol) {
+        grepExtraFlags = ' -i';
+        const part = '\\w*' + escapeRegex(q) + '\\w*';
+        grepPattern = '(function\\s+' + part + '\\b|const\\s+' + part + '\\s*=|let\\s+' + part + '\\s*=|var\\s+' + part + '\\s*=|class\\s+' + part + '\\b|export\\s+(default\\s+)?(async\\s+)?function\\s+' + part + '\\b|export\\s+(default\\s+)?class\\s+' + part + '\\b|async\\s+function\\s+' + part + '\\b|def\\s+' + part + '\\b|\\*\\s+' + part + '\\s*\\(|(public|private|protected)\\s+\\w+\\s+' + part + '\\s*\\()';
+      } else {
+        grepPattern = escapeRegex(q);
+      }
+
+      let stdout = '';
+      try {
+        const grepArgs = ['grep', '-n', '--color=never', grepExtraFlags, '--binary-files=without-match', '-E', shq(grepPattern), shq(singleFile)];
+        stdout = execSync(grepArgs.join(' '), { encoding: 'utf-8', timeout: 5000, maxBuffer: 2 * 1024 * 1024 }).trim();
+      } catch (err) {
+        stdout = err.stdout ? err.stdout.trim() : '';
+      }
+
+      const lines = stdout ? stdout.split('\n').filter(Boolean) : [];
+      const results = [];
+      for (const line of lines) {
+        if (results.length >= limit) break;
+        const colonIdx = line.indexOf(':');
+        if (colonIdx === -1) continue;
+        const num = parseInt(line.slice(0, colonIdx), 10);
+        let text = line.slice(colonIdx + 1).trim();
+        if (text.length > 300) text = text.slice(0, 300) + '…';
+        const matchStart = text.toLowerCase().indexOf(q.toLowerCase());
+        const matchEnd = matchStart >= 0 ? matchStart + q.length : -1;
+        results.push({ file: path.basename(singleFile), line: text, num, matchStart, matchEnd });
+      }
+      return res.json({ results, total: results.length, truncated: results.length >= limit });
+    }
+
+    const dir = req.query.dir || process.env.HOME || '/tmp';
+    const target = resolveSafe(dir);
+
+    let stat;
+    try { stat = await fsp.stat(target); } catch {
+      return res.status(404).json({ error: 'Directory not found' });
+    }
+    if (!stat.isDirectory()) {
+      return res.status(400).json({ error: 'Not a directory' });
+    }
+
+    const hasRg = (() => {
+      try { execSync('which rg', { encoding: 'utf-8', timeout: 2000 }); return true; } catch { return false; }
+    })();
+
+    let stdout = '';
+    try {
+      if (hasRg) {
+        const rgArgs = [
+          'rg',
+          '--no-heading', '--line-number', '--color=never',
+          '--max-count', String(limit),
+          '--max-filesize', '1M',
+          '--hidden=false',
+          '--glob', '!.git',
+          '--glob', '!node_modules',
+        ];
+        for (const ext of extFilter) {
+          rgArgs.push('--type-add', 'custom:*.' + ext);
+        }
+        if (extFilter.length) {
+          rgArgs.push('-t', 'custom');
+        }
+        rgArgs.push(shq(q), shq(target));
+        stdout = execSync(rgArgs.join(' '), {
+          encoding: 'utf-8',
+          timeout: 8000,
+          maxBuffer: 4 * 1024 * 1024,
+        }).trim();
+      } else {
+        const includeArgs = extFilter.length
+          ? extFilter.flatMap(e => ['--include', '*.' + e])
+          : [];
+        const grepArgs = [
+          'grep', '-rn', '--color=never',
+          '--binary-files=without-match',
+          '--exclude-dir=node_modules',
+          '--exclude-dir=.git',
+          ...includeArgs,
+          '-E', shq(escapeRegex(q)),
+          shq(target),
+        ];
+        stdout = execSync(grepArgs.join(' '), {
+          encoding: 'utf-8',
+          timeout: 8000,
+          maxBuffer: 4 * 1024 * 1024,
+        }).trim();
+      }
+    } catch (err) {
+      stdout = err.stdout ? err.stdout.trim() : '';
+    }
+
+    const lines = stdout ? stdout.split('\n').filter(Boolean) : [];
+    const results = [];
+    let total = 0;
+    let truncated = false;
+
+    for (const line of lines) {
+      total++;
+      if (results.length >= limit) {
+        truncated = true;
+        continue;
+      }
+      // Parse "filepath:linenum:text" — ripgrep and grep -n both use this format
+      const firstColon = line.indexOf(':');
+      if (firstColon === -1) continue;
+      const secondColon = line.indexOf(':', firstColon + 1);
+      if (secondColon === -1) continue;
+
+      const filePath = line.slice(0, firstColon);
+      const num = parseInt(line.slice(firstColon + 1, secondColon), 10);
+      let text = line.slice(secondColon + 1).trim();
+      if (text.length > 300) text = text.slice(0, 300) + '…';
+
+      const relPath = path.relative(target, filePath);
+      const matchStart = text.toLowerCase().indexOf(q.toLowerCase());
+      const matchEnd = matchStart >= 0 ? matchStart + q.length : -1;
+
+      results.push({ file: relPath, line: text, num, matchStart, matchEnd });
+    }
+
+    res.json({ results, total, truncated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── Shell helpers ───────────────────────────────────────────────────
+function shq(s) {
+  return "'" + String(s).replace(/'/g, "'\\''") + "'";
+}
+
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function fuzzyMatch(query) {
+  const chars = [...query];
+  return function (str) {
+    let qi = 0, score = 0, lastMatchIdx = -2;
+    for (let i = 0; i < str.length && qi < chars.length; i++) {
+      if (str[i] === chars[qi]) {
+        score += (i === lastMatchIdx + 1) ? 3 : 1;
+        if (i === 0 || /[-_.\s\/]/.test(str[i - 1])) score += 2;
+        lastMatchIdx = i;
+        qi++;
+      }
+    }
+    return qi === chars.length ? score : -1;
+  };
+}
+
 module.exports = router;

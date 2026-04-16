@@ -40,8 +40,9 @@ const terminalModule = terminalMode === 'controlmode'
 const { handleTerminalConnection, getStats } = terminalModule;
 console.log(`[Server] Terminal mode: ${terminalMode}`);
 const { handleSpeechConnection } = require('./services/speech');
-const { pool, dbEnabled, testConnection } = require('./db/pool');
+
 const { bootstrap } = require('./db/bootstrap');
+const { dbEnabled, testConnection } = require('./db/pool');
 
 const app = express();
 
@@ -100,6 +101,40 @@ app.use('/api/butler', tokenMiddleware, butlerProxyRouter);
 app.use('/api/files', tokenMiddleware, filesRouter);
 app.use('/api/upload', tokenMiddleware, uploadRouter);
 app.use('/api/cli-history', tokenMiddleware, cliHistoryRouter);
+
+// ── Ephemeral Terminal (temporary tmux session) ──────────────────────
+app.post('/api/ephemeral-terminal', tokenMiddleware, (req, res) => {
+  const { execSync } = require('child_process');
+  const os = require('os');
+  const cwd = (req.body.cwd || '').replace(/^~/, os.homedir()).replace(/['"\\]/g, '') || os.homedir();
+  const id = `__et_${Date.now().toString(36)}`;
+
+  try {
+    execSync(`tmux new-session -d -s "${id}" -c "${cwd}"`, { encoding: 'utf-8', timeout: 5000 });
+    const paneId = execSync(`tmux list-panes -t "${id}" -F "#{pane_id}"`, { encoding: 'utf-8' }).trim().split('\n')[0];
+    console.log(`[EphemeralTerminal] Created session=${id} paneId=${paneId} cwd=${cwd}`);
+    res.json({ success: true, sessionName: id, paneId });
+  } catch (err) {
+    console.error(`[EphemeralTerminal] Failed to create session: ${err.message}`);
+    res.status(500).json({ error: 'tmux_error', message: err.message });
+  }
+});
+
+app.delete('/api/ephemeral-terminal/:name', tokenMiddleware, (req, res) => {
+  const { execSync } = require('child_process');
+  const name = req.params.name.replace(/['"\\]/g, '');
+  if (!name.startsWith('__et_')) {
+    return res.status(400).json({ error: 'bad_request', message: 'Not an ephemeral session' });
+  }
+  try {
+    execSync(`tmux kill-session -t "${name}"`, { encoding: 'utf-8', timeout: 5000 });
+    console.log(`[EphemeralTerminal] Killed session=${name}`);
+    res.json({ success: true });
+  } catch (err) {
+    // Session might already be gone — that's fine
+    res.json({ success: true });
+  }
+});
 
 // Task routes: task CRUD (tasks-db.js), summaries
 app.use('/api/tasks', tokenMiddleware, requireDb, tasksDbRouter);       // /:id, /:id/complete, /:id/detail

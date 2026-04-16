@@ -65,8 +65,13 @@ function createOpenCodeProvider(opts = {}) {
     if (!db) return { sessions: [], total: 0 };
 
     const directory = (opts.directory || '').trim();
+    const rootOnly = opts.rootOnly !== false;
     let whereClause = '1=1';
     const params = [];
+
+    if (rootOnly) {
+      whereClause += ' AND s.parent_id IS NULL';
+    }
 
     if (directory) {
       whereClause += ' AND (s.directory = ? OR s.directory LIKE ?)';

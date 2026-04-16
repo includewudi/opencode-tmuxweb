@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare, ScrollText, FolderSearch, BrainCircuit, FolderTree, GitBranch } from 'lucide-react'
+import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare, ScrollText, FolderSearch, BrainCircuit, FolderTree, GitBranch, History } from 'lucide-react'
 import { TmuxTree } from '../shared/components/TmuxTree'
 import { TaskStatBadges } from '../shared/components/TaskStatBadges'
 import { TerminalTabs } from './TerminalTabs'
@@ -12,7 +12,9 @@ import { FloatingImperialStudy } from '../shared/components/imperial-study/compo
 import { FloatingYazi } from '../shared/components/file-browser/FloatingYazi'
 import { FloatingQuickOpen } from '../shared/components/file-browser/FloatingQuickOpen'
 import { FloatingGitPanel } from '../shared/components/file-browser/FloatingGitPanel'
+import { FloatingTerminal } from '../shared/components/ephemeral-terminal/FloatingTerminal'
 import { FloatingCLIHistory } from '../shared/components/cli-history/FloatingCLIHistory'
+import { FloatingSessionBrowser } from '../shared/components/session-browser/FloatingSessionBrowser'
 import { TaskToastContainer } from '../shared/components/TaskToast'
 import { ErrorBoundary } from '../shared/components/ErrorBoundary'
 import { usePaneNavigation } from '../hooks/usePaneNavigation'
@@ -63,8 +65,10 @@ export default function App() {
   const [yaziFloat, setYaziFloat] = useState(false)
 
   const [cliHistoryFloat, setCLIHistoryFloat] = useState(false)
+  const [sessionBrowserFloat, setSessionBrowserFloat] = useState(false)
   const [quickOpenFloat, setQuickOpenFloat] = useState(false)
   const [gitFloat, setGitFloat] = useState(false)
+  const [terminalFloat, setTerminalFloat] = useState(false)
   const activePaneKey = useMemo(() => {
     const tab = tabs.find(t => t.id === activeTabId)
     if (!tab) return null
@@ -351,7 +355,17 @@ export default function App() {
               >
                 <span className={gitFloat ? 'fb-float-pin' : ''}>
                   <GitBranch size={22} strokeWidth={gitFloat ? 2 : 1.5} />
-                  {gitFloat && <span className="fb-float-pin__indicator" />}
+                {gitFloat && <span className="fb-float-pin__indicator" />}
+                </span>
+              </button>
+              <button
+                className={`activity-tab ${terminalFloat ? 'active' : ''}`}
+                title="临时终端"
+                onClick={() => setTerminalFloat(!terminalFloat)}
+              >
+                <span className={terminalFloat ? 'fb-float-pin' : ''}>
+                  <TerminalSquare size={22} strokeWidth={terminalFloat ? 2 : 1.5} />
+                  {terminalFloat && <span className="fb-float-pin__indicator" />}
                 </span>
               </button>
               <button
@@ -362,6 +376,16 @@ export default function App() {
                 <span className={cliHistoryFloat ? 'fb-float-pin' : ''}>
                   <BrainCircuit size={22} strokeWidth={cliHistoryFloat ? 2 : 1.5} />
                   {cliHistoryFloat && <span className="fb-float-pin__indicator" />}
+                </span>
+              </button>
+              <button
+                className={`activity-tab ${sessionBrowserFloat ? 'active' : ''}`}
+                title="Session 目录"
+                onClick={() => setSessionBrowserFloat(!sessionBrowserFloat)}
+              >
+                <span className={sessionBrowserFloat ? 'fb-float-pin' : ''}>
+                  <History size={22} strokeWidth={sessionBrowserFloat ? 2 : 1.5} />
+                  {sessionBrowserFloat && <span className="fb-float-pin__indicator" />}
                 </span>
               </button>
             </div>
@@ -489,6 +513,16 @@ export default function App() {
         </ErrorBoundary>
       )}
 
+      {sessionBrowserFloat && (
+        <ErrorBoundary>
+          <FloatingSessionBrowser
+            cwd={activePaneCwd}
+            onClose={() => setSessionBrowserFloat(false)}
+            onSendToTerminal={sendToActiveTerminal}
+          />
+        </ErrorBoundary>
+      )}
+
       {quickOpenFloat && (
         <ErrorBoundary>
           <FloatingQuickOpen
@@ -504,6 +538,15 @@ export default function App() {
           <FloatingGitPanel
             dir={activePaneCwd || undefined}
             onClose={() => setGitFloat(false)}
+          />
+        </ErrorBoundary>
+      )}
+
+      {terminalFloat && (
+        <ErrorBoundary>
+          <FloatingTerminal
+            cwd={activePaneCwd || undefined}
+            onClose={() => setTerminalFloat(false)}
           />
         </ErrorBoundary>
       )}

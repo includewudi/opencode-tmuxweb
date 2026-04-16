@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Search, X, ChevronRight, Terminal, Bot, User, Wrench,
-  CheckCircle2, XCircle, Loader2, RefreshCw, ArrowLeft, Hash,
+  CheckCircle2, XCircle, Loader2, RefreshCw, ArrowLeft, Hash, Repeat,
 } from 'lucide-react'
-import './CLIHistoryPanel.css'
+import './SessionBrowser.css'
 
 interface SessionSummary {
   id: string
@@ -85,13 +85,13 @@ function agentColor(name: string | null): string {
 function relativeTime(tsSec: number): string {
   const diff = Date.now() - tsSec * 1000
   const mins = Math.floor(diff / 60000)
-  if (mins < 1) return 'just now'
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 1) return '刚刚'
+  if (mins < 60) return `${mins}分钟前`
   const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
+  if (hours < 24) return `${hours}小时前`
   const days = Math.floor(hours / 24)
-  if (days < 30) return `${days}d ago`
-  return new Date(tsSec * 1000).toLocaleDateString()
+  if (days < 30) return `${days}天前`
+  return new Date(tsSec * 1000).toLocaleDateString('zh-CN')
 }
 
 function truncate(s: string, max: number): string {
@@ -118,7 +118,7 @@ function formatTokens(tokens: { input: number; output: number; cache?: { read: n
 function ToolStatusIcon({ status }: { status: string | null | undefined }) {
   if (status === 'completed') return <CheckCircle2 size={12} style={{ color: 'var(--green-500)' }} />
   if (status === 'failed') return <XCircle size={12} style={{ color: 'var(--red-500)' }} />
-  return <Loader2 size={12} className="cli-h-spin" style={{ color: 'var(--blue-400)' }} />
+  return <Loader2 size={12} className="sb-spin" style={{ color: 'var(--blue-400)' }} />
 }
 
 function InputPreview({ input }: { input: unknown }) {
@@ -126,11 +126,12 @@ function InputPreview({ input }: { input: unknown }) {
   return <span>{truncate(str, 200)}</span>
 }
 
-interface CLIHistoryPanelProps {
+interface SessionBrowserPanelProps {
   cwd?: string | null
+  onSwitchSession?: (sessionId: string) => void
 }
 
-export function CLIHistoryPanel({ cwd }: CLIHistoryPanelProps) {
+export function SessionBrowserPanel({ cwd, onSwitchSession }: SessionBrowserPanelProps) {
   const [provider] = useState<string>('opencode')
   const [sessions, setSessions] = useState<SessionSummary[]>([])
   const [selectedSession, setSelectedSession] = useState<string | null>(null)
@@ -146,7 +147,7 @@ export function CLIHistoryPanel({ cwd }: CLIHistoryPanelProps) {
   const fetchSessions = useCallback(async () => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ provider, limit: '50' })
+      const params = new URLSearchParams({ provider, limit: '50', rootOnly: '1' })
       if (searchQuery) params.set('search', searchQuery)
       if (cwd) params.set('directory', cwd)
       const res = await fetch(`/api/cli-history/sessions?${params}`, { credentials: 'include' })
@@ -154,7 +155,7 @@ export function CLIHistoryPanel({ cwd }: CLIHistoryPanelProps) {
       const data = await res.json()
       setSessions(data.sessions || [])
     } catch (err) {
-      console.error('[CLIHistoryPanel] fetch error:', err)
+      console.error('[SessionBrowser] fetch error:', err)
     } finally {
       setLoading(false)
     }
@@ -173,7 +174,7 @@ export function CLIHistoryPanel({ cwd }: CLIHistoryPanelProps) {
       const data = await res.json()
       setSessionDetail(data)
     } catch (err) {
-      console.error('[CLIHistoryPanel] detail error:', err)
+      console.error('[SessionBrowser] detail error:', err)
       setSessionDetail(null)
     } finally {
       setDetailLoading(false)
@@ -183,14 +184,14 @@ export function CLIHistoryPanel({ cwd }: CLIHistoryPanelProps) {
   const fetchToolCalls = useCallback(async (sessionId: string) => {
     try {
       const res = await fetch(
-        `/api/cli-history/sessions/${encodeURIComponent(sessionId)}/tools?provider=${provider}`,
+        `/api/cli-history/sessions/${encodeURIComponent(sessionId)}/tools?provider=${provider}&limit=50`,
         { credentials: 'include' }
       )
       if (!res.ok) throw new Error('Failed to fetch tools')
       const data = await res.json()
       setToolCalls(data.toolCalls || [])
     } catch (err) {
-      console.error('[CLIHistoryPanel] tools error:', err)
+      console.error('[SessionBrowser] tools error:', err)
       setToolCalls([])
     }
   }, [provider])
@@ -224,135 +225,135 @@ export function CLIHistoryPanel({ cwd }: CLIHistoryPanelProps) {
   )
 
   return (
-    <div className="cli-h-panel">
-      <div className="cli-h-header">
-        <div className="cli-h-header-left">
+    <div className="sb-panel">
+      <div className="sb-header">
+        <div className="sb-header-left">
           <Terminal size={15} />
-          <span className="cli-h-title">CLI History</span>
+          <span className="sb-title">Session 目录</span>
         </div>
-        <div className="cli-h-header-right">
-          <button className="cli-h-btn" onClick={fetchSessions} disabled={loading} title="Refresh">
-            <RefreshCw size={13} className={loading ? 'cli-h-spin' : ''} />
+        <div className="sb-header-right">
+          <button className="sb-btn" onClick={fetchSessions} disabled={loading} title="刷新">
+            <RefreshCw size={13} className={loading ? 'sb-spin' : ''} />
           </button>
         </div>
       </div>
 
-      <div className="cli-h-search">
+      <div className="sb-search">
         <Search size={13} />
         <input
           type="text"
-          placeholder="Search sessions..."
+          placeholder="搜索会话..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
         />
         {searchQuery && (
-          <button className="cli-h-btn" onClick={() => setSearchQuery('')} title="Clear">
+          <button className="sb-btn" onClick={() => setSearchQuery('')} title="清除">
             <X size={12} />
           </button>
         )}
       </div>
 
-      <div className="cli-h-body">
-        <div className="cli-h-session-list">
+      <div className="sb-body">
+        <div className="sb-session-list">
           {loading && sessions.length === 0 ? (
-            <div className="cli-h-loading">
-              <Loader2 size={20} className="cli-h-spin" />
-              <span>Loading...</span>
+            <div className="sb-loading">
+              <Loader2 size={20} className="sb-spin" />
+              <span>加载中...</span>
             </div>
           ) : filteredSessions.length === 0 ? (
-            <div className="cli-h-empty">
-{searchQuery ? 'No matches' : 'No sessions found'}
+            <div className="sb-empty">
+              {searchQuery ? '无匹配结果' : '暂无会话'}
             </div>
           ) : (
             filteredSessions.map(session => (
               <div
                 key={session.id}
-                className={`cli-h-session-item${selectedSession === session.id ? ' active' : ''}`}
+                className={`sb-session-item${selectedSession === session.id ? ' active' : ''}`}
                 onClick={() => selectSession(session.id)}
               >
-                <span className="cli-h-session-title">{session.title || 'Untitled'}</span>
-                <div className="cli-h-session-meta">
-                  <span className="cli-h-session-path" title={session.projectPath}>
+                <span className="sb-session-title">{session.title || '无标题'}</span>
+                <div className="sb-session-meta">
+                  <span className="sb-session-path" title={session.projectPath}>
                     {truncate(session.projectPath?.split('/').slice(-2).join('/') || session.directory?.split('/').slice(-2).join('/') || '', 24)}
                   </span>
                   {session.agent && (
-                    <span className="cli-h-agent-badge" style={{ background: agentColor(session.agent) }}>
+                    <span className="sb-agent-badge" style={{ background: agentColor(session.agent) }}>
                       {session.agent}
                     </span>
                   )}
-                  <span className="cli-h-session-time">{relativeTime(session.timeUpdated)}</span>
-{session.messageCount} msgs
+                  <span className="sb-session-time">{relativeTime(session.timeUpdated)}</span>
+                  <span className="sb-badge">{session.messageCount} 条消息</span>
                 </div>
               </div>
             ))
           )}
         </div>
 
-        <div className="cli-h-detail">
+        <div className="sb-detail">
           {!selectedSession || !sessionDetail ? (
-            <div className="cli-h-empty">
+            <div className="sb-empty">
               {selectedSession && detailLoading ? (
-                <><Loader2 size={20} className="cli-h-spin" /><span>Loading...</span></>
+                <><Loader2 size={20} className="sb-spin" /><span>加载中...</span></>
               ) : (
-'Select a session'
+                '选择一个会话'
               )}
             </div>
           ) : (
             <>
-              <div className="cli-h-detail-header">
-                <button className="cli-h-detail-back" onClick={goBack} title="Back">
+              <div className="sb-detail-header">
+                <button className="sb-detail-back" onClick={goBack} title="返回">
                   <ArrowLeft size={14} />
                 </button>
-                <span className="cli-h-detail-title">{sessionDetail.title || 'Untitled'}</span>
+                <span className="sb-detail-title">{sessionDetail.title || '无标题'}</span>
                 {sessionDetail.agent && (
-                  <span className="cli-h-agent-badge" style={{ background: agentColor(sessionDetail.agent) }}>
+                  <span className="sb-agent-badge" style={{ background: agentColor(sessionDetail.agent) }}>
                     {sessionDetail.agent}
                   </span>
                 )}
+                {onSwitchSession && (
+                  <button
+                    className="sb-switch-btn"
+                    onClick={() => onSwitchSession(sessionDetail.id)}
+                    title="切换到此会话"
+                  >
+                    <Repeat size={12} />
+                    切换
+                  </button>
+                )}
               </div>
 
-              <div className="cli-h-detail-tabs">
+              <div className="sb-detail-tabs">
                 <button
-                  className={`cli-h-tab${detailTab === 'messages' ? ' active' : ''}`}
+                  className={`sb-tab${detailTab === 'messages' ? ' active' : ''}`}
                   onClick={() => setDetailTab('messages')}
                 >
-                  Messages
+                  消息
                 </button>
                 <button
-                  className={`cli-h-tab${detailTab === 'tools' ? ' active' : ''}`}
+                  className={`sb-tab${detailTab === 'tools' ? ' active' : ''}`}
                   onClick={() => setDetailTab('tools')}
                 >
-                  Tools ({toolCalls.length || inlineTools.length})
+                  工具调用 ({toolCalls.length || inlineTools.length})
                 </button>
               </div>
 
-              <div className="cli-h-detail-content">
+              <div className="sb-detail-content">
                 {detailTab === 'messages' ? (
                   (sessionDetail.messages || []).map(msg => (
-                    <div key={msg.id} className="cli-h-message">
-                      <div className={`cli-h-message-role ${msg.role}`}>
+                    <div key={msg.id} className="sb-message">
+                      <div className={`sb-message-role ${msg.role}`}>
                         {msg.role === 'user' ? <User size={13} /> : <Bot size={13} />}
-                        {msg.role === 'user' ? 'User' : 'Assistant'}
+                        {msg.role === 'user' ? '用户' : '助手'}
                         {msg.modelID && (
-                          <span className="cli-h-message-model">{msg.modelID}</span>
+                          <span className="sb-message-model">{msg.modelID}</span>
                         )}
                         {msg.agent && (
-                          <span className="cli-h-agent-badge" style={{ background: agentColor(msg.agent), fontSize: '9px', padding: '0 4px' }}>
+                          <span className="sb-agent-badge" style={{ background: agentColor(msg.agent), fontSize: '9px', padding: '0 4px' }}>
                             {msg.agent}
                           </span>
                         )}
-                        {msg.error && (
-                          <span className="cli-h-error-badge" title={`${msg.error.statusCode || ''} ${msg.error.name || 'Error'}: ${msg.error.message || ''}`}>
-                            {msg.error.name || 'Error'}: {msg.error.message || 'Unknown error'}
-                          </span>
-                        )}
-                        {msg.error && (
-                          <span className="cli-h-error-badge" title={msg.error.message || ''}>
-                            ⚠️ {msg.error.name || 'Error'}{msg.error.statusCode ? ` (${msg.error.statusCode})` : ''}: {msg.error.message || 'unknown'}
-                          </span>
-                        )}
                         {msg.tokens && (
-                          <span className="cli-h-message-tokens">
+                          <span className="sb-message-tokens">
                             {formatTokens(msg.tokens)}
                           </span>
                         )}
@@ -360,7 +361,7 @@ export function CLIHistoryPanel({ cwd }: CLIHistoryPanelProps) {
                       {msg.parts
                         .filter(p => p.type === 'text')
                         .map((p, idx) => (
-                          <div key={idx} className="cli-h-message-content">
+                          <div key={idx} className="sb-message-content">
                             {p.text || ''}
                           </div>
                         ))}
@@ -370,23 +371,23 @@ export function CLIHistoryPanel({ cwd }: CLIHistoryPanelProps) {
                           const key = `${msg.id}-tool-${idx}`
                           const isExpanded = expandedTool === key
                           return (
-                            <div key={key} className="cli-h-tool-inline" onClick={() => setExpandedTool(isExpanded ? null : key)}>
+                            <div key={key} className="sb-tool-inline" onClick={() => setExpandedTool(isExpanded ? null : key)}>
                               <Wrench size={12} style={{ color: 'var(--zinc-500)' }} />
-                              <span className="cli-h-tool-name">{p.tool || 'unknown'}</span>
-                              <span className="cli-h-tool-status">
+                              <span className="sb-tool-name">{p.tool || 'unknown'}</span>
+                              <span className="sb-tool-status">
                                 <ToolStatusIcon status={p.status} />
                               </span>
                               {p.duration != null && (
-                                <span className="cli-h-tool-duration">{formatDuration(p.duration)}</span>
+                                <span className="sb-tool-duration">{formatDuration(p.duration)}</span>
                               )}
                               <ChevronRight size={12} style={{ color: 'var(--zinc-600)', transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }} />
                               {isExpanded && (
                                 <div style={{ width: '100%' }}>
                                   {p.input != null && (
-                                    <><div className="cli-h-tool-input-label">Input</div><pre className="cli-h-tool-output"><InputPreview input={p.input} /></pre></>
+                                    <><div className="sb-tool-input-label">Input</div><pre className="sb-tool-output"><InputPreview input={p.input} /></pre></>
                                   )}
                                   {p.output && (
-                                    <><div className="cli-h-tool-output-label">Output</div><pre className="cli-h-tool-output">{truncate(p.output, 2000)}</pre></>
+                                    <><div className="sb-tool-output-label">Output</div><pre className="sb-tool-output">{truncate(p.output, 2000)}</pre></>
                                   )}
                                 </div>
                               )}
@@ -397,9 +398,9 @@ export function CLIHistoryPanel({ cwd }: CLIHistoryPanelProps) {
                   ))
                 ) : (
                   detailLoading ? (
-                    <div className="cli-h-loading"><Loader2 size={20} className="cli-h-spin" /><span>Loading tools...</span></div>
+                    <div className="sb-loading"><Loader2 size={20} className="sb-spin" /><span>加载中...</span></div>
                   ) : (toolCalls.length === 0 && inlineTools.length === 0) ? (
-                    <div className="cli-h-empty">No tool calls</div>
+                    <div className="sb-empty">暂无工具调用</div>
                   ) : (
                     (toolCalls.length > 0 ? toolCalls : inlineTools).map((tc, idx) => {
                       const key = 'tool' in tc ? (tc as ToolCall).id : tc._key || `tool-${idx}`
@@ -411,33 +412,33 @@ export function CLIHistoryPanel({ cwd }: CLIHistoryPanelProps) {
                       const isExpanded = expandedEntry === key
                       const inputStr = typeof input === 'string' ? input : JSON.stringify(input)
                       return (
-                        <div key={key} className="cli-h-tool-entry" onClick={() => setExpandedEntry(isExpanded ? null : key)}>
-                          <div className="cli-h-tool-entry-top">
+                        <div key={key} className="sb-tool-entry" onClick={() => setExpandedEntry(isExpanded ? null : key)}>
+                          <div className="sb-tool-entry-top">
                             <Wrench size={12} style={{ color: 'var(--zinc-500)' }} />
-                            <span className="cli-h-tool-entry-name" style={{ color: 'var(--amber-500)' }}>
+                            <span className="sb-tool-entry-name" style={{ color: 'var(--amber-500)' }}>
                               {tool}
                             </span>
-                            <span className="cli-h-tool-status">
+                            <span className="sb-tool-status">
                               <ToolStatusIcon status={status} />
                             </span>
                             {dur != null && dur > 0 && (
-                              <span className="cli-h-tool-entry-duration">{formatDuration(dur)}</span>
+                              <span className="sb-tool-entry-duration">{formatDuration(dur)}</span>
                             )}
                             <Hash size={11} style={{ color: 'var(--zinc-600)' }} />
                             <ChevronRight size={12} style={{ color: 'var(--zinc-600)', transform: isExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s', marginLeft: 'auto' }} />
                           </div>
                           {!isExpanded && (
-                            <div className="cli-h-tool-preview">
-{inputStr ? truncate(inputStr, 80) : output ? truncate(output, 80) : 'No preview'}
+                            <div className="sb-tool-preview">
+                              {inputStr ? truncate(inputStr, 80) : output ? truncate(output, 80) : '无预览'}
                             </div>
                           )}
                           {isExpanded && (
                             <div>
                               {input != null && (
-                                <><div className="cli-h-tool-input-label">Input</div><pre className="cli-h-tool-output">{truncate(inputStr, 5000)}</pre></>
+                                <><div className="sb-tool-input-label">Input</div><pre className="sb-tool-output">{truncate(inputStr, 5000)}</pre></>
                               )}
                               {output && (
-                                <><div className="cli-h-tool-output-label">Output</div><pre className="cli-h-tool-output">{truncate(output, 5000)}</pre></>
+                                <><div className="sb-tool-output-label">Output</div><pre className="sb-tool-output">{truncate(output, 5000)}</pre></>
                               )}
                             </div>
                           )}

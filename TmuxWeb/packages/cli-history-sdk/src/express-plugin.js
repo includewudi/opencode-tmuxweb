@@ -95,6 +95,7 @@ function createRouter(opts = {}) {
         offset: req.query.offset,
         search: req.query.search,
         directory: req.query.directory,
+        rootOnly: req.query.rootOnly !== '0',
       });
       res.json(result);
     } catch (err) {

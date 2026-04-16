@@ -1,10 +1,17 @@
-import { useState, useEffect } from 'react'
-import { Save, Loader2, Pencil, X, Terminal, Eye, GitCompare, Clock } from 'lucide-react'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Save, Loader2, Pencil, X, Terminal, Eye, GitCompare, Clock, Search, ChevronDown, ChevronRight } from 'lucide-react'
 import type { FileEntry } from './web-file-browser-helpers'
 import { DiffView } from './DiffView'
 import { getToken } from '../../../utils/auth'
 import { isImageFile, isVideoFile, isDocFile } from './web-file-browser-helpers'
 import { FileHistory } from './FileHistory'
+
+interface GrepLine {
+  num: number
+  line: string
+  matchStart: number
+  matchEnd: number
+}
 
 type PreviewMode = 'preview' | 'diff' | 'history'
 
@@ -31,6 +38,12 @@ export function FilePreview({ selectedFile, filePath, fileContent, previewLoadin
   const [isEditing, setIsEditing] = useState(false)
   const [editable, setEditable] = useState('')
   const [mode, setMode] = useState<PreviewMode>('preview')
+  const [showFind, setShowFind] = useState(false)
+  const [findQuery, setFindQuery] = useState('')
+  const [findResults, setFindResults] = useState<GrepLine[]>([])
+  const [findLoading, setFindLoading] = useState(false)
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<number>>(new Set())
+  const findInputRef = useRef<HTMLInputElement>(null)
   const isEditable = selectedFile && fileContent !== '(binary file)' && fileContent !== '(failed to load)'
 
   useEffect(() => {
@@ -38,6 +51,103 @@ export function FilePreview({ selectedFile, filePath, fileContent, previewLoadin
     if (hasGitChanges && selectedFile?.git) setMode('diff')
     else setMode('preview')
   }, [selectedFile?.name, hasGitChanges, forceMode])
+
+  useEffect(() => {
+    if (showFind) findInputRef.current?.focus()
+  }, [showFind])
+
+  useEffect(() => {
+    setShowFind(false)
+    setFindQuery('')
+    setFindResults([])
+  }, [filePath])
+
+  const doFind = useCallback(async (raw: string) => {
+    if (raw.length < 1 || !filePath) { setFindResults([]); return }
+    setFindLoading(true)
+    const isSymbol = raw.startsWith('@')
+    const q = isSymbol ? raw.slice(1) : raw
+    if (!q) { setFindResults([]); setFindLoading(false); return }
+    try {
+      const token = getToken()
+      const params = new URLSearchParams({ q, file: filePath, limit: '100', token })
+      if (isSymbol) params.set('mode', 'symbol')
+      const res = await fetch(`/api/files/grep?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        setFindResults(data.results || [])
+        setCollapsedGroups(new Set())
+      } else { setFindResults([]) }
+    } catch { setFindResults([]) }
+    finally { setFindLoading(false) }
+  }, [filePath])
+
+  useEffect(() => {
+    if (!showFind || !findQuery) { setFindResults([]); return }
+    const timer = setTimeout(() => doFind(findQuery), 300)
+    return () => clearTimeout(timer)
+  }, [findQuery, showFind, doFind])
+
+  const contentLines = fileContent.split('\n')
+
+  const groups: { startLine: number; endLine: number; results: GrepLine[] }[] = []
+  let currentGroup: { startLine: number; endLine: number; results: GrepLine[] } | null = null
+  for (const r of findResults) {
+    const ctxStart = Math.max(1, r.num - 2)
+    if (currentGroup && ctxStart <= currentGroup.endLine + 1) {
+      currentGroup.endLine = Math.max(currentGroup.endLine, r.num + 2)
+      currentGroup.results.push(r)
+    } else {
+      if (currentGroup) groups.push(currentGroup)
+      currentGroup = { startLine: ctxStart, endLine: r.num + 2, results: [r] }
+    }
+  }
+  if (currentGroup) groups.push(currentGroup)
+
+  const renderContentWithContext = () => {
+    if (findResults.length === 0) {
+      return <pre className="wfb-preview-content">{fileContent}</pre>
+    }
+    return (
+      <div className="wfb-find-content">
+        {groups.map((g, gi) => {
+          const collapsed = collapsedGroups.has(gi)
+          const first = g.results[0]
+          return (
+            <div key={gi} className="wfb-find-group">
+              <div className="wfb-find-group__header" onClick={() => setCollapsedGroups(prev => {
+                const next = new Set(prev)
+                if (next.has(gi)) next.delete(gi); else next.add(gi)
+                return next
+              })}>
+                {collapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                <span className="wfb-find-group__loc">Line {first.num}</span>
+                <span className="wfb-find-group__text">{first.line.slice(0, 80)}</span>
+              </div>
+              {!collapsed && contentLines.slice(g.startLine - 1, g.endLine).map((line, idx) => {
+                const num = g.startLine + idx
+                const match = g.results.find(r => r.num === num)
+                return (
+                  <div key={num} className={`wfb-find-line${match ? ' wfb-find-line--match' : ''}`}>
+                    <span className="wfb-find-line__num">{num}</span>
+                    {match ? (
+                      <span className="wfb-find-line__text">
+                        {match.line.slice(0, match.matchStart)}
+                        <mark>{match.line.slice(match.matchStart, match.matchEnd)}</mark>
+                        {match.line.slice(match.matchEnd)}
+                      </span>
+                    ) : (
+                      <span className="wfb-find-line__text">{line}</span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
 
   const startEdit = () => { setEditable(fileContent); setIsEditing(true) }
   const cancelEdit = () => { setIsEditing(false); onCancelEdit() }
@@ -67,6 +177,7 @@ export function FilePreview({ selectedFile, filePath, fileContent, previewLoadin
             {onSendPath && (
               <button className="wfb-icon-btn" onClick={() => onSendPath(filePath)} title="Send path to terminal"><Terminal size={14} /></button>
             )}
+            <button className={`wfb-icon-btn${showFind ? ' wfb-icon-btn--active' : ''}`} onClick={() => setShowFind(v => !v)} title="Find in file"><Search size={14} /></button>
             <button className="wfb-icon-btn" onClick={startEdit} title="Edit"><Pencil size={14} /></button>
           </div>
         )}
@@ -87,6 +198,20 @@ export function FilePreview({ selectedFile, filePath, fileContent, previewLoadin
           </button>
         ))}
       </div>
+      {showFind && mode === 'preview' && !isEditing && (
+        <div className="wfb-find-bar">
+          <Search size={13} className="wfb-find-bar__icon" />
+          <input ref={findInputRef} className="wfb-find-bar__input"
+            value={findQuery} onChange={e => setFindQuery(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Escape') { setShowFind(false); setFindQuery(''); setFindResults([]) } }}
+            placeholder="搜索内容… @搜索方法"
+            spellCheck={false}
+          />
+          {findLoading && <Loader2 size={13} className="wfb-spin" />}
+          {findResults.length > 0 && <span className="wfb-find-bar__count">{findResults.length} matches</span>}
+          <button className="wfb-icon-btn" onClick={() => { setShowFind(false); setFindQuery(''); setFindResults([]) }}><X size={13} /></button>
+        </div>
+      )}
       <div className="wfb-preview-body">
         {previewLoading ? (
           <div className="wfb-loading"><Loader2 size={20} className="wfb-spin" /></div>
@@ -121,7 +246,7 @@ export function FilePreview({ selectedFile, filePath, fileContent, previewLoadin
             </div>
           </div>
         ) : (
-          <pre className="wfb-preview-content">{fileContent}</pre>
+          renderContentWithContext()
         )}
       </div>
     </div>
