@@ -1,0 +1,655 @@
+/* project-overview.css — ProjectOverview panel styles */
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.po-card {
+  background: #16213e;
+  border: 1px solid #2a2a4a;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.po-card:hover {
+  background: #1c2a4a;
+}
+
+/* ── Card Header (project name + arrow) ───────────────────────────────────── */
+.po-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.po-card-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #e0e0e0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+
+.po-card-arrow {
+  font-size: 12px;
+  color: #888;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.po-card-arrow.open {
+  transform: rotate(90deg);
+}
+
+/* ── Meta Row (time, session count, badges) ───────────────────────────────── */
+.po-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.po-card-time {
+  font-size: 12px;
+  color: #888;
+}
+
+.po-card-session-count {
+  font-size: 12px;
+  color: #e0e0e0;
+  background: #2a2a4a;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.po-card-active-plan {
+  font-size: 12px;
+  color: #fff;
+  background: #eab308;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.po-card-completed-plans {
+  font-size: 12px;
+  color: #888;
+}
+
+/* ── Progress Bar ─────────────────────────────────────────────────────────── */
+.po-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.po-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.po-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.po-progress-fill.done {
+  background: #22c55e;
+}
+
+.po-progress-fill.pending {
+  background: #3b82f6;
+}
+
+.po-progress-text {
+  font-size: 12px;
+  color: #888;
+  white-space: nowrap;
+}
+
+/* ── Latest Message Preview ───────────────────────────────────────────────── */
+.po-card-message {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Expanded Section ─────────────────────────────────────────────────────── */
+.po-card-expanded {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.po-card-expanded.open {
+  max-height: 2000px;
+}
+
+.po-card-divider {
+  border: none;
+  border-top: 1px solid #2a2a4a;
+  margin: 10px 0 8px;
+}
+
+/* ── TODO Section ─────────────────────────────────────────────────────────── */
+.po-todo-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0e0e0;
+  margin-bottom: 4px;
+}
+
+.po-todo-item {
+  font-size: 13px;
+  color: #d4d4d8;
+  padding: 2px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.po-todo-icon {
+  flex-shrink: 0;
+}
+
+.po-todo-content {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.po-todo-priority {
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.po-todo-priority.high {
+  color: #ef4444;
+}
+
+.po-todo-priority.medium {
+  color: #eab308;
+}
+
+.po-todo-priority.low {
+  color: #888;
+}
+
+.po-todo-more {
+  font-size: 12px;
+  color: #888;
+  padding-top: 2px;
+}
+
+.po-todo-empty {
+  font-size: 12px;
+  color: #888;
+  font-style: italic;
+}
+
+/* ── Session Section ──────────────────────────────────────────────────────── */
+.po-session-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0e0e0;
+  margin: 8px 0 4px;
+}
+
+.po-session-item {
+  background: #1a1a2e;
+  border: 1px solid #2a2a4a;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 6px;
+}
+
+.po-session-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: #e0e0e0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.po-session-time {
+  font-size: 11px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.po-session-stats {
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.po-session-stats .add {
+  color: #22c55e;
+}
+
+.po-session-stats .del {
+  color: #ef4444;
+}
+
+.po-session-stats .files {
+  color: #3b82f6;
+}
+
+.po-session-msg {
+  font-size: 12px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.po-session-msg.user {
+  color: #60a5fa;
+}
+
+.po-session-msg.assistant {
+  color: #4ade80;
+}
+
+/* ── Panel States ────────────────────────────────────────────────────────────── */
+.po-loading,
+.po-loading-small {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  font-size: 13px;
+  color: #888;
+}
+
+.po-loading-small {
+  padding: 8px 16px;
+  font-size: 12px;
+}
+
+.po-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 16px;
+  font-size: 13px;
+  color: #ef4444;
+}
+
+.po-error-retry {
+  background: #2a2a4a;
+  border: 1px solid #3a3a5a;
+  border-radius: 4px;
+  color: #e0e0e0;
+  padding: 2px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.po-error-retry:hover {
+  background: #3a3a5a;
+}
+
+.po-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  font-size: 13px;
+  color: #888;
+  font-style: italic;
+}
+
+/* ── Floating Split-Pane Layout ──────────────────────────────────────────── */
+.po-float-panel {
+  min-width: 600px !important;
+  min-height: 400px !important;
+}
+
+.po-float-panel .is-floating-panel__body {
+  display: none;
+}
+
+.po-split {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  height: calc(100% - 34px);
+  overflow: hidden;
+}
+
+.po-split-left {
+  border-right: 1px solid #2a2a4a;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.po-split-search {
+  padding: 8px 10px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.po-split-search-icon {
+  color: #666;
+  flex-shrink: 0;
+}
+
+.po-split-search input {
+  width: 100%;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: #e0e0e0;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  outline: none;
+}
+
+.po-split-search input:focus {
+  border-color: #3b82f6;
+}
+
+.po-split-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.po-split-item {
+  padding: 8px 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #1a1a2e;
+  transition: background-color 0.15s;
+}
+
+.po-split-item:hover {
+  background-color: #1c2a4a;
+}
+
+.po-split-item.selected {
+  background-color: #1c2a4a;
+  border-left: 3px solid #3b82f6;
+  padding-left: 7px;
+}
+
+.po-split-item-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #e0e0e0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.po-split-item-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 10px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.po-badge-plan {
+  color: #eab308;
+}
+
+.po-split-item-msg {
+  font-size: 10px;
+  color: #666;
+  margin-top: 3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Right Detail Panel ─────────────────────────────────────────────────── */
+.po-split-right {
+  overflow-y: auto;
+  height: 100%;
+}
+
+.po-split-empty {
+  color: #888;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 60px;
+}
+
+.po-detail {
+  padding: 12px 16px;
+}
+
+.po-detail-header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #2a2a4a;
+  margin-bottom: 4px;
+}
+
+.po-detail-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f0f0f0;
+  margin-bottom: 2px;
+}
+
+.po-detail-path {
+  font-size: 11px;
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 6px;
+}
+
+.po-detail-meta {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+  color: #888;
+  flex-wrap: wrap;
+}
+
+.po-detail-section {
+  margin-top: 6px;
+}
+
+.po-detail-section-title {
+  font-size: 12px;
+  color: #aaa;
+  font-weight: 600;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid #2a2a4a;
+}
+
+.po-detail-message {
+  font-size: 13px;
+  color: #d4d4d8;
+  line-height: 1.6;
+}
+
+/* ── Goal Panel ────────────────────────────────────────────────────────── */
+.po-goal-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.po-goal-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.po-goal-item {
+  border-bottom: 1px solid #1a1a2e;
+}
+
+.po-goal-item.selected {
+  background-color: #1c2a4a;
+}
+
+.po-goal-item-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.po-goal-item-header:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.po-goal-expand-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.po-goal-status {
+  flex-shrink: 0;
+  font-size: 12px;
+  margin-top: 1px;
+}
+
+.po-goal-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.po-goal-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e0e0e0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.po-goal-item-badges {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: #888;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.po-badge-todo-pending {
+  color: #eab308;
+}
+
+.po-badge-todo-done {
+  color: #22c55e;
+}
+
+.po-badge-code {
+  color: #22c55e;
+  font-size: 10px;
+}
+
+.po-goal-item-body {
+  padding: 4px 10px 8px 36px;
+  border-bottom: 1px solid #1a1a2e;
+}
+
+.po-goal-todos {
+  margin-bottom: 6px;
+}
+
+.po-goal-sessions {
+  margin-top: 4px;
+}
+
+.po-goal-sessions-title {
+  font-size: 11px;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.po-goal-session-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #888;
+  padding: 1px 0;
+}
+
+.po-goal-session-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.po-goal-session-agent {
+  color: #60a5fa;
+  flex-shrink: 0;
+  font-size: 10px;
+}
+
+.po-goal-detail-session {
+  background: #1a1a2e;
+  border: 1px solid #2a2a4a;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 6px;
+}
+
+.po-goal-detail-session-header {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.po-goal-detail-agent {
+  background: #1c2a4a;
+  color: #60a5fa;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.po-goal-detail-category {
+  color: #a78bfa;
+  font-size: 11px;
+}
+
+.po-goal-detail-time {
+  color: #666;
+  font-size: 11px;
+  margin-left: auto;
+}

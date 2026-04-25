@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Menu, X, History, ScrollText, FolderSearch } from 'lucide-react'
+import { Menu, X, History, ScrollText, FolderSearch, BarChart3 } from 'lucide-react'
 import { MobileDrawer } from './MobileDrawer'
 import { MobileTerminal } from './MobileTerminal'
 import { TaskHistoryPanel } from '../shared/components/TaskHistoryPanel'
 import { ImperialStudyPanel } from '../shared/components/imperial-study/components/ImperialStudyPanel'
+import { FloatingProjectOverview } from '../shared/components/ProjectOverview/components/FloatingProjectOverview'
 import { LoginModal } from '../shared/components/LoginModal'
 import { WebFileBrowser } from '../shared/components/file-browser/WebFileBrowser'
 import { TaskToastContainer } from '../shared/components/TaskToast'
@@ -81,6 +82,7 @@ export default function MobileApp() {
   const [statusRefreshToken, setStatusRefreshToken] = useState(0)
   const [imperialOpen, setImperialOpen] = useState(false)
   const [fileBrowserOpen, setFileBrowserOpen] = useState(false)
+  const [projectOverviewOpen, setProjectOverviewOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fontSize, setFontSize] = useState(() => {
@@ -355,6 +357,9 @@ export default function MobileApp() {
             <button className="mobile-menu-btn" onClick={() => setFileBrowserOpen(true)} type="button" title="Files">
               <FolderSearch size={22} />
             </button>
+            <button className="mobile-menu-btn" onClick={() => setProjectOverviewOpen(true)} type="button" title="项目总览">
+              <BarChart3 size={22} />
+            </button>
             <button className="mobile-menu-btn" onClick={() => setImperialOpen(true)} type="button" title="\u5fa1\u66f8\u623f">
               <ScrollText size={22} />
             </button>
@@ -365,8 +370,8 @@ export default function MobileApp() {
         )}
       </header>
 
-      {(drawerOpen || rightPanelOpen || imperialOpen || fileBrowserOpen) && (
-        <div className="mobile-overlay" onClick={() => { setDrawerOpen(false); setRightPanelOpen(false); setImperialOpen(false); setFileBrowserOpen(false) }} />
+      {(drawerOpen || rightPanelOpen || imperialOpen || fileBrowserOpen || projectOverviewOpen) && (
+        <div className="mobile-overlay" onClick={() => { setDrawerOpen(false); setRightPanelOpen(false); setImperialOpen(false); setFileBrowserOpen(false); setProjectOverviewOpen(false) }} />
       )}
 
       {/* Full-screen \u5fa1\u66f8\u623f panel */}
@@ -392,6 +397,10 @@ export default function MobileApp() {
           </header>
           <WebFileBrowser dir={activePaneCwd || '~'} />
         </div>
+      )}
+
+      {projectOverviewOpen && (
+        <FloatingProjectOverview onClose={() => setProjectOverviewOpen(false)} />
       )}
 
       <MobileDrawer

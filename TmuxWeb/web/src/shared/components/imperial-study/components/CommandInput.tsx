@@ -90,6 +90,33 @@ export function CommandInput({ onDispatched, paneTarget, activeTag, onTagChange,
                     return;
                 }
 
+                // Auto-dispatch when selection is required: use recommended assistant
+                if (data.data?.selection_required && data.data?.recommended) {
+                    setFeedback({ type: "ok", msg: `派发中 · ${data.data.recommended}...` });
+                    try {
+                        const dispatchRes = await fetch(`${BUTLER_API_BASE}/orchestrate`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ...payload, assistant: data.data.recommended }),
+                        });
+                        if (!dispatchRes.ok) throw new Error(`HTTP ${dispatchRes.status}`);
+                        const dispatchData = await dispatchRes.json();
+                        if (dispatchData.success && dispatchData.data?.run_id) {
+                            setFeedback({ type: "ok", msg: `已下旨 · ${data.data.recommended} · run ${dispatchData.data.run_id.slice(0, 8)}` });
+                            setIntent("");
+                            resetHeight();
+                            onDispatched?.({ ...dispatchData.data, intent: trimmed });
+                            setTimeout(clearFeedback, 4000);
+                        } else {
+                            setFeedback({ type: "err", msg: dispatchData.error?.message || "二次派发失败" });
+                        }
+                    } catch (dispatchErr: unknown) {
+                        const msg = dispatchErr instanceof Error ? dispatchErr.message : "Network error";
+                        setFeedback({ type: "err", msg });
+                    }
+                    return;
+                }
+
                 setFeedback({ type: "ok", msg: `已下旨 · run ${data.data.run_id?.slice(0, 8)}` });
                 setIntent("");
                 resetHeight();

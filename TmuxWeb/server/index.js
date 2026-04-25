@@ -32,6 +32,7 @@ const capabilitiesRouter = require('./routes/capabilities');
 const uploadRouter = require('./routes/upload');
 const filesRouter = require('./routes/files');
 const cliHistoryRouter = require('./routes/cli-history');
+const projectOverviewRouter = require('./routes/project-overview');
 // Terminal mode: 'pty' (default, one PTY per pane) or 'controlmode' (single PTY via tmux -C)
 const terminalMode = config.terminalMode || 'pty';
 const terminalModule = terminalMode === 'controlmode'
@@ -101,6 +102,7 @@ app.use('/api/butler', tokenMiddleware, butlerProxyRouter);
 app.use('/api/files', tokenMiddleware, filesRouter);
 app.use('/api/upload', tokenMiddleware, uploadRouter);
 app.use('/api/cli-history', tokenMiddleware, cliHistoryRouter);
+app.use('/api/project-overview', tokenMiddleware, projectOverviewRouter);
 
 // ── Ephemeral Terminal (temporary tmux session) ──────────────────────
 app.post('/api/ephemeral-terminal', tokenMiddleware, (req, res) => {

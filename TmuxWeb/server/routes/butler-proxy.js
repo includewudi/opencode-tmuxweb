@@ -100,6 +100,13 @@ router.all('/*', (req, res) => {
     from: req.ip || req.connection?.remoteAddress,
   });
 
+  if (targetPath.includes('/orchestrate') || targetPath.includes('/research') || targetPath.includes('/command')) {
+    console.log(`\n${'═'.repeat(52)}`);
+    console.log(`[Butler Proxy] ★ DISPATCH: ${req.method} ${targetPath}`);
+    console.log(`[Butler Proxy] ★ BODY: ${JSON.stringify(reqBody, null, 2)}`);
+    console.log(`${'═'.repeat(52)}\n`);
+  }
+
   const options = {
     hostname: BUTLER_HOST,
     port: BUTLER_PORT,
@@ -131,6 +138,13 @@ router.all('/*', (req, res) => {
         ms: elapsed,
       });
 
+      if (targetPath.includes('/orchestrate') || targetPath.includes('/research') || targetPath.includes('/command')) {
+        console.log(`\n${'═'.repeat(52)}`);
+        console.log(`[Butler Proxy] ★ RESPONSE: ${proxyRes.statusCode} ${targetPath} (${elapsed}ms)`);
+        console.log(`[Butler Proxy] ★ BODY: ${JSON.stringify(parsed, null, 2)}`);
+        console.log(`${'═'.repeat(52)}\n`);
+      }
+
       const isJson = (proxyRes.headers['content-type'] || '').includes('application/json');
       const isClientError = proxyRes.statusCode >= 400;
 
@@ -146,10 +160,9 @@ router.all('/*', (req, res) => {
         return;
       }
 
-      const fwdHeaders = { ...proxyRes.headers };
       if (!isJson) {
-        fwdHeaders['content-type'] = 'application/json';
-        resBody_safe = JSON.stringify({
+        const fwdHeaders = { ...proxyRes.headers, 'content-type': 'application/json' };
+        const safeBody = JSON.stringify({
           success: false,
           error: {
             code: proxyRes.statusCode,
@@ -158,7 +171,7 @@ router.all('/*', (req, res) => {
           },
         });
         res.writeHead(proxyRes.statusCode, fwdHeaders);
-        res.end(resBody_safe);
+        res.end(safeBody);
       } else {
         res.writeHead(proxyRes.statusCode, proxyRes.headers);
         res.end(resBody);
@@ -193,6 +206,61 @@ router.all('/*', (req, res) => {
   } else {
     proxyReq.end();
   }
+});
+
+// ── OpenCode Message Proxy (auto-discovers port via Butler worker_sessions) ──
+router.get('/oc/session/:sessionId/message', async (req, res) => {
+  const { sessionId } = req.params;
+  const startTime = Date.now();
+
+  let opencodePort = req.query.port;
+  if (!opencodePort) {
+    try {
+      const butlerRes = await fetch(`http://${BUTLER_HOST}:${BUTLER_PORT}/api/worker_sessions?limit=50`);
+      if (butlerRes.ok) {
+        const butlerData = await butlerRes.json();
+        const sessions = butlerData?.data?.worker_sessions || [];
+        const match = sessions.find(ws =>
+          ws.session_id === sessionId ||
+          ws.persona === sessionId
+        );
+        if (match?.port) opencodePort = String(match.port);
+      }
+    } catch {
+    }
+  }
+
+  if (!opencodePort) {
+    return res.status(404).json({ error: `No OpenCode port for session ${sessionId}` });
+  }
+
+  const proxyReq = http.request({
+    hostname: '127.0.0.1',
+    port: parseInt(opencodePort, 10),
+    path: `/session/${sessionId}/message`,
+    method: 'GET',
+    headers: { 'host': `127.0.0.1:${opencodePort}` },
+  }, (proxyRes) => {
+    const chunks = [];
+    proxyRes.on('data', (chunk) => chunks.push(chunk));
+    proxyRes.on('end', () => {
+      const elapsed = Date.now() - startTime;
+      const body = Buffer.concat(chunks).toString('utf-8');
+      log('OC-RES', { sessionId, port: opencodePort, status: proxyRes.statusCode, ms: elapsed });
+      res.writeHead(proxyRes.statusCode, { 'content-type': 'application/json' });
+      res.end(body);
+    });
+  });
+
+  proxyReq.on('error', (err) => {
+    const elapsed = Date.now() - startTime;
+    log('OC-ERR', { sessionId, port: opencodePort, error: err.message, ms: elapsed });
+    if (!res.headersSent) {
+      res.status(502).json({ error: `OpenCode unavailable: ${err.message}` });
+    }
+  });
+
+  proxyReq.end();
 });
 
 module.exports = router;

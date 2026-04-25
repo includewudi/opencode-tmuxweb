@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare, ScrollText, FolderSearch, BrainCircuit, FolderTree, GitBranch, History } from 'lucide-react'
+import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare, ScrollText, FolderSearch, BrainCircuit, FolderTree, GitBranch, History, BarChart3 } from 'lucide-react'
 import { TmuxTree } from '../shared/components/TmuxTree'
 import { TaskStatBadges } from '../shared/components/TaskStatBadges'
 import { TerminalTabs } from './TerminalTabs'
@@ -15,6 +15,7 @@ import { FloatingGitPanel } from '../shared/components/file-browser/FloatingGitP
 import { FloatingTerminal } from '../shared/components/ephemeral-terminal/FloatingTerminal'
 import { FloatingCLIHistory } from '../shared/components/cli-history/FloatingCLIHistory'
 import { FloatingSessionBrowser } from '../shared/components/session-browser/FloatingSessionBrowser'
+import { FloatingProjectOverview } from '../shared/components/ProjectOverview/components/FloatingProjectOverview'
 import { TaskToastContainer } from '../shared/components/TaskToast'
 import { ErrorBoundary } from '../shared/components/ErrorBoundary'
 import { usePaneNavigation } from '../hooks/usePaneNavigation'
@@ -69,6 +70,7 @@ export default function App() {
   const [quickOpenFloat, setQuickOpenFloat] = useState(false)
   const [gitFloat, setGitFloat] = useState(false)
   const [terminalFloat, setTerminalFloat] = useState(false)
+  const [projectOverviewFloat, setProjectOverviewFloat] = useState(false)
   const activePaneKey = useMemo(() => {
     const tab = tabs.find(t => t.id === activeTabId)
     if (!tab) return null
@@ -388,6 +390,13 @@ export default function App() {
                   {sessionBrowserFloat && <span className="fb-float-pin__indicator" />}
                 </span>
               </button>
+              <button
+                className={`activity-tab ${projectOverviewFloat ? 'active' : ''}`}
+                title="项目总览"
+                onClick={() => setProjectOverviewFloat(!projectOverviewFloat)}
+              >
+                <BarChart3 size={22} strokeWidth={projectOverviewFloat ? 2 : 1.5} />
+              </button>
             </div>
             <div className="activity-bar-bottom">
               <button className="activity-tab" onClick={() => setShowGroupManager(!showGroupManager)} title="Manage groups">
@@ -548,6 +557,12 @@ export default function App() {
             cwd={activePaneCwd || undefined}
             onClose={() => setTerminalFloat(false)}
           />
+        </ErrorBoundary>
+      )}
+
+      {projectOverviewFloat && (
+        <ErrorBoundary>
+          <FloatingProjectOverview onClose={() => setProjectOverviewFloat(false)} />
         </ErrorBoundary>
       )}
 

@@ -4,7 +4,7 @@
 
 ---
 
-## PTY 资源耗尽（macOS 硬限制 511）
+## PTY 资源耗尽（macOS 限制 511 / 可提升至 999）
 
 ### 症状
 
@@ -15,7 +15,7 @@
 
 ### 原因
 
-macOS 内核限制 PTY 最大数量为 **511 个**（`/dev/pty*`）。以下场景会快速耗尽：
+macOS 默认 PTY 上限为 **511**，可通过 `kern.tty.ptmx_max` sysctl 提升至 **999**（硬上限）。以下场景会快速耗尽：
 
 - **OpenCode 频繁重启** — 每次重启 OpenCode session 会创建新 PTY，旧 PTY 未必及时释放
 - **PM2 无限重启** — 服务崩溃后 PM2 自动重启，每次创建新 PTY，累积泄漏
@@ -41,21 +41,36 @@ curl -sk https://localhost:8215/api/debug/pty-status \
 
 ### 解决
 
+#### 临时提升 PTY 上限（推荐，需 sudo）
+
 ```bash
-# 紧急释放 — 杀掉所有 node-pty 子进程
+# 查看当前上限
+sysctl kern.tty.ptmx_max        # 默认 511
+
+# 提升到 800（立即生效，重启失效）
+sudo sysctl kern.tty.ptmx_max=800
+
+# 持久化（写入 /etc/sysctl.conf）
+echo "kern.tty.ptmx_max=800" | sudo tee -a /etc/sysctl.conf
+```
+
+> 来源：Apple DTS 确认硬上限 999，通过 `kern.tty.ptmx_max` 控制。
+
+#### 紧急释放 PTY
+
+```bash
 pkill -f node-pty-helper
-# 或者更激进地杀 node 进程
 pm2 kill
 pkill -f "node server/index.js"
 
-# 检查残留
 lsof /dev/pty* 2>/dev/null | wc -l
 ```
 
 ### 预防
 
-1. **PM2 设置重启上限** — `ecosystem.config.js` 中设置 `max_restarts: 10`
-2. **使用 `controlmode`** — 只用一个 PTY 通过 tmux control mode 管理所有 pane
+1. **提升 PTY 上限** — `sudo sysctl kern.tty.ptmx_max=800` 并持久化
+2. **PM2 设置重启上限** — `ecosystem.config.js` 中设置 `max_restarts: 10`
+3. **使用 `controlmode`** — 只用一个 PTY 通过 tmux control mode 管理所有 pane
    ```json
    // config_private.json
    { "terminalMode": "controlmode" }
@@ -65,9 +80,7 @@ lsof /dev/pty* 2>/dev/null | wc -l
    # 加入 crontab -e
    */5 * * * * [ $(ls /dev/pty* 2>/dev/null | wc -l) -gt 400 ] && echo "PTY alert: $(date)" >> /tmp/pty-alert.log
    ```
-4. **重启 opencode 前** — 确认旧进程已退出：`ps aux | grep opencode`
-
----
+4. **定期检查** — 写个 cron 监控 PTY 数量
 
 ## 端口占用
 

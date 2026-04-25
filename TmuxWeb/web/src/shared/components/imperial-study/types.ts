@@ -132,3 +132,34 @@ export interface PipelineRun {
     result?: string;
     startedAt: number;
 }
+
+export interface CliHistoryPart {
+    id: string;
+    type: string;
+    text: string | null;
+    tool: string | null;
+    callID: string | null;
+    status: string | null;
+    input: string | null;
+    output: string | null;
+    duration: number | null;
+}
+
+export interface CliHistoryMessage {
+    id: string;
+    role: string;
+    agent: string | null;
+    modelID: string | null;
+    providerID: string | null;
+    tokens: {
+        total: number;
+        input: number;
+        output: number;
+        reasoning: number;
+        cache?: { write: number; read: number };
+    } | null;
+    error: string | null;
+    timeCreated: number;
+    timeUpdated: number;
+    parts: CliHistoryPart[];
+}
