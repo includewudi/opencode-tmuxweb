@@ -671,14 +671,17 @@ td{padding:5px 12px;border-bottom:1px solid #21262d}
 router.post('/git/commit', async (req, res) => {
   try {
     const { dir, message, excludeFiles } = req.body;
+    console.log('[git/commit] REQ', { dir, message, excludeFiles: excludeFiles?.length ?? 0 });
     if (!dir || !message) return res.status(400).json({ error: 'dir and message are required' });
     const target = resolveSafe(dir);
     let repoRoot;
     try {
       repoRoot = execSync('git rev-parse --show-toplevel', { cwd: target, encoding: 'utf-8', timeout: 3000 }).trim();
     } catch {
+      console.log('[git/commit] not a git repo:', dir);
       return res.status(400).json({ error: 'Not a git repository' });
     }
+    console.log('[git/commit] repoRoot:', repoRoot);
     execSync('git add -A', { cwd: repoRoot, encoding: 'utf-8', timeout: 10000 });
     if (excludeFiles && excludeFiles.length > 0) {
       for (const f of excludeFiles) {
@@ -690,11 +693,14 @@ router.post('/git/commit', async (req, res) => {
     let out;
     try {
       out = execSync(`git commit -m ${JSON.stringify(message)}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 10000 }).trim();
+      console.log('[git/commit] OK', out);
     } catch (e) {
+      console.log('[git/commit] FAIL', e.stderr?.trim() || e.message);
       return res.status(400).json({ error: e.stderr?.trim() || e.message || 'Commit failed' });
     }
     res.json({ ok: true, output: out });
   } catch (err) {
+    console.log('[git/commit] ERROR', err.message);
     res.status(500).json({ error: err.message });
   }
 });
