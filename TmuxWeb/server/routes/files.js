@@ -3,7 +3,7 @@ const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
 const os = require('os');
-const { execSync } = require('child_process');
+const { execSync, execFileSync } = require('child_process');
 
 const router = express.Router();
 
@@ -692,7 +692,7 @@ router.post('/git/commit', async (req, res) => {
     }
     let out;
     try {
-      out = execSync(`git commit -m ${JSON.stringify(message)}`, { cwd: repoRoot, encoding: 'utf-8', timeout: 10000 }).trim();
+      out = execFileSync('git', ['commit', '-m', message], { cwd: repoRoot, encoding: 'utf-8', timeout: 10000 }).trim();
       console.log('[git/commit] OK', out);
     } catch (e) {
       console.log('[git/commit] FAIL', e.stderr?.trim() || e.message);

@@ -1,15 +1,20 @@
 const { Router } = require('express');
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 const config = require('../config-loader');
 
 const router = Router();
 
 const BUTLER_HOST = config.butler?.host || 'localhost';
 const BUTLER_PORT = config.butler?.port || 9999;
+const LOG_FILE = path.join(__dirname, '..', '..', 'logs', 'butler-proxy.log');
 
 function log(tag, data) {
   const ts = new Date().toISOString();
-  console.log(`[Butler Proxy] [${ts}] [${tag}]`, typeof data === 'string' ? data : JSON.stringify(data));
+  const line = `[${ts}] [${tag}] ${typeof data === 'string' ? data : JSON.stringify(data)}\n`;
+  console.log(`[Butler Proxy] ${line.trimEnd()}`);
+  try { fs.appendFileSync(LOG_FILE, line); } catch {}
 }
 
 // Detect SSE requests (Accept: text/event-stream)

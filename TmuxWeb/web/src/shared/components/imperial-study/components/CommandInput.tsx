@@ -78,6 +78,7 @@ export function CommandInput({ onDispatched, paneTarget, activeTag, onTagChange,
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
 
+            console.log('[CommandInput] orchestrate RES', data);
             if (data.success) {
                 // Chat fallback: auto-switch to 闲聊 mode
                 if (data.data?.chat_fallback) {
@@ -117,7 +118,35 @@ export function CommandInput({ onDispatched, paneTarget, activeTag, onTagChange,
                     return;
                 }
 
-                setFeedback({ type: "ok", msg: `已下旨 · run ${data.data.run_id?.slice(0, 8)}` });
+                if (data.data?.escalation_required || !data.data?.run_id) {
+                    const urlMatch = trimmed.match(/https?:\/\/\S+/);
+                    if (urlMatch && /待阅读|阅读|read|收藏|bookmark|save/i.test(trimmed)) {
+                        try {
+                            const readingRes = await fetch(`${BUTLER_API_BASE}/readings`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ url: urlMatch[0], title: trimmed.replace(/https?:\/\/\S+/, '').replace(/^[,，\s]+|[,，\s]+$/g, '').trim() || trimmed }),
+                            });
+                            if (readingRes.ok) {
+                                setFeedback({ type: "ok", msg: "📚 已加入待阅读" });
+                                setIntent('');
+                                resetHeight();
+                                setTimeout(clearFeedback, 3000);
+                                return;
+                            }
+                        } catch {
+                        }
+                    }
+                    setFeedback({ type: "ok", msg: "🤖 转交 AI 分析..." });
+                    onAssistantSend?.(trimmed, "chat");
+                    onTagChange("chat");
+                    setIntent("");
+                    resetHeight();
+                    setTimeout(clearFeedback, 3000);
+                    return;
+                }
+
+                setFeedback({ type: "ok", msg: `已下旨 · run ${data.data.run_id.slice(0, 8)}` });
                 setIntent("");
                 resetHeight();
                 onDispatched?.({ ...data.data, intent: trimmed });
