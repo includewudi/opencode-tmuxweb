@@ -20,14 +20,14 @@
 #   1. Verify prerequisites (node, npm, tmux)
 #   2. Install backend dependencies (npm install)
 #   3. Install frontend dependencies (npm install)
-#   4. Create config_private.json if missing (with a random token)
+#   4. Create private_config.json if missing (with a random token)
 #   5. Generate SSL certificates if missing (self-signed or mkcert)
 #   6. Build frontend for production
 #   7. Optionally set up MySQL database
 #   8. Set up OpenCode plugin (if OpenCode is installed)
 #   9. Start the server
 #
-# PORTS (configurable in server/config_private.json):
+# PORTS (configurable in server/private_config.json):
 #   - Backend API:  8215 (HTTPS)
 #   - Frontend:     5215 (via Vite dev or built-in static serve)
 #   - CA download:  8280 (HTTP, for iOS cert install)
@@ -123,10 +123,10 @@ cd "$TMUXWEB_DIR"
 
 step "Step 4/9: Configuration"
 
-CONFIG_PRIVATE="$TMUXWEB_DIR/server/config_private.json"
+CONFIG_PRIVATE="$TMUXWEB_DIR/server/private_config.json"
 
 if [ -f "$CONFIG_PRIVATE" ]; then
-    log "config_private.json already exists, skipping."
+    log "private_config.json already exists, skipping."
 else
     # Generate a random token
     TOKEN=$(openssl rand -hex 16 2>/dev/null || head -c 32 /dev/urandom | xxd -p | head -c 32)
@@ -155,7 +155,7 @@ else
 }
 CONF_EOF
 
-    log "Created config_private.json"
+    log "Created private_config.json"
     log "Auth token: ${BOLD}${TOKEN}${NC}"
     warn "Edit $CONFIG_PRIVATE to add LLM keys, database, voice, etc."
 fi
@@ -208,7 +208,7 @@ step "Step 7/9: Database (optional)"
 
 if command -v mysql &>/dev/null; then
     log "MySQL client found. Database tables auto-create on first backend start."
-    warn "To enable: add db config to server/config_private.json:"
+    warn "To enable: add db config to server/private_config.json:"
     echo '  "db": { "host": "localhost", "port": 3306, "user": "root", "password": "xxx", "database": "tmuxweb" }'
 else
     warn "MySQL not found. Task tracking will be disabled (server runs fine without it)."
@@ -279,7 +279,7 @@ fi
 step "Step 9/9: Starting TmuxWeb"
 
 # Read config for display
-DISPLAY_TOKEN=$(python3 -c "import json;print(json.load(open('$CONFIG_PRIVATE')).get('token','(not set)'))" 2>/dev/null || echo "(check config_private.json)")
+DISPLAY_TOKEN=$(python3 -c "import json;print(json.load(open('$CONFIG_PRIVATE')).get('token','(not set)'))" 2>/dev/null || echo "(check private_config.json)")
 DISPLAY_PORT=$(python3 -c "import json;print(json.load(open('$CONFIG_PRIVATE')).get('port', 8215))" 2>/dev/null || echo "8215")
 
 echo ""
@@ -289,7 +289,7 @@ echo -e "${GREEN}${BOLD}╚═════════════════�
 echo ""
 echo -e "  ${BOLD}Auth Token:${NC}  ${YELLOW}${DISPLAY_TOKEN}${NC}"
 echo -e "  ${BOLD}Backend:${NC}     https://localhost:${DISPLAY_PORT}"
-echo -e "  ${BOLD}Config:${NC}      TmuxWeb/server/config_private.json"
+echo -e "  ${BOLD}Config:${NC}      TmuxWeb/server/private_config.json"
 echo -e "  ${BOLD}Docs:${NC}        README.md / README_CN.md"
 echo ""
 
