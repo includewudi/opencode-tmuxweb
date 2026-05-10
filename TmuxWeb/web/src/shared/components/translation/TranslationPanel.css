@@ -1,0 +1,197 @@
+/* Translation Panel — prefix: tp-* */
+
+.tp-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--zinc-900);
+}
+
+/* ── Header ── */
+.tp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--zinc-800);
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.tp-header-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tp-session-info {
+  font-size: 11px;
+  color: var(--zinc-500);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tp-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ── Retranslate Button ── */
+.tp-retranslate-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--zinc-800);
+  border: 1px solid var(--zinc-700);
+  color: var(--zinc-400);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tp-retranslate-btn:hover {
+  background: var(--zinc-700);
+  color: var(--zinc-200);
+}
+
+/* ── Status ── */
+.tp-status {
+  font-size: 11px;
+  color: var(--zinc-400);
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.tp-status.done {
+  color: #34d399;
+}
+
+.tp-status.error {
+  color: #f87171;
+}
+
+/* ── Body ── */
+.tp-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  position: relative;
+}
+
+/* ── Paired Lines (中英对照) ── */
+.tp-pairs {
+  padding: 6px 0;
+}
+
+.tp-pair {
+  padding: 2px 12px;
+}
+
+.tp-pair-en {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--zinc-300);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tp-pair-zh {
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #93c5fd;
+  padding-left: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.tp-pair + .tp-pair {
+  margin-top: 4px;
+}
+
+/* ── Raw Text (fallback while translating) ── */
+.tp-raw {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--zinc-200);
+  margin: 0;
+  padding: 10px 12px;
+}
+
+/* ── Translating Bar ── */
+.tp-translating-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(9, 9, 11, 0.85);
+  backdrop-filter: blur(4px);
+  border-top: 1px solid var(--zinc-800);
+  font-size: 11px;
+  color: var(--zinc-400);
+}
+
+/* ── Error Bar ── */
+.tp-error-bar {
+  padding: 6px 12px;
+  font-size: 11px;
+  color: #f87171;
+  border-top: 1px solid var(--zinc-800);
+}
+
+/* ── Empty / Loading ── */
+.tp-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 16px;
+  color: var(--zinc-500);
+  font-size: 13px;
+  text-align: center;
+  flex: 1;
+}
+
+/* ── Spin Animation ── */
+@keyframes tp-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.tp-spin {
+  animation: tp-spin 1s linear infinite;
+}
+
+/* ── Scrollbar ── */
+.tp-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tp-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tp-body::-webkit-scrollbar-thumb {
+  background: var(--zinc-700);
+  border-radius: 3px;
+}
+
+.tp-body::-webkit-scrollbar-thumb:hover {
+  background: var(--zinc-600);
+}
