@@ -8,7 +8,7 @@ function requireDb(req, res, next) {
   if (!dbEnabled) {
     return res.status(503).json({
       error: 'database_not_configured',
-      message: 'This feature requires MySQL. Configure db in config_private.json.'
+      message: 'This feature requires MySQL. Configure db in private_config.json.'
     });
   }
   next();

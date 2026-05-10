@@ -30,7 +30,7 @@ npm link cli-history-sdk
 
 ```bash
 # 直接 install 绝对路径
-npm install /Users/wudi/data/code/ai_tools/ios/opencode/opencode-iterm-dev/TmuxWeb/packages/cli-history-sdk
+npm install ./packages/cli-history-sdk
 ```
 
 或手动写进 `package.json`：
@@ -38,7 +38,7 @@ npm install /Users/wudi/data/code/ai_tools/ios/opencode/opencode-iterm-dev/TmuxW
 ```json
 {
   "dependencies": {
-    "cli-history-sdk": "file:/Users/wudi/data/code/ai_tools/ios/opencode/opencode-iterm-dev/TmuxWeb/packages/cli-history-sdk"
+"cli-history-sdk": "file:./packages/cli-history-sdk"
   }
 }
 ```

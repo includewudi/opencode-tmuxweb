@@ -11,7 +11,7 @@
 **Key Decisions:**
 - **Express over raw HTTP:** TmuxWeb uses Express; current server.js is 626 lines of manual routing — Express is strictly better
 - **Keep JSX:** Current frontend is JSX; converting to TS is scope creep. Port TSX → JSX
-- **Reuse TmuxWeb config:** `web/config.js` already loads `TmuxWeb/server/config.json` as base — just add MySQL/auth fields to `config_private.json`
+- **Reuse TmuxWeb config:** `web/config.js` already loads `TmuxWeb/server/config.json` as base — just add MySQL/auth fields to `private_config.json`
 - **Single server:** One Express server serves everything (no separate TmuxWeb process)
 
 ---
@@ -91,7 +91,7 @@ Copy `TmuxWeb/server/routes/auth.js`. Change `require('../config.json')` to `req
 
 Copy `TmuxWeb/server/middleware/auth.js`. Same config path fix: `require('../config.json')` → `require('../config')`.
 
-**Step 3: Update `web/config_private.json`**
+**Step 3: Update `web/private_config.json`**
 
 Add `token` and `sessionSecret` fields:
 ```json
@@ -104,7 +104,7 @@ Add `token` and `sessionSecret` fields:
 **Step 4: Commit**
 
 ```bash
-git add web/routes/auth.js web/middleware/auth.js web/config_private.json
+git add web/routes/auth.js web/middleware/auth.js web/private_config.json
 git commit -m "feat: add cookie-based auth middleware and login/logout routes"
 ```
 
@@ -253,7 +253,7 @@ git commit -m "feat: rewrite server.js from raw HTTP to Express with all TmuxWeb
 pm2 restart iterm-api
 sleep 3
 pm2 status
-curl -s https://172.29.15.223:8215/health -k
+curl -s https://localhost:8215/health -k
 ```
 
 Expected: PM2 shows online, health returns ok
@@ -479,8 +479,8 @@ pm2 restart iterm-api
 **Step 3: Verify health**
 
 ```bash
-curl -s https://172.29.15.223:8215/health -k
-curl -s https://172.29.15.223:8215/healthz -k
+curl -s https://localhost:8215/health -k
+curl -s https://localhost:8215/healthz -k
 ```
 
 Expected: Both return ok, healthz shows db: ok
@@ -495,12 +495,12 @@ Expected: Both return ok, healthz shows db: ok
 
 ```bash
 # Login
-curl -s -X POST https://172.29.15.223:8215/api/auth/login -k \
+curl -s -X POST https://localhost:8215/api/auth/login -k \
   -H 'Content-Type: application/json' \
   -d '{"token":"tmuxweb-dev-token"}' -c cookies.txt
 
 # Authenticated request
-curl -s https://172.29.15.223:8215/api/profiles -k -b cookies.txt
+curl -s https://localhost:8215/api/profiles -k -b cookies.txt
 
 # Cleanup
 rm cookies.txt
@@ -510,7 +510,7 @@ rm cookies.txt
 
 ```bash
 # Create group
-curl -s -X POST https://172.29.15.223:8215/api/groups -k \
+curl -s -X POST https://localhost:8215/api/groups -k \
   -b cookies.txt \
   -H 'Content-Type: application/json' \
   -d '{"profile_key":"default","group_name":"Test Group"}'
@@ -520,17 +520,17 @@ curl -s -X POST https://172.29.15.223:8215/api/groups -k \
 
 ```bash
 # Sessions
-curl -s https://172.29.15.223:8215/api/sessions -k
+curl -s https://localhost:8215/api/sessions -k
 
 # AI command (no auth required for this endpoint currently)
-curl -s -X POST https://172.29.15.223:8215/api/ai/command -k \
+curl -s -X POST https://localhost:8215/api/ai/command -k \
   -H 'Content-Type: application/json' \
   -d '{"prompt":"list files","role":"cli"}'
 ```
 
 **Step 4: Open web UI in browser**
 
-Open `https://172.29.15.223:8215` — verify:
+Open `https://localhost:8215` — verify:
 - Login modal appears (if not yet authenticated)
 - Session tree shows with groups
 - Terminal connects and works
@@ -606,7 +606,7 @@ web/
 ```
 web/server.js              — Full rewrite to Express
 web/package.json           — Add dependencies
-web/config_private.json    — Add token + sessionSecret
+web/private_config.json    — Add token + sessionSecret
 web/app/package.json       — Add @dnd-kit
 web/app/src/App.jsx        — Integrate new components
 ```

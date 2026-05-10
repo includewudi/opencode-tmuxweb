@@ -7,10 +7,10 @@ const certFile = path.join(__dirname, '../server/cert.pem')
 const keyFile = path.join(__dirname, '../server/key.pem')
 const hasCerts = fs.existsSync(certFile) && fs.existsSync(keyFile)
 
-// 从 config.json 读取统一配置（config_private.json 可覆盖）
+// 从 config.json 读取统一配置（private_config.json 可覆盖）
 function loadConfig() {
   const base = JSON.parse(fs.readFileSync(path.join(__dirname, '../server/config.json'), 'utf-8'))
-  const privPath = path.join(__dirname, '../server/config_private.json')
+  const privPath = path.join(__dirname, '../server/private_config.json')
   if (fs.existsSync(privPath)) {
     const priv = JSON.parse(fs.readFileSync(privPath, 'utf-8'))
     Object.assign(base, priv)

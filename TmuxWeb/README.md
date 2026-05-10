@@ -35,7 +35,7 @@ TmuxWeb/
 npm run install:all
 
 # 2. 创建私有配置（填写 token 等）
-cp server/config.json server/config_private.json
+cp server/config.json server/private_config.json
 
 # 3. 构建前端
 cd web && npm run build && cd ..
@@ -48,7 +48,7 @@ pm2 start ecosystem.config.js
 
 ## 端口配置
 
-端口统一在 `server/config_private.json` 中配置，前端 vite 自动读取：
+端口统一在 `server/private_config.json` 中配置，前端 vite 自动读取：
 
 ```json
 {
@@ -115,7 +115,7 @@ curl -s https://install.zerotier.com | sudo bash
 
 ### 3. 配置 allowedOrigins
 
-获取服务器的 ZeroTier IP（形如 `10.x.x.x`），加入 `server/config_private.json`：
+获取服务器的 ZeroTier IP（形如 `10.x.x.x`），加入 `server/private_config.json`：
 
 ```json
 {
@@ -185,7 +185,7 @@ TmuxWeb 的核心功能，通过浏览器管理所有 tmux 会话。
 | `pty`（默认） | 每个 pane 独立 PTY | 大多数场景 |
 | `controlmode` | 单 PTY 通过 tmux -C | 低资源占用 |
 
-在 `server/config_private.json` 中配置：
+在 `server/private_config.json` 中配置：
 
 ```json
 { "terminalMode": "pty" }
@@ -229,7 +229,7 @@ TmuxWeb 的核心功能，通过浏览器管理所有 tmux 会话。
 
 ### 配置
 
-在 `server/config_private.json` 中添加 `butler` 配置：
+在 `server/private_config.json` 中添加 `butler` 配置：
 
 ```json
 {
@@ -486,7 +486,7 @@ OpenCode 进入空闲
 
 ### 配置
 
-在 `server/config_private.json` 中添加讯飞凭证：
+在 `server/private_config.json` 中添加讯飞凭证：
 
 ```json
 {

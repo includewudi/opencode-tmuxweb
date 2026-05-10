@@ -25,15 +25,15 @@ npm run install:all
 | 文件 | 说明 |
 |------|------|
 | `server/config.json` | 公共配置（提交到 git） |
-| `server/config_private.json` | **私有配置**（不提交 git，优先级更高） |
+| `server/private_config.json` | **私有配置**（不提交 git，优先级更高） |
 
 **首次配置**：复制模板
 
 ```bash
-cp server/config.json server/config_private.json
+cp server/config.json server/private_config.json
 ```
 
-然后编辑 `server/config_private.json`，只需填写你要覆盖的字段（其余字段从 `config.json` 继承）。
+然后编辑 `server/private_config.json`，只需填写你要覆盖的字段（其余字段从 `config.json` 继承）。
 
 ### 必填配置
 
@@ -232,7 +232,7 @@ TmuxWeb 后端（:8215）
 
 TmuxWeb 通过 `allowedOrigins` 限制跨域请求来源，**只填写你实际使用的内网 IP**，不要开放所有来源。
 
-在 `server/config_private.json` 中配置：
+在 `server/private_config.json` 中配置：
 
 ```json
 {

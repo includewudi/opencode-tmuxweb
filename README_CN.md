@@ -108,7 +108,7 @@
 
 TmuxWeb 提供**通用编排对接标准** —— 通过简单的代理配置，接入任意外部任务编排后端。
 
-- **代理层** —— 反向代理任意 REST API（在 `config_private.json` 中配置 host/port）
+- **代理层** —— 反向代理任意 REST API（在 `private_config.json` 中配置 host/port）
 - **Worker 面板** —— 查看编排后端中活跃的 AI 代理工作者
 - **收件箱** —— 接收并展示来自编排服务的通知
 - **活动流** —— 跟踪已连接服务的最近事件
@@ -154,12 +154,12 @@ ln -sf "$(pwd)/my-rules.js" ~/.config/opencode/plugins/my-rules.js
 编辑 `my-rules.js`，将 `PORT` 常量设为你的 TmuxWeb 后端端口：
 
 ```javascript
-const PORT = 8215;            // 必须与 server/config_private.json 中的 port 一致
+const PORT = 8215;            // 必须与 server/private_config.json 中的 port 一致
 ```
 
 **第 4 步 ——（可选）启用任务持久化：**
 
-任务追踪需要 MySQL。在 `server/config_private.json` 中添加 `db` 配置：
+任务追踪需要 MySQL。在 `server/private_config.json` 中添加 `db` 配置：
 
 ```json
 {
@@ -275,10 +275,10 @@ cd web && npm install && npm run build && cd ..
 复制默认配置并填写你的值：
 
 ```bash
-cp server/config.json server/config_private.json
+cp server/config.json server/private_config.json
 ```
 
-编辑 `server/config_private.json`：
+编辑 `server/private_config.json`：
 
 ```jsonc
 {
@@ -318,7 +318,7 @@ cp server/config.json server/config_private.json
 }
 ```
 
-> `config_private.json` 已加入 gitignore。公共的 `config.json` 包含默认值和说明文档。
+> `private_config.json` 已加入 gitignore。公共的 `config.json` 包含默认值和说明文档。
 
 ### 数据库设置（可选）
 
@@ -381,7 +381,7 @@ pm2 start ecosystem.config.js
 
 1. 在服务器和手机上安装 ZeroTier
 2. 加入同一个网络
-3. 将 ZeroTier IP 添加到 `config_private.json` 的 `allowedOrigins`
+3. 将 ZeroTier IP 添加到 `private_config.json` 的 `allowedOrigins`
 4. 通过 `http://<zerotier-ip>:5215` 访问
 
 ## API 参考
@@ -452,7 +452,7 @@ pm2 start ecosystem.config.js
 
 ## 配置参考
 
-所有配置项写入 `server/config_private.json`（覆盖 `config.json`）：
+所有配置项写入 `server/private_config.json`（覆盖 `config.json`）：
 
 | 配置项 | 类型 | 默认值 | 说明 |
 |--------|------|--------|------|
@@ -480,7 +480,7 @@ TmuxWeb/
 ├── server/
 │   ├── index.js              # Express + WebSocket 入口
 │   ├── config.json           # 默认配置（跟踪提交）
-│   ├── config_private.json   # 你的配置（gitignore）
+│   ├── private_config.json   # 你的配置（gitignore）
 │   ├── routes/               # API 路由处理器
 │   ├── middleware/            # 认证中间件
 │   ├── services/

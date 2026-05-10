@@ -1,4 +1,4 @@
-const LOG_SERVER_URL = 'http://172.29.15.223:9999/log';
+const LOG_SERVER_URL = 'http://localhost:9999/log';
 
 interface LogEntry {
   timestamp: string;

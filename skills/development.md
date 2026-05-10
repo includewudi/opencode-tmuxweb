@@ -23,8 +23,8 @@ cd opencode-tmuxweb/TmuxWeb
 npm run install:all
 
 # 3. 创建私有配置
-cp server/config.json server/config_private.json
-# 编辑 config_private.json，填写 token、LLM API 等
+cp server/config.json server/private_config.json
+# 编辑 private_config.json，填写 token、LLM API 等
 
 # 4. 初始化数据库（如需任务追踪）
 mysql -u root -p < server/db/init.sql
@@ -91,7 +91,7 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048   -keyout key.pem -out cert.
 
 ## 配置文件
 
-### config_private.json（必须配置）
+### private_config.json（必须配置）
 
 ```json
 {
@@ -212,7 +212,7 @@ nvm use 20
 ## 相关文件
 
 - `TmuxWeb/server/config.json` — 公共配置
-- `TmuxWeb/server/config_private.json` — 私有配置（gitignored）
+- `TmuxWeb/server/private_config.json` — 私有配置（gitignored）
 - `TmuxWeb/ecosystem.config.js` — PM2 配置
 - `TmuxWeb/start.sh` — 快速启动脚本
 - `DEPLOY.md` — 详细部署文档

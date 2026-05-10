@@ -13,7 +13,7 @@ opencode-tmuxweb/
 ├── web/                          # ★ 主要工作目录
 │   ├── server.js                 # Node.js 后端（HTTP/HTTPS + WebSocket）
 │   ├── config.js                 # 配置加载器（合并 public + private config）
-│   ├── config_private.json       # 私有配置（gitignored，含 API keys）
+│   ├── private_config.json       # 私有配置（gitignored，含 API keys）
 │   ├── speech.js                 # 讯飞语音识别 WebSocket 代理
 │   ├── pty_helper.py             # Python PTY 分配器
 │   ├── ecosystem.config.js       # pm2 进程管理配置
@@ -48,11 +48,11 @@ opencode-tmuxweb/
 配置通过 `web/config.js` 加载，**深度合并**两个文件：
 
 1. **`TmuxWeb/server/config.json`**（公共，提交 git）— 默认值和文档
-2. **`web/config_private.json`**（私有，gitignored）— API keys 和敏感信息
+2. **`web/private_config.json`**（私有，gitignored）— API keys 和敏感信息
 
-`config_private.json` 的键会覆盖 `config.json` 中的同名键。
+`private_config.json` 的键会覆盖 `config.json` 中的同名键。
 
-### config_private.json 完整模板
+### private_config.json 完整模板
 
 ```json
 {
@@ -86,7 +86,7 @@ opencode-tmuxweb/
 | `llm.roles.<roleId>` | 特定角色覆盖（可覆盖 apiKey/apiUrl/model） | 继承默认 |
 | `xfyun.appId/apiKey/apiSecret` | 讯飞语音 API 凭证 | 无（不配则语音不可用） |
 
-### 环境变量（可选，优先级低于 config_private.json）
+### 环境变量（可选，优先级低于 private_config.json）
 
 ```bash
 LLM_API_KEY=sk-xxx
@@ -255,7 +255,7 @@ pm2 delete all            # 清除所有进程
 
 ### 每角色模型配置
 
-在 `config_private.json` 中：
+在 `private_config.json` 中：
 
 ```json
 {

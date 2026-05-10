@@ -109,7 +109,7 @@ ls -la TmuxWeb/web/dist/
 
 ### 实例命名
 
-PM2 进程名由 `config.json`（或 `config_private.json`）中的 `envName` 字段决定，格式为 `tmuxweb-{envName}-backend` / `tmuxweb-{envName}-frontend`。
+PM2 进程名由 `config.json`（或 `private_config.json`）中的 `envName` 字段决定，格式为 `tmuxweb-{envName}-backend` / `tmuxweb-{envName}-frontend`。
 
 | envName | 后端名称 | 前端名称 | 说明 |
 |---------|----------|----------|------|

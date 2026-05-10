@@ -46,7 +46,7 @@ MESSAGE_DIR = STORAGE / "message"
 PART_DIR = STORAGE / "part"
 PROJECT_DIR = STORAGE / "project"
 
-DEFAULT_VAULT = Path("/Users/wudi/obsidian-vault/butler/project/opencode-iterm")
+DEFAULT_VAULT = Path("~/obsidian-vault/butler/project/opencode-iterm").expanduser()
 TZ_SHANGHAI = timezone(timedelta(hours=8))
 
 # Tool output truncation (avoid massive MD files)

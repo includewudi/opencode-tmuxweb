@@ -130,13 +130,13 @@ const HEARTBEAT_TIMEOUT = 10000;   // 10s pong 超时
 
 ## 配置管理
 
-**优先级**: `config_private.json` > `config.json`
+**优先级**: `private_config.json` > `config.json`
 
 ```js
 // config-loader.js 合并逻辑
 const config = {
   ...require('./config.json'),
-  ...require('./config_private.json')  // 覆盖
+  ...require('./private_config.json')  // 覆盖
 };
 ```
 

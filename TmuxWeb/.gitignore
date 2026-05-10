@@ -12,7 +12,7 @@ npm-debug.log*
 # Environment / secrets
 .env
 .env.local
-config_private.json
+private_config.json
 
 # OpenCode plugin — local copy only, do NOT commit
 # Use plugins/my-rules.js.back as the template

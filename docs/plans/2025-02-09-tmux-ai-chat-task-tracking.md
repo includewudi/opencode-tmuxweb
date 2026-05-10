@@ -53,7 +53,7 @@
 
 ### Phase 2: CLI Skill (Already Done ✅)
 
-- Skill 已创建: `/Users/wudi/.config/opencode/skills/tmuxweb-task-callback/SKILL.md`
+- Skill 已创建: `~/.config/opencode/skills/tmuxweb-task-callback/SKILL.md`
 - 定义了 API 接口格式、事件 payload、throttling 策略
 
 ### Phase 3: Frontend Integration (Optional)

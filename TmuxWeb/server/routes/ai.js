@@ -21,7 +21,7 @@ async function generateAiCommand(prompt, role) {
   if (!apiKey) {
     return {
       command: prompt.trim(),
-      explanation: '⚠️ 未配置 LLM API。在 config_private.json 中设置 llm.apiKey 后可启用 AI 生成。'
+      explanation: '⚠️ 未配置 LLM API。在 private_config.json 中设置 llm.apiKey 后可启用 AI 生成。'
     };
   }
 

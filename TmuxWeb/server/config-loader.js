@@ -21,16 +21,16 @@ function deepMerge(target, source) {
 }
 
 const configPath = path.join(__dirname, 'config.json');
-const privatePath = path.join(__dirname, 'config_private.json');
+const privatePath = path.join(__dirname, 'private_config.json');
 
 let config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
 
 if (fs.existsSync(privatePath)) {
   const privateConfig = JSON.parse(fs.readFileSync(privatePath, 'utf8'));
   config = deepMerge(config, privateConfig);
-  console.log('[Config] Merged config_private.json');
+  console.log('[Config] Merged private_config.json');
 } else {
-  console.warn('[Config] No config_private.json found — using defaults from config.json');
+  console.warn('[Config] No private_config.json found — using defaults from config.json');
 }
 
 // Auto-generate allowedOrigins from port/frontendPort + hosts

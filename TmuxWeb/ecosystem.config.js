@@ -1,14 +1,14 @@
 const path = require('path');
 const fs = require('fs');
 
-// Load config: config_private.json overrides config.json
+// Load config: private_config.json overrides config.json
 const baseConfig = JSON.parse(fs.readFileSync(path.join(__dirname, 'server/config.json'), 'utf8'));
 let config = { ...baseConfig };
 try {
-  const privateConfig = JSON.parse(fs.readFileSync(path.join(__dirname, 'server/config_private.json'), 'utf8'));
+  const privateConfig = JSON.parse(fs.readFileSync(path.join(__dirname, 'server/private_config.json'), 'utf8'));
   config = { ...baseConfig, ...privateConfig };
 } catch (e) {
-  // config_private.json is optional
+  // private_config.json is optional
 }
 
 const frontendPort = config.frontendPort || 5215;

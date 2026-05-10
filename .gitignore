@@ -90,7 +90,7 @@ dist/
 # Private config (API keys)
 web/config_private.json
 TmuxWeb/server/config_private.json
-**/config_private.json
+**/private_config.json
 **/snippets_private.json
 
 # SSL certificates
@@ -144,3 +144,20 @@ TmuxWeb/ecosystem.config.private.js
 # Screenshots from debugging
 *.png
 !TmuxWeb/docs/*.png
+
+# Environment files (comprehensive)
+.env
+.env.*
+!.env.example
+
+# Generic secrets/keys
+*.key
+*.p12
+*.p8
+credentials*
+secrets.*
+
+# Database files (generic pattern)
+*.db
+*.sqlite
+*.sqlite3

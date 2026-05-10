@@ -1,7 +1,7 @@
 const mysql = require('mysql2/promise');
 const config = require('../config-loader');
 
-// Resolve DB config: config_private.json > env vars > defaults
+// Resolve DB config: private_config.json > env vars > defaults
 // If no db config and no env vars with real credentials, db is disabled.
 const dbConfig = config.db || {};
 const resolvedConfig = {
@@ -13,7 +13,7 @@ const resolvedConfig = {
 };
 
 // DB is considered "enabled" only if user explicitly configured it
-// (either via config_private.json db section or MYSQL_* env vars)
+// (either via private_config.json db section or MYSQL_* env vars)
 const dbEnabled = !!(
   (config.db && config.db.host) ||
   process.env.MYSQL_HOST ||

@@ -108,7 +108,7 @@ Single-column layout optimized for touch:
 
 TmuxWeb provides a **generic orchestration docking standard** — connect any external task orchestration backend via a simple proxy configuration.
 
-- **Proxy layer** — reverse-proxy any REST API through TmuxWeb (configurable host/port in `config_private.json`)
+- **Proxy layer** — reverse-proxy any REST API through TmuxWeb (configurable host/port in `private_config.json`)
 - **Worker dashboard** — view active AI agent workers from the orchestration backend
 - **Inbox** — receive and display notifications from the orchestration service
 - **Activity feed** — track recent events from connected services
@@ -154,12 +154,12 @@ ln -sf "$(pwd)/my-rules.js" ~/.config/opencode/plugins/my-rules.js
 Edit `my-rules.js` and set the `PORT` constant to match your TmuxWeb server port:
 
 ```javascript
-const PORT = 8215;            // must match your server/config_private.json port
+const PORT = 8215;            // must match your server/private_config.json port
 ```
 
 **Step 4 — (Optional) Enable task persistence:**
 
-Task tracking requires MySQL. Add `db` config to `server/config_private.json`:
+Task tracking requires MySQL. Add `db` config to `server/private_config.json`:
 
 ```json
 {
@@ -275,10 +275,10 @@ cd web && npm install && npm run build && cd ..
 Copy the default config and fill in your values:
 
 ```bash
-cp server/config.json server/config_private.json
+cp server/config.json server/private_config.json
 ```
 
-Edit `server/config_private.json`:
+Edit `server/private_config.json`:
 
 ```jsonc
 {
@@ -318,7 +318,7 @@ Edit `server/config_private.json`:
 }
 ```
 
-> `config_private.json` is gitignored. The public `config.json` contains defaults and documentation.
+> `private_config.json` is gitignored. The public `config.json` contains defaults and documentation.
 
 ### Database Setup (Optional)
 
@@ -381,7 +381,7 @@ For access without a public IP:
 
 1. Install ZeroTier on server and mobile device
 2. Join the same network
-3. Add ZeroTier IP to `allowedOrigins` in `config_private.json`
+3. Add ZeroTier IP to `allowedOrigins` in `private_config.json`
 4. Access via `http://<zerotier-ip>:5215`
 
 ## API Reference
@@ -452,7 +452,7 @@ All API routes require authentication (token via login or session cookie).
 
 ## Configuration Reference
 
-All settings go in `server/config_private.json` (overrides `config.json`):
+All settings go in `server/private_config.json` (overrides `config.json`):
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -480,7 +480,7 @@ TmuxWeb/
 ├── server/
 │   ├── index.js              # Express + WebSocket entry point
 │   ├── config.json           # Default config (tracked)
-│   ├── config_private.json   # Your config (gitignored)
+│   ├── private_config.json   # Your config (gitignored)
 │   ├── routes/               # API route handlers
 │   ├── middleware/            # Auth middleware
 │   ├── services/

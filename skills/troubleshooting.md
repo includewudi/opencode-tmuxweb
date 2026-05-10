@@ -72,7 +72,7 @@ lsof /dev/pty* 2>/dev/null | wc -l
 2. **PM2 设置重启上限** — `ecosystem.config.js` 中设置 `max_restarts: 10`
 3. **使用 `controlmode`** — 只用一个 PTY 通过 tmux control mode 管理所有 pane
    ```json
-   // config_private.json
+   // private_config.json
    { "terminalMode": "controlmode" }
    ```
 3. **定期检查** — 写个 cron 监控 PTY 数量
@@ -170,7 +170,7 @@ OpenCode 会话结束（session.idle 事件）
    ```
 3. 确保 MySQL 已配置（task 事件需要数据库存储）：
    ```json
-   // config_private.json
+   // private_config.json
    {
      "db": {
        "host": "localhost",
@@ -371,7 +371,7 @@ TmuxWeb **无需 MySQL 即可运行**。未配置时：
 
 4. 检查配置
    ```json
-   // config_private.json
+   // private_config.json
    {
      "db": {
        "host": "localhost",
@@ -389,7 +389,7 @@ TmuxWeb **无需 MySQL 即可运行**。未配置时：
 ### 语音输入无响应
 
 1. 确认浏览器已授权麦克风权限
-2. 检查讯飞配置（`config_private.json` 中的 `xfyun`）
+2. 检查讯飞配置（`private_config.json` 中的 `xfyun`）
 3. 查看后端日志：`pm2 logs tmuxweb-backend | grep -i speech`
 
 ---

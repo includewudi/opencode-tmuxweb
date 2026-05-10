@@ -64,7 +64,7 @@ opencode-tmuxweb/
 cd TmuxWeb
 npm run install:all          # 安装前后端依赖
 npm run build               # 构建前端
-cp server/config.json server/config_private.json  # 创建私有配置
+cp server/config.json server/private_config.json  # 创建私有配置
 node server/index.js        # 启动服务
 ```
 
@@ -74,5 +74,5 @@ node server/index.js        # 启动服务
 
 1. **Node.js 版本**: 推荐 v20.x，v22+ 可能有兼容问题
 2. **证书**: iPhone 访问需要 HTTPS，用 mkcert 生成证书并安装 CA
-3. **token 认证**: 所有 API 需要配置 `config_private.json` 中的 token
+3. **token 认证**: 所有 API 需要配置 `private_config.json` 中的 token
 4. **MySQL**: 任务追踪功能依赖 MySQL，需先执行 `server/db/init.sql`
