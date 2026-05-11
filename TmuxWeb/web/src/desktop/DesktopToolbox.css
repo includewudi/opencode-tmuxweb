@@ -53,6 +53,7 @@
 .desktop-quick-keys {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
   padding: 6px 8px;
   border-bottom: 1px solid var(--zinc-800);
