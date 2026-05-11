@@ -382,3 +382,50 @@
 .mobile-hint-close:hover {
   color: var(--zinc-300);
 }
+/* ── Group Manager Overlay (desktop) ── */
+.gm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 200;
+}
+.gm-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 420px;
+  max-height: 70vh;
+  background: var(--zinc-900);
+  border-radius: 12px;
+  border: 1px solid var(--zinc-700);
+  display: flex;
+  flex-direction: column;
+  z-index: 201;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+.gm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--zinc-700);
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--zinc-200);
+}
+.gm-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--zinc-400);
+  cursor: pointer;
+}
+.gm-close:hover { background: var(--zinc-800); color: var(--zinc-200); }
+.gm-panel .group-manager { padding: 8px; overflow-y: auto; flex: 1; min-height: 0; }

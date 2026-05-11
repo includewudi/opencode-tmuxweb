@@ -1,0 +1,175 @@
+/* ── MobileGitPanel: full-screen mobile layout for GitPanel ── */
+
+.mgp-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Git panel wrapper: scrollable on mobile ── */
+.mgp-container .wfb-git-panel {
+  flex: 1;
+  min-height: 0;
+  max-height: none !important;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* ── Branch bar: full-width touch friendly ── */
+.mgp-container .wfb-git-panel__branch-bar {
+  padding: 10px 12px;
+  flex-direction: row !important;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mgp-container .wfb-git-panel__branch-name {
+  font-size: 15px;
+}
+
+.mgp-container .wfb-git-panel__ahead-behind {
+  font-size: 12px;
+}
+
+/* ── Branch actions (pull/push): full-width block buttons ── */
+.mgp-container .wfb-git-panel__branch-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.mgp-container .wfb-git-btn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 14px;
+  font-size: 14px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mgp-container .wfb-git-btn:active {
+  opacity: 0.7;
+}
+
+/* ── Commit row: stack vertically on mobile ── */
+.mgp-container .wfb-git-panel__commit-row {
+  flex-direction: column !important;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.mgp-container .wfb-git-panel__commit-input {
+  width: 100% !important;
+  min-height: 48px;
+  height: auto;
+  font-size: 16px !important;
+  padding: 12px 14px !important;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid var(--wfb-border, #3f3f46);
+  background: var(--bg-secondary, #1e1e24);
+  color: var(--text-primary, #e4e4e7);
+  outline: none;
+}
+
+/* ── Suggest + commit buttons: full width ── */
+.mgp-container .wfb-git-btn--suggest,
+.mgp-container .wfb-git-btn--commit {
+  width: 100%;
+  justify-content: center;
+  min-height: 44px;
+}
+
+/* ── Section headers: larger touch targets ── */
+.mgp-container .wfb-git-panel__section-header {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 14px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mgp-container .wfb-git-panel__section-header:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ── File list items: larger touch targets ── */
+.mgp-container .wfb-git-panel__file-item {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mgp-container .wfb-git-panel__file-item:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mgp-container .wfb-git-panel__file-name {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+/* ── Log items: touch friendly ── */
+.mgp-container .wfb-git-panel__log-item {
+  padding: 10px 12px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mgp-container .wfb-git-panel__log-item:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mgp-container .wfb-git-panel__log-sha {
+  font-size: 12px;
+}
+
+.mgp-container .wfb-git-panel__log-msg {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  max-width: 100%;
+}
+
+.mgp-container .wfb-git-panel__log-meta {
+  font-size: 12px;
+}
+
+/* ── Log list: scrollable ── */
+.mgp-container .wfb-git-panel__log-list {
+  max-height: 40vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Badges: slightly larger on mobile ── */
+.mgp-container .wfb-git-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  min-width: auto;
+}
+
+/* ── Empty state ── */
+.mgp-container .wfb-git-panel__empty {
+  padding: 20px 12px;
+  text-align: center;
+  font-size: 14px;
+  color: #71717a;
+}
+
+/* ── Operation output ── */
+.mgp-container .wfb-git-panel__output {
+  margin: 8px 12px;
+  font-size: 13px;
+  max-height: 20vh;
+  overflow-y: auto;
+}

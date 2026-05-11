@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Menu, X, History, ScrollText, FolderSearch, BarChart3 } from 'lucide-react'
+import { Menu, X, History, ScrollText, FolderSearch, BarChart3, Maximize2 } from 'lucide-react'
 import { MobileDrawer } from './MobileDrawer'
 import { MobileTerminal } from './MobileTerminal'
 import { TaskHistoryPanel } from '../shared/components/TaskHistoryPanel'
@@ -365,6 +365,9 @@ export default function MobileApp() {
             </button>
             <button className="mobile-menu-btn" onClick={toggleRightPanel} type="button" title="Task history">
               <History size={22} />
+            </button>
+            <button className="mobile-menu-btn" onClick={() => window.location.href = '/fullscreen'} type="button" title="全屏">
+              <Maximize2 size={22} />
             </button>
           </>
         )}

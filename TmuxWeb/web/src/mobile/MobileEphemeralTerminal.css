@@ -1,0 +1,29 @@
+/* ── MobileEphemeralTerminal: full-screen mobile layout for EphemeralTerminal ── */
+
+.met-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  background: #1e1e1e;
+}
+
+/* ── xterm fills the entire container ── */
+.met-container > div {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ── xterm canvas: prevent unwanted touch gestures ── */
+.met-container .xterm {
+  height: 100%;
+  padding: 4px 0;
+}
+
+.met-container .xterm-viewport {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Override MobilePanel body for terminal: no padding ── */

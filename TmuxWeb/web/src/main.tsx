@@ -5,6 +5,7 @@ import './styles/global.css'
 
 const App = lazy(() => import('./desktop/App'))
 const MobileApp = lazy(() => import('./mobile/MobileApp'))
+const MobileFullscreenApp = lazy(() => import('./mobile/MobileFullscreenApp'))
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <BrowserRouter>
@@ -12,6 +13,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/m" element={<MobileApp />} />
+        <Route path="/fullscreen" element={<MobileFullscreenApp />} />
       </Routes>
     </Suspense>
   </BrowserRouter>

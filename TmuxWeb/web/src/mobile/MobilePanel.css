@@ -1,0 +1,126 @@
+/* ── MobilePanel: reusable full-screen overlay shell ── */
+
+.mp-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 149;
+  -webkit-tap-highlight-color: transparent;
+  animation: mp-fade-in 0.2s ease-out;
+}
+
+.mp-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: var(--bg-primary, #1a1c20);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: mp-slide-up 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.mp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 12px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border-color, #2e3035);
+  background: var(--bg-secondary, #1e1e24);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mp-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary, #e4e4e7);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mp-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.mp-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted, #888);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mp-close-btn:active { background: rgba(255,255,255,0.1); }
+
+.mp-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+
+/* ── Force ALL direct children to fill body ── */
+.mp-body > div {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Nuke desktop floating panel inline styles (useFloatingPanel sets these) ── */
+.mp-body .fb-floating-panel,
+.mp-body .is-floating-panel,
+.mp-body .cli-h-panel,
+.mp-body .sb-panel,
+.mp-body [class*="floating"] {
+  position: static !important;
+  inset: auto !important;
+  left: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  max-height: none !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  transform: none !important;
+  flex-shrink: 1;
+}
+
+/* ── Universal desktop style killer: nuke all max-height/fixed-height within mobile panels ── */
+.mp-body [style*="height"],
+.mp-body [style*="max-height"],
+.mp-body [style*="width"] {
+  height: auto !important;
+  max-height: none !important;
+  width: auto !important;
+}
+
+/* ── Kill resize handle and opacity slider (desktop-only chrome) ── */
+.mp-body .fb-floating-panel__resize,
+.mp-body .is-floating-panel__resize,
+.mp-body .fb-floating-panel__opacity-slider,
+.mp-body .is-floating-panel__opacity-slider,
+.mp-body .wfb-splitter {
+  display: none !important;
+}
+
+@keyframes mp-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mp-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }

@@ -399,8 +399,8 @@ export default function App() {
               </button>
             </div>
             <div className="activity-bar-bottom">
-              <button className="activity-tab" onClick={() => setShowGroupManager(!showGroupManager)} title="Manage groups">
-                <Settings size={22} strokeWidth={1.5} />
+<button className="activity-tab" onClick={() => { setShowGroupManager(!showGroupManager); setSidebarOpen(true); if (sidebarMode === 'imperial') setSidebarMode('explorer') }} title="Manage groups">
+                <Settings size={22} strokeWidth={showGroupManager ? 2 : 1.5} />
               </button>
               <button className="activity-tab" onClick={handleLogout} title="Sign out">
                 <LogOut size={22} strokeWidth={1.5} />
@@ -423,14 +423,6 @@ export default function App() {
 
                 {/* Task stat badges — always visible, no tab switching */}
                 <TaskStatBadges refreshToken={statusRefreshToken} />
-
-                {showGroupManager && currentProfile && (
-                  <GroupManager
-                    profileKey={currentProfile.profile_key}
-                    sessions={sessions}
-                    onGroupsChanged={fetchTree}
-                  />
-                )}
 
                 <div className="sidebar-content-area">
                   <TmuxTree
@@ -564,6 +556,23 @@ export default function App() {
         <ErrorBoundary>
           <FloatingProjectOverview onClose={() => setProjectOverviewFloat(false)} />
         </ErrorBoundary>
+      )}
+
+      {/* Group Manager Overlay */}
+      {showGroupManager && (
+<div className="gm-overlay" onClick={() => { setShowGroupManager(false) }}>
+          <div className="gm-panel">
+            <header className="gm-header">
+              <span>分组管理</span>
+              <button className="gm-close" onClick={() => setShowGroupManager(false)} type="button"><X size={16} /></button>
+            </header>
+            <GroupManager
+              profileKey={currentProfile?.profile_key || ''}
+              sessions={sessions}
+              onGroupsChanged={fetchTree}
+            />
+          </div>
+        </div>
       )}
 
       <TaskToastContainer notifications={notifications} onDismiss={dismissNotification} />

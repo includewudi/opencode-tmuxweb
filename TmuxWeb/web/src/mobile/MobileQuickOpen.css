@@ -1,0 +1,166 @@
+/* ── MobileQuickOpen: full-screen mobile layout for QuickOpen + FileBrowser ── */
+
+.mqo-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── QuickOpen section: fixed height at top ── */
+.mqo-quick-open {
+  flex: 0 0 auto;
+  max-height: 40vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border-bottom: 1px solid #27272a;
+}
+
+/* ── File browser section: fills remaining space ── */
+.mqo-browser {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── QuickOpen header: compact ── */
+.mqo-container .quick-open__header {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* ── Input row: full width, touch friendly ── */
+.mqo-container .quick-open__input-row {
+  display: flex;
+  gap: 8px;
+  padding: 6px 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.mqo-container .quick-open__input {
+  flex: 1;
+  min-height: 44px;
+  font-size: 16px !important; /* prevent iOS zoom */
+  padding: 8px 12px !important;
+  box-sizing: border-box;
+}
+
+.mqo-container .quick-open__go {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 16px;
+  font-size: 14px;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+
+.mqo-container .quick-open__go:active {
+  opacity: 0.7;
+}
+
+/* ── Refresh button: touch friendly ── */
+.mqo-container .quick-open__refresh {
+  min-width: 36px;
+  min-height: 36px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Error message ── */
+.mqo-container .quick-open__error {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+/* ── Path tree nodes: larger touch targets ── */
+.mqo-container .quick-open__node-header {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  font-size: 14px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mqo-container .quick-open__node-header:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mqo-container .quick-open__node-path {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+/* ── Child items: touch targets ── */
+.mqo-container .quick-open__child {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 4px 12px 4px 28px;
+  font-size: 14px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mqo-container .quick-open__child:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* ── Empty / loading states ── */
+.mqo-container .quick-open__empty {
+  padding: 12px;
+  text-align: center;
+  font-size: 13px;
+  color: #71717a;
+}
+
+.mqo-container .quick-open__loading {
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+  color: #a1a1aa;
+}
+
+/* ── WebFileBrowser overrides (reuse MobileFileBrowser approach) ── */
+.mqo-container .wfb-container {
+  flex-direction: column !important;
+}
+
+.mqo-container .wfb-tree-panel {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  flex: 1 1 50% !important;
+  border-right: none !important;
+  border-bottom: 1px solid var(--wfb-border, #27272a);
+}
+
+.mqo-container .wfb-splitter {
+  display: none !important;
+}
+
+.mqo-container .wfb-preview-panel {
+  flex: 1 1 50% !important;
+  min-height: 0 !important;
+  border-left: none !important;
+}
+
+.mqo-container .wfb-tree-item {
+  height: 48px !important;
+  padding: 0 12px !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mqo-container .wfb-icon-btn {
+  width: 40px;
+  height: 40px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mqo-container .wfb-inline-input {
+  height: 44px;
+  font-size: 16px; /* prevent iOS zoom */
+}

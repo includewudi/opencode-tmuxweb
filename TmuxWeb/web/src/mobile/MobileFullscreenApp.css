@@ -1,0 +1,145 @@
+.fs-app {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  height: calc(var(--app-height, 100vh));
+  overflow: hidden;
+  background: #0f1115;
+}
+
+.fs-header {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 0 0 12px;
+  background: #252526;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.fs-title {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  color: #d4d4d4;
+  padding-left: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fs-terminal {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.fs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  height: 52px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: #1a1c20;
+  border-top: 1px solid #2c313a;
+  flex-shrink: 0;
+}
+
+.fs-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.fs-btn:active { background: rgba(255,255,255,.1); color: #fff; }
+.fs-btn:disabled { opacity: .3; pointer-events: none; }
+
+.fs-btn.primary { background: rgba(77,120,204,.2); color: #61afef; }
+.fs-btn.primary:active { background: rgba(77,120,204,.35); }
+
+/* ── VoiceInput in bar ── */
+.fs-bar .voice-input { display: flex; align-items: center; justify-content: center; }
+.fs-bar .voice-btn {
+  width: 44px; height: 44px;
+  border-radius: 50%; border: none;
+  background: rgba(77,120,204,.2);
+  color: #61afef;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.fs-bar .voice-btn:active { background: rgba(77,120,204,.35); }
+.fs-bar .voice-btn.recording { background: rgba(239,68,68,.25); color: #f87171; animation: fs-pulse 1.2s ease-in-out infinite; }
+.fs-bar .voice-btn.connecting { background: rgba(234,179,8,.2); color: #fbbf24; }
+@keyframes fs-pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* ── Bottom Sheet Menu ── */
+.fs-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 101;
+  background: rgba(0,0,0,0.5);
+}
+
+.fs-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 102;
+  background: #1e1e24;
+  border-radius: 16px 16px 0 0;
+  max-height: 70vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  animation: fs-slide-up 0.25s ease-out;
+}
+
+.fs-sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.2);
+  margin: 8px auto;
+}
+
+.fs-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  background: transparent;
+  border: none;
+  color: #d4d4d4;
+  font-size: 15px;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  text-align: left;
+}
+
+.fs-sheet-item:active { background: rgba(255,255,255,0.08); }
+
+.fs-sheet-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.fs-sheet-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 4px 16px; }
+
+.fs-sheet-danger { color: #f87171; }
+.fs-sheet-danger:active { background: rgba(248,113,113,.15); }
+
+@keyframes fs-slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}

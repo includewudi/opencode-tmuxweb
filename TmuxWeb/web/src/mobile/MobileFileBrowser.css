@@ -1,0 +1,92 @@
+/* ── MobileFileBrowser: single-column mobile layout for WebFileBrowser ── */
+
+.mfb-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Force single-column layout ── */
+.mfb-container .wfb-container {
+  flex-direction: column !important;
+}
+
+/* ── Tree panel: full width, limited height ── */
+.mfb-container .wfb-tree-panel {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  flex: 1 1 50% !important;
+  border-right: none !important;
+  border-bottom: 1px solid var(--wfb-border, #27272a);
+}
+
+/* ── Hide the drag splitter on mobile ── */
+.mfb-container .wfb-splitter {
+  display: none !important;
+}
+
+/* ── Preview panel: full width, takes remaining space ── */
+.mfb-container .wfb-preview-panel {
+  flex: 1 1 50% !important;
+  min-height: 0 !important;
+  border-left: none !important;
+}
+
+/* ── Tree items: larger touch targets ── */
+.mfb-container .wfb-tree-item {
+  height: 48px !important;
+  padding: 0 12px !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mfb-container .wfb-tree-item__name {
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Tree header: more compact on mobile ── */
+.mfb-container .wfb-tree-header {
+  padding: 6px 8px;
+}
+
+.mfb-container .wfb-tree-header__dir {
+  font-size: 14px;
+}
+
+/* ── Icon buttons: expand for touch ── */
+.mfb-container .wfb-icon-btn {
+  width: 40px;
+  height: 40px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Context menu: prevent overflow off-screen ── */
+.mfb-container .wfb-ctx-menu {
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+/* ── Inline inputs: touch-friendly ── */
+.mfb-container .wfb-inline-input {
+  height: 44px;
+  font-size: 16px; /* prevent iOS zoom */
+}
+
+/* ── AI overlay: full mobile coverage ── */
+.mfb-container .wfb-ai-overlay {
+  z-index: 170; /* above MobilePanel z-index 160 */
+  align-items: flex-end !important;
+}
+
+.mfb-container .wfb-ai-panel {
+  max-width: 100% !important;
+  max-height: 60vh;
+  border-radius: 16px 16px 0 0 !important;
+  margin: 0 !important;
+}

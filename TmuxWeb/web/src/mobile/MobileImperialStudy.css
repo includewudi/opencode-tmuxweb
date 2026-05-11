@@ -1,0 +1,61 @@
+/* ── MobileImperialStudy: full-screen wrapper for ImperialStudyPanel ── */
+
+.mis-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* The panel already uses vertical layout when !floating — let it fill the space */
+.mis-container .imperial-study {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Panel header: hide it (MobilePanel already shows the title) ── */
+.mis-container .is-panel-header {
+  display: none;
+}
+
+/* ── Scroll area: take remaining space ── */
+.mis-container .is-scroll-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 24px; /* safe area for bottom gestures */
+}
+
+/* ── Command input: touch-friendly textarea ── */
+.mis-container .is-command-input textarea,
+.mis-container .is-command-input input {
+  min-height: 44px;
+  font-size: 16px; /* prevent iOS zoom on focus */
+}
+
+/* ── Worker / Inbox cards: larger touch targets ── */
+.mis-container .is-worker-card,
+.mis-container .is-inbox-item {
+  min-height: 44px;
+  padding: 10px 12px;
+}
+
+/* ── Icon buttons: expand tap area ── */
+.mis-container .is-icon-btn {
+  width: 36px;
+  height: 36px;
+}
+
+/* ── Activity section: collapsed by default is fine, just ensure compact sizing ── */
+.mis-container .is-activity-row {
+  min-height: 40px;
+  padding: 8px 12px;
+}
+
+/* ── Modals (inbox detail, task detail): ensure full mobile coverage ── */
+.mis-container .is-modal-overlay {
+  z-index: 170; /* above MobilePanel z-index 160 */
+}

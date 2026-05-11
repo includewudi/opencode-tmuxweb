@@ -1,0 +1,30 @@
+/* MobileCLIHistory — override desktop 2-column layout to single-column */
+
+.mclh-container {
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Stack body vertically: session list on top, detail below */
+.mclh-container .cli-h-body {
+  flex-direction: column;
+}
+
+/* Session list takes full width, limited height */
+.mclh-container .cli-h-session-list {
+  width: 100% !important;
+  max-height: 40vh;
+  border-right: none;
+  border-bottom: 1px solid var(--zinc-800);
+}
+
+/* Detail takes remaining space */
+.mclh-container .cli-h-detail {
+  flex: 1;
+  min-height: 0;
+}
+
+/* Wider path on mobile */
+.mclh-container .cli-h-session-path {
+  max-width: 100%;
+}

@@ -1,0 +1,140 @@
+/* MobileProjectOverview — single-column layout overrides */
+
+.mpo-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Override the desktop grid split to single column */
+.mpo-container .po-split {
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: unset;
+  height: 100%;
+}
+
+/* Remove min-width constraint from floating panel */
+.mpo-container .po-float-panel {
+  min-width: unset !important;
+  min-height: unset !important;
+}
+
+/* Search bar */
+.mpo-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid #2a2a4a;
+  flex-shrink: 0;
+}
+
+.mpo-search-icon {
+  color: #666;
+  flex-shrink: 0;
+}
+
+.mpo-search input {
+  width: 100%;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: #e0e0e0;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+.mpo-search input:focus {
+  border-color: #3b82f6;
+}
+
+/* Refresh button */
+.mpo-refresh-btn {
+  background: transparent;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+.mpo-refresh-btn:hover {
+  color: #e0e0e0;
+}
+
+/* Project list */
+.mpo-project-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.mpo-project-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #1a1a2e;
+  transition: background-color 0.15s;
+}
+
+.mpo-project-item:hover,
+.mpo-project-item:active {
+  background-color: #1c2a4a;
+}
+
+.mpo-project-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #e0e0e0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 4px;
+}
+
+/* Goal panel */
+.mpo-goal-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.mpo-goal-header {
+  flex-shrink: 0;
+}
+
+.mpo-back-btn {
+  background: transparent;
+  border: none;
+  color: #60a5fa;
+  font-size: 13px;
+  padding: 8px 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.mpo-back-btn:hover {
+  color: #93c5fd;
+}
+
+/* Left/right split: both take full width on mobile */
+.mpo-container .po-split-left {
+  border-right: none;
+  height: auto;
+  max-height: none;
+}
+
+.mpo-container .po-split-right {
+  height: auto;
+}
+
+/* Hide the floating panel body (unused in mobile) */
+.mpo-container .is-floating-panel__body {
+  display: none;
+}
