@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react'
-import { Plus, Trash2, Play } from 'lucide-react'
+import { Plus } from 'lucide-react'
+import './SnippetsTab.css'
 
 interface Snippet {
   name: string
@@ -13,9 +14,9 @@ interface SnippetsTabProps {
 
 export function SnippetsTab({ onSend, disabled }: SnippetsTabProps) {
   const [snippets, setSnippets] = useState<Snippet[]>([])
+  const [showForm, setShowForm] = useState(false)
   const [newName, setNewName] = useState('')
   const [newCommand, setNewCommand] = useState('')
-  const [showForm, setShowForm] = useState(false)
 
   const fetchSnippets = useCallback(async () => {
     try {
@@ -58,82 +59,37 @@ export function SnippetsTab({ onSend, disabled }: SnippetsTabProps) {
   }, [fetchSnippets])
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', padding: '8px', gap: '6px', overflow: 'auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <span style={{ color: '#abb2bf', fontSize: '13px', fontWeight: 600 }}>命令片段</span>
+    <div className="snippets-tab">
+      <div className="snippets-header">
+        <span className="snippets-title">命令片段</span>
         <button
+          className="snippets-add-btn"
           onClick={() => setShowForm(!showForm)}
-          style={{
-            background: '#4d78cc',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '3px 8px',
-            fontSize: '11px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '3px',
-          }}
           type="button"
         >
-          <Plus size={11} /> 添加
+          <Plus size={12} />
         </button>
       </div>
 
       {showForm && (
-        <div style={{
-          background: '#1e2028',
-          border: '1px solid #2c313a',
-          borderRadius: '6px',
-          padding: '8px',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '6px',
-        }}>
+        <div className="snippets-form">
           <input
+            className="snippets-form-input"
             placeholder="名称"
             value={newName}
             onChange={e => setNewName(e.target.value)}
-            style={{
-              background: '#13151a',
-              border: '1px solid #2c313a',
-              borderRadius: '4px',
-              padding: '6px',
-              color: '#abb2bf',
-              fontSize: '12px',
-              outline: 'none',
-            }}
           />
           <input
+            className="snippets-form-input snippets-form-cmd"
             placeholder="命令"
             value={newCommand}
             onChange={e => setNewCommand(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAdd() }}
-            style={{
-              background: '#13151a',
-              border: '1px solid #2c313a',
-              borderRadius: '4px',
-              padding: '6px',
-              color: '#98c379',
-              fontSize: '12px',
-              fontFamily: 'Menlo, Monaco, monospace',
-              outline: 'none',
-            }}
           />
           <button
+            className="snippets-form-save"
             onClick={handleAdd}
             disabled={!newName.trim() || !newCommand.trim()}
-            style={{
-              background: '#4d78cc',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              padding: '6px',
-              fontSize: '12px',
-              cursor: 'pointer',
-              opacity: (!newName.trim() || !newCommand.trim()) ? 0.5 : 1,
-            }}
             type="button"
           >
             保存
@@ -142,68 +98,28 @@ export function SnippetsTab({ onSend, disabled }: SnippetsTabProps) {
       )}
 
       {snippets.length === 0 && !showForm && (
-        <div style={{ color: '#555a66', fontSize: '12px', textAlign: 'center', padding: '20px' }}>
-          暂无片段，点击「添加」保存常用命令
-        </div>
+        <div className="snippets-empty">暂无片段</div>
       )}
 
-      {snippets.map((s, i) => (
-        <div
-          key={i}
-          style={{
-            background: '#1a1c20',
-            border: '1px solid #2c313a',
-            borderRadius: '6px',
-            padding: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}
-        >
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ color: '#9da5b4', fontSize: '12px', fontWeight: 500 }}>{s.name}</div>
-            <div style={{
-              color: '#98c379',
-              fontSize: '11px',
-              fontFamily: 'Menlo, Monaco, monospace',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}>
-              {s.command}
-            </div>
-          </div>
+      <div className="snippets-buttons">
+        {snippets.map((s, i) => (
           <button
+            key={i}
+            className="snippet-btn"
+            title={`${s.name}: ${s.command}`}
             onClick={() => onSend(s.command + '\n')}
             disabled={disabled}
-            style={{
-              background: '#4d78cc',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '4px',
-              padding: '4px 8px',
-              cursor: 'pointer',
-              opacity: disabled ? 0.5 : 1,
-            }}
+            onContextMenu={e => { e.preventDefault(); handleDelete(i) }}
             type="button"
           >
-            <Play size={12} />
+            {s.name}
           </button>
-          <button
-            onClick={() => handleDelete(i)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#e06c75',
-              cursor: 'pointer',
-              padding: '4px',
-            }}
-            type="button"
-          >
-            <Trash2 size={12} />
-          </button>
-        </div>
-      ))}
+        ))}
+      </div>
+
+      {snippets.length > 0 && (
+        <div className="snippets-hint">右键删除</div>
+      )}
     </div>
   )
 }

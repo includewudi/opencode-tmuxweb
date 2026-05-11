@@ -39,6 +39,17 @@ export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey,
     { label: 'clr', title: '清行 (Ctrl+U)', data: '\x15' },
     { label: 'esc', title: 'Escape', data: '\x1b' },
     { label: 'tab', title: 'Tab', data: '\t' },
+    { label: '⏎', title: 'Enter', data: '\r' },
+    { label: '→|', title: `竖分屏 (${prefix.label} + %)`, data: prefix.code + '%' },
+    { label: '―', title: `横分屏 (${prefix.label} + ")`, data: prefix.code + '"' },
+    { label: '⊞', title: `切换布局 (${prefix.label} + Space)`, data: prefix.code + ' ' },
+    { label: '⬌', title: `全屏pane (${prefix.label} + z)`, data: prefix.code + 'z' },
+    { label: '→', title: `下一pane (${prefix.label} + o)`, data: prefix.code + 'o' },
+    { label: '←', title: `上一pane (${prefix.label} + o 逆向)`, data: prefix.code + 'o\x1b[D' },
+    { label: '⇅', title: `方向键 (${prefix.label} + 方向键)`, data: prefix.code + '\x1b' },
+    { label: 'd', title: `detach (${prefix.label} + d)`, data: prefix.code + 'd' },
+    { label: '?', title: `快捷键帮助 (${prefix.label} + ?)`, data: prefix.code + '?' },
+    { label: ':', title: `命令行 (${prefix.label} + :)`, data: prefix.code + ':' },
   ]
 
   const handleVoiceText = useCallback((text: string) => {
