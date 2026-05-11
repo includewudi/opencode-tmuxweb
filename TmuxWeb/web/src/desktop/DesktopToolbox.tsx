@@ -29,13 +29,14 @@ interface QuickKey {
 export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey, onStatusChange }: DesktopToolboxProps) {
   const [activeTab, setActiveTab] = useState<TabId>('ai')
   const [voiceText, setVoiceText] = useState<string | undefined>(undefined)
+  const [clearCounter, setClearCounter] = useState(0)
   const localVoiceRef = useRef<VoiceInputHandle | null>(null)
   const effectiveVoiceRef = voiceRef || localVoiceRef
   const prefix = useTmuxPrefix()
 
   const quickKeys: QuickKey[] = [
     { label: '^C', title: 'Ctrl+C 中断', data: '\x03' },
-    { label: 'clr', title: '清行 (Ctrl+U)', data: '\x15' },
+    { label: 'clr', title: '清空输入框', data: '' },
     { label: 'esc', title: 'Escape', data: '\x1b' },
     { label: 'tab', title: 'Tab', data: '\t' },
     { label: '⏎', title: 'Enter', data: '\r' },
@@ -90,7 +91,7 @@ export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey,
             key={k.label}
             className="desktop-quick-key"
             title={k.title}
-            onClick={() => onSend(k.data)}
+            onClick={() => k.label === 'clr' ? setClearCounter(c => c + 1) : onSend(k.data)}
             disabled={disabled}
           >
             {k.label}
@@ -106,6 +107,7 @@ export function DesktopToolbox({ onSend, disabled, voiceRef, taskHistoryPaneKey,
             disabled={disabled}
             initialText={voiceText}
             onTextConsumed={handleTextConsumed}
+            clearTrigger={clearCounter}
           />
         )}
 

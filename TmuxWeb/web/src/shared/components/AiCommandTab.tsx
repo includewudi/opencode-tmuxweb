@@ -30,9 +30,10 @@ interface AiCommandTabProps {
   disabled?: boolean
   initialText?: string
   onTextConsumed?: () => void
+  clearTrigger?: number
 }
 
-export function AiCommandTab({ onSend, disabled, initialText, onTextConsumed }: AiCommandTabProps) {
+export function AiCommandTab({ onSend, disabled, initialText, onTextConsumed, clearTrigger }: AiCommandTabProps) {
   const [input, setInput] = useState('')
   const [selectedRole] = useState('cli')
   const [roles, setRoles] = useState<Role[]>(BUILTIN_ROLES_FALLBACK)
@@ -48,6 +49,10 @@ export function AiCommandTab({ onSend, disabled, initialText, onTextConsumed }: 
       onTextConsumed?.()
     }
   }, [initialText, onTextConsumed])
+
+  useEffect(() => {
+    if (clearTrigger !== undefined && clearTrigger > 0) setInput('')
+  }, [clearTrigger])
 
   const fetchRoles = useCallback(async () => {
     try {
