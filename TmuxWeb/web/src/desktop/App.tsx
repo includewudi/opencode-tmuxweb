@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
-import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare, ScrollText, FolderSearch, BrainCircuit, FolderTree, GitBranch, History, BarChart3 } from 'lucide-react'
+import { Settings, LogOut, Menu, X, Smartphone, Maximize2, Minimize2, TerminalSquare, ScrollText, FolderSearch, BrainCircuit, FolderTree, GitBranch, History, BarChart3, Languages } from 'lucide-react'
 import { TmuxTree } from '../shared/components/TmuxTree'
 import { TaskStatBadges } from '../shared/components/TaskStatBadges'
 import { TerminalTabs } from './TerminalTabs'
@@ -16,6 +16,7 @@ import { FloatingTerminal } from '../shared/components/ephemeral-terminal/Floati
 import { FloatingCLIHistory } from '../shared/components/cli-history/FloatingCLIHistory'
 import { FloatingSessionBrowser } from '../shared/components/session-browser/FloatingSessionBrowser'
 import { FloatingProjectOverview } from '../shared/components/ProjectOverview/components/FloatingProjectOverview'
+import { FloatingTranslation } from '../shared/components/translation/FloatingTranslation'
 import { TaskToastContainer } from '../shared/components/TaskToast'
 import { ErrorBoundary } from '../shared/components/ErrorBoundary'
 import { usePaneNavigation } from '../hooks/usePaneNavigation'
@@ -71,6 +72,7 @@ export default function App() {
   const [gitFloat, setGitFloat] = useState(false)
   const [terminalFloat, setTerminalFloat] = useState(false)
   const [projectOverviewFloat, setProjectOverviewFloat] = useState(false)
+  const [translationFloat, setTranslationFloat] = useState(false)
   const activePaneKey = useMemo(() => {
     const tab = tabs.find(t => t.id === activeTabId)
     if (!tab) return null
@@ -397,6 +399,13 @@ export default function App() {
               >
                 <BarChart3 size={22} strokeWidth={projectOverviewFloat ? 2 : 1.5} />
               </button>
+              <button
+                className={`activity-tab ${translationFloat ? 'active' : ''}`}
+                title="翻译"
+                onClick={() => setTranslationFloat(!translationFloat)}
+              >
+                <Languages size={22} strokeWidth={translationFloat ? 2 : 1.5} />
+              </button>
             </div>
             <div className="activity-bar-bottom">
 <button className="activity-tab" onClick={() => { setShowGroupManager(!showGroupManager); setSidebarOpen(true); if (sidebarMode === 'imperial') setSidebarMode('explorer') }} title="Manage groups">
@@ -555,6 +564,15 @@ export default function App() {
       {projectOverviewFloat && (
         <ErrorBoundary>
           <FloatingProjectOverview onClose={() => setProjectOverviewFloat(false)} />
+        </ErrorBoundary>
+      )}
+
+      {translationFloat && (
+        <ErrorBoundary>
+          <FloatingTranslation
+            paneId={activePaneKey}
+            onClose={() => setTranslationFloat(false)}
+          />
         </ErrorBoundary>
       )}
 
