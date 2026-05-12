@@ -631,3 +631,12 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+
+.mobile-translate-panel .tp-panel {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.mobile-translate-panel .tp-pair {
+  padding: 10px 14px;
+}

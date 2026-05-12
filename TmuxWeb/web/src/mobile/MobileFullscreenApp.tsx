@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Terminal as XTerm } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
 import { Menu, Mic, ArrowLeft, Maximize2, X } from 'lucide-react'
-import { TerminalSquare, ScrollText, FolderSearch, FolderTree, GitBranch, BrainCircuit, History, BarChart3, Settings, LogOut } from 'lucide-react'
+import { TerminalSquare, ScrollText, FolderSearch, FolderTree, GitBranch, BrainCircuit, History, BarChart3, Settings, LogOut, Languages } from 'lucide-react'
 import { MobileDrawer } from './MobileDrawer'
 import { getToken } from '../utils/auth'
 import { checkAuth, logout } from '../utils/auth'
@@ -20,6 +20,7 @@ import { MobileCLIHistory } from './MobileCLIHistory'
 import { MobileSessionBrowser } from './MobileSessionBrowser'
 import { MobileProjectOverview } from './MobileProjectOverview'
 import { GroupManager } from '../shared/components/GroupManager'
+import { TranslationPanel } from '../shared/components/translation/TranslationPanel'
 import { ErrorBoundary } from '../shared/components/ErrorBoundary'
 import 'xterm/css/xterm.css'
 import './mobile.css'
@@ -68,6 +69,7 @@ export default function MobileFullscreenApp() {
   const [cliHistoryOpen, setCLIHistoryOpen] = useState(false)
   const [sessionBrowserOpen, setSessionBrowserOpen] = useState(false)
   const [projectOverviewOpen, setProjectOverviewOpen] = useState(false)
+  const [translateOpen, setTranslateOpen] = useState(false)
   const [showGroupManager, setShowGroupManager] = useState(false)
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -357,6 +359,9 @@ export default function MobileFullscreenApp() {
             <button className="fs-sheet-item" onClick={() => { setMenuOpen(false); setTimeout(() => setCLIHistoryOpen(v => !v), 0) }}>
               <BrainCircuit size={20} /><span>CLI 历史</span>
             </button>
+            <button className="fs-sheet-item" onClick={() => { setMenuOpen(false); setTimeout(() => setTranslateOpen(v => !v), 0) }}>
+              <Languages size={20} /><span>终端翻译</span>
+            </button>
             {/* Divider */}
             <div className="fs-sheet-divider" />
             {/* Tools */}
@@ -424,6 +429,19 @@ export default function MobileFullscreenApp() {
       <ErrorBoundary>
         <MobileEphemeralTerminal open={terminalOpen} onClose={() => setTerminalOpen(false)} cwd={activePaneCwd || undefined} />
       </ErrorBoundary>
+
+      {/* Translation */}
+      {translateOpen && (
+        <div className="mobile-overlay" onClick={() => setTranslateOpen(false)}>
+          <div className="mobile-imperial-panel mobile-translate-panel">
+            <header className="mobile-imperial-header">
+              <span>终端翻译</span>
+              <button className="mobile-menu-btn" onClick={() => setTranslateOpen(false)} type="button"><X size={18} /></button>
+            </header>
+            <TranslationPanel paneId={tabs.find(t => t.id === activeTabId)?.paneId ?? null} />
+          </div>
+        </div>
+      )}
 
       {/* Group Manager Modal */}
       {showGroupManager && (
