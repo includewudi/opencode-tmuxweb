@@ -63,6 +63,21 @@
   color: var(--zinc-200);
 }
 
+.tp-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #b91c1c;
+  border: 1px solid #991b1b;
+  color: white;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.tp-cancel-btn:hover { background: #dc2626; }
+
 /* ── Status ── */
 .tp-status {
   font-size: 11px;

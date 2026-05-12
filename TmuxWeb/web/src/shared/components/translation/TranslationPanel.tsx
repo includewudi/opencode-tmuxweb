@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Languages, Loader2 } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { Languages, Loader2, X } from 'lucide-react'
 import './TranslationPanel.css'
 
 interface TranslationPair {
@@ -36,38 +36,52 @@ export function TranslationPanel({ paneId }: TranslationPanelProps) {
   const [translated, setTranslated] = useState<string | null>(null)
   const [status, setStatus] = useState<'idle' | 'capturing' | 'translating' | 'done' | 'error' | 'empty'>('idle')
   const [errorMsg, setErrorMsg] = useState('')
+  const abortRef = useRef<AbortController | null>(null)
+
+  const cancelRequest = useCallback(() => {
+    abortRef.current?.abort()
+    abortRef.current = null
+    setStatus('error')
+    setErrorMsg('已取消')
+  }, [])
 
   const pairs = useMemo(() => translated ? parsePairs(translated) : [], [translated])
 
   const captureAndTranslate = useCallback(async (pid: string) => {
+    abortRef.current?.abort()
+    const ac = new AbortController()
+    abortRef.current = ac
+
     setStatus('capturing')
     setOriginal('')
     setTranslated(null)
     setErrorMsg('')
 
-    const capRes = await fetch('/api/cli-history/capture-pane', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ paneId: pid }),
-    })
-    if (!capRes.ok) throw new Error(`HTTP ${capRes.status}`)
-
-    const capData = await capRes.json()
-    if (capData.status === 'empty') {
-      setStatus('empty')
-      return
-    }
-
-    setOriginal(capData.text)
-    setStatus('translating')
-
     try {
+      const capRes = await fetch('/api/cli-history/capture-pane', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ paneId: pid }),
+        signal: ac.signal,
+      })
+      if (!capRes.ok) throw new Error(`HTTP ${capRes.status}`)
+
+      const capData = await capRes.json()
+      if (capData.status === 'empty') {
+        setStatus('empty')
+        return
+      }
+
+      setOriginal(capData.text)
+      setStatus('translating')
+
       const trRes = await fetch('/api/cli-history/translate-text', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ text: capData.text }),
+        signal: ac.signal,
       })
       if (!trRes.ok) throw new Error(`HTTP ${trRes.status}`)
 
@@ -80,8 +94,11 @@ export function TranslationPanel({ paneId }: TranslationPanelProps) {
         setStatus('done')
       }
     } catch (e) {
+      if ((e as Error).name === 'AbortError') return
       setStatus('error')
       setErrorMsg(e instanceof Error ? e.message : '翻译失败')
+    } finally {
+      if (abortRef.current === ac) abortRef.current = null
     }
   }, [])
 
@@ -151,6 +168,11 @@ export function TranslationPanel({ paneId }: TranslationPanelProps) {
         </div>
         <div className="tp-header-right">
           <span className={`tp-status${statusClass}`}>{statusText}</span>
+          {(status === 'capturing' || status === 'translating') && (
+            <button className="tp-cancel-btn" onClick={cancelRequest} title="取消">
+              <X size={12} />
+            </button>
+          )}
           <button className="tp-retranslate-btn" onClick={handleRetranslate}>
             <Languages size={12} />
           </button>

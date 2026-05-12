@@ -12,7 +12,7 @@ baseRouter.post('/capture-pane', (req, res) => {
 
     let text = '';
     try {
-      text = execSync(`tmux capture-pane -p -t "${paneId}" -S -2000`, {
+      text = execSync(`tmux capture-pane -p -t "${paneId}" -S -80`, {
         encoding: 'utf-8',
         timeout: 3000,
       }).trim();
@@ -25,7 +25,7 @@ baseRouter.post('/capture-pane', (req, res) => {
           { encoding: 'utf-8', timeout: 3000 }
         ).trim();
         if (!resolved) throw e;
-        text = execSync(`tmux capture-pane -p -t "${resolved}" -S -2000`, {
+        text = execSync(`tmux capture-pane -p -t "${resolved}" -S -80`, {
           encoding: 'utf-8',
           timeout: 3000,
         }).trim();
@@ -40,13 +40,16 @@ baseRouter.post('/capture-pane', (req, res) => {
   }
 });
 
-// POST /translate-text — translate text via LLM
+// POST /translate-text — translate text via LLM (60s timeout)
 baseRouter.post('/translate-text', async (req, res) => {
   try {
     const { text } = req.body;
     if (!text || !text.trim()) return res.status(400).json({ error: 'text required' });
 
-    const translated = await translatePaneText(text);
+    const translated = await Promise.race([
+      translatePaneText(text),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('翻译超时(60s)')), 60000)),
+    ]);
     if (!translated) {
       return res.json({ status: 'error', error: '翻译失败' });
     }
